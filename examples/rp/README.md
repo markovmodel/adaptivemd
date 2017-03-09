@@ -42,6 +42,56 @@ mkdir -p ~/mongodb/data/db
 mongod --quiet --dbpath ~/mongodb/data/db &
 ```
 
+### 2. Clone adaptive-sampling
+
+Let's get adaptivemd from the github repo now.
+
+```bash
+# clone and install adaptive-md 
+git clone git@github.com:markovmodel/adaptive-sampling.git
+```
+
+### 3. Virtual Environment
+
+For RP you need to create a virtual environment using `virtualenv` 
+
+```bash
+# create virtual environment (here named ve)
+virtualenv $HOME/ve
+
+# activate it
+source $HOME/ve/bin/activate
+
+# install radical.pilot
+pip install radical.pilot
+
+# more packages for adaptivemd
+pip install pyyaml numpy ujson simtk.unit
+
+# go to adativemd
+cd adaptive-sampling/package
+# and install it
+python setup.py develop
+
+# see if it works
+python -c "import adaptivemd" || echo 'FAILED'
+
+# deactivate it
+deactivate
+
+# add an alias to .bashrc
+echo "alias ve='source $HOME/ve/bin/activate'" >> ~/.bash_rc
+
+```
+
+Note, this is where we run the adaptive sampling strategies from. RP will use the VE to run the pilot that will distribute jobs that we push to the database. The VE is _not_ used to run pyemma or openmm or anything else. This is why we do not have to install it in the VE.
+
+If you want, you can deactivate the VE using
+
+```bash
+deactivate
+```
+
 ### Conda
 
 Whereever you will run the actual tasks (local or a cluster) you probably use some python so we recommend to install the common set of conda packages. If you are remotely executing python then you can even use python 3 without problems. The RPC might also work with python 3 but that needs to be tested. 
@@ -64,37 +114,17 @@ conda config --append channels omnia
 
 and `--append` will make sure that the regular conda packages are tried first and use `conda-forge` and `omnia` as a fallback.
 
-Install required and necessary packages now
+Install the usual packages by
 
-```bash
-# for adaptivemd only
-conda install ujson pyyaml pymongo=2.8 numpy
-
-# for openmm, pyemma etc
+```
 conda install pyemma openmm mdtraj
 ```
 
-### 3. Install _adaptivemd_
+and install `adaptivemd` from the github using
 
-Let's get adaptivemd from the github repo now.
-
-```bash
-# clone and install adaptivemd 
-git clone git@github.com:markovmodel/adaptivemd.git
-
-# go to adativemd
-cd adaptivemd/
-
-# and install it
+```
+cd adaptive-sampling/package
 python setup.py develop
-
-# see if it works
-python -c "import adaptivemd" || echo 'FAILED'
-
-# run a simple test
-cd adaptive/tests/
-python test_simple.py
-
 ```
 
 All of this must also be installed on the cluster, where you want to run your simulations.
@@ -104,6 +134,12 @@ For allegro I suggest to use a miniconda installation. Note that you only need t
 
 #### Finally
 
+make sure you run your adaptivemd scripts when the VE is active. There is an alias in the above script
+
+```bash
+source $HOME/ve/bin/activate
+```
+
 That's it. Have fun running adaptive simulations.
 
-You might want to start with the examples in `examples/tutorials`
+You might want to start with the examples in `example/tutorial`
