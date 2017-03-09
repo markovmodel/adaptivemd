@@ -1,0 +1,64 @@
+;       Input file
+; integrator
+integrator          =  md
+nsteps              =  25000
+dt                  =  0.002
+
+;integrator          =  steep
+;emstep                         = 0.01
+;emtol              = 10
+;
+;
+; removing CM translation and rotation
+comm_mode           =  linear
+nstcomm             =  100
+;
+; output control
+nstlog                   = 1000
+nstenergy                = 0
+nstxout                  = 0
+nstvout                  = 0
+nstfout                  = 0
+; group definition
+nstxout-compressed       = 1000
+compressed-x-precision   = 1000
+compressed-x-grps        = system
+;
+; neighbour searching
+cutoff-scheme       = verlet
+nstlist             = 20
+rlist               = 0.9
+ns_type             = grid
+pbc                 = xyz
+;
+; electrostatic
+
+coulombtype         = Cut-off
+rcoulomb            = 0.9
+;fourierspacing      = 0.1
+vdwtype             = Cut-off
+rvdw                = 0.9
+
+;
+; constraints
+constraints              = h-bonds ;none
+constraint-algorithm     = lincs
+lincs_iter               = 1
+lincs_order              = 4
+;
+; temperature
+Tcoupl              = V-rescale
+tc_grps             = system
+tau_t               = 2
+ref_t               = 300
+;
+pcoupl              = no
+;
+; initial velocities
+gen_vel             = yes
+gen_temp            = 300
+gen_seed            = -1
+
+ld-seed = -1
+
+implicit_solvent = no
