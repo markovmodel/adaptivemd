@@ -1,7 +1,7 @@
 from event import Event
 from file import Location
 from mongodb import ObjectJSON
-from task import Task, TaskList, DummyTask
+from task import Task, DummyTask
 
 
 class Scheduler(object):
@@ -62,10 +62,6 @@ class Scheduler(object):
         self._folder_name = None
 
         self.simplifier = ObjectJSON()
-
-        # delegate some functions to the task wrapper
-        for fn in ['add_path', 'add_conda_env', 'setenv', 'pre_add_paths']:
-            setattr(self, fn, getattr(self.wrapper, fn))
 
     @property
     def staging_area_location(self):
@@ -207,9 +203,7 @@ class Scheduler(object):
             the list of tasks actually executed after looking at all objects
 
         """
-        tasks = self._to_tasks(submission)
-
-        return TaskList(tasks)
+        return self._to_tasks(submission)
 
     def add_event(self, event):
         if isinstance(event, (tuple, list)):

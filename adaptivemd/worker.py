@@ -9,7 +9,6 @@ from adaptivemd.mongodb import StorableMixin, SyncVariable, create_to_dict, Obje
 
 from scheduler import Scheduler
 from reducer import filter_str, apply_reducer, parse_transfer_worker, parse_action
-from task import TaskList
 from logentry import LogEntry
 from util import DT
 from file import Transfer
@@ -89,7 +88,7 @@ class WorkerScheduler(Scheduler):
                 # task.state = 'pending'
                 self.tasks[task.__uuid__] = task
 
-        return TaskList(tasks)
+        return tasks
 
     def _start_job(self, task):
         script = self.task_to_script(task >> self.wrapper >> self.resource.wrapper)
