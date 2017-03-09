@@ -32,12 +32,12 @@ if __name__ == '__main__':
     #   the instance to create trajectories
     # --------------------------------------------------------------------------
 
-    pdb_file = File('file://../files/alanine/alanine.pdb').named('initial_pdb').load()
+    pdb_file = File('file://../../examples/files/alanine/alanine.pdb').named('initial_pdb').load()
 
     engine = OpenMMEngine(
         pdb_file=pdb_file,
-        system_file=File('file://../files/alanine/system.xml').load(),
-        integrator_file=File('file://../files/alanine/integrator.xml').load(),
+        system_file=File('file://../../examples/files/alanine/system.xml').load(),
+        integrator_file=File('file://../../examples/files/alanine/integrator.xml').load(),
         args='-r --report-interval 1 -p CPU --store-interval 1'
     ).named('openmm')
 
@@ -63,7 +63,7 @@ if __name__ == '__main__':
 
     # project.queue(task)
 
-    pdb = md.load('../files/alanine/alanine.pdb')
+    pdb = md.load('../../examples/files/alanine/alanine.pdb')
     cwd = os.getcwd()
 
     # this part fakes a running worker without starting the worker process
@@ -89,12 +89,28 @@ if __name__ == '__main__':
     assert(os.path.exists(traj_path))
 
     # go back to the place where we ran the test
-    os.chdir(cwd)
-
     traj = md.load(traj_path, top=pdb)
 
     assert(len(traj) == 100)
-    print traj[0].xyz
-    print pdb[0].xyzk
+
+    # well, we have a 100 step trajectory which matches the size of the initial PDB
+    # that is a good sign
+
+    # extend the trajectory by 50
+    task2 = task.extend(50)
+
+    worker.submit(task2)
+
+    while not task2.is_done():
+        worker.advance()
+
+    # should still be one, since we have the same trajectory
+    assert(len(project.trajectories) == 1)
+
+    traj = md.load(traj_path, top=pdb)
+
+    assert (len(traj) == 150)
+
+    # after extension it is 150 frames. Excellent
 
     project.close()
