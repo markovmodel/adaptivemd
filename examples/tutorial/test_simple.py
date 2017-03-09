@@ -2,66 +2,38 @@
 
 import sys
 
-# WE RELY ON THESE BEING SET !!!
-
-# set default verbose level
-# verbose = os.environ.get('RADICAL_PILOT_VERBOSE', 'REPORT')
-# os.environ['RADICAL_PILOT_VERBOSE'] = verbose
-
-# set default URL to IMP Mongo DB
-# path_to_db = os.environ.get(
-#     'RADICAL_PILOT_DBURL', "mongodb://ensembletk.imp.fu-berlin.de:27017/rp")
-
-# assume we run a local
-# path_to_db = os.environ.get(
-#     'RADICAL_PILOT_DBURL', "mongodb://localhost:27017/rp")
-#
-# os.environ['RADICAL_PILOT_DBURL'] = path_to_db
-
-# import adaptive components
-
 from adaptivemd import Project
-from adaptivemd import LocalCluster AllegroCluster
+from adaptivemd import LocalCluster
 
 from adaptivemd import OpenMMEngine
 from adaptivemd import PyEMMAAnalysis
 
-from adaptivemd import File, Directory
+from adaptivemd import File
+from adaptivemd import WorkerScheduler
 
 
 if __name__ == '__main__':
 
-    project = Project('testcase')
+    project = Project('example-simple-1')
 
     # --------------------------------------------------------------------------
     # CREATE THE RESOURCE
     #   the instance to know about the place where we run simulations
     # --------------------------------------------------------------------------
 
-    resource_id = 'local.jhp'
-
-    if len(sys.argv) > 2:
-        exit()
-    elif len(sys.argv) == 2:
-        resource_id = sys.argv[1]
-
-    if resource_id == 'local.jhp':
-        project.initialize(LocalJHP())
-    elif resource_id == 'local.sheep':
-        project.initialize(LocalSheep())
-    elif resource_id == 'fub.allegro':
-        project.initialize(AllegroCluster())
+    project.initialize(LocalCluster())
 
     # --------------------------------------------------------------------------
     # CREATE THE ENGINE
     #   the instance to create trajectories
     # --------------------------------------------------------------------------
-    pdb_file = File('file://../files/alanine/alanine.pdb').named('initial_pdb')
+
+    pdb_file = File('file://../files/alanine/alanine.pdb').named('initial_pdb').load()
 
     engine = OpenMMEngine(
         pdb_file=pdb_file,
-        system_file=File('file://../files/alanine/system.xml'),
-        integrator_file=File('file://../files/alanine/integrator.xml'),
+        system_file=File('file://../files/alanine/system.xml').load(),
+        integrator_file=File('file://../files/alanine/integrator.xml').load(),
         args='-r --report-interval 1 -p CPU --store-interval 1'
     ).named('openmm')
 
@@ -82,14 +54,15 @@ if __name__ == '__main__':
     #   the instance that runs the simulations on the resource
     # --------------------------------------------------------------------------
 
-    scheduler = project.get_scheduler(cores=1)
-
     trajectory = project.new_trajectory(engine['pdb_file'], 100)
     task = engine.task_run_trajectory(trajectory)
 
-    scheduler(task)
+    # project.queue(task)
 
-    scheduler.wait()
-    scheduler.exit()
+    # this part fakes a running worker without starting the worker process
+    worker = WorkerScheduler(project.resource)
+    worker.submit(task)
+
+    worker.wait()
 
     project.close()

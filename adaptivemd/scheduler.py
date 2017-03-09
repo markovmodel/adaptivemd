@@ -63,10 +63,6 @@ class Scheduler(object):
 
         self.simplifier = ObjectJSON()
 
-        # delegate some functions to the task wrapper
-        for fn in ['add_path', 'add_conda_env', 'setenv', 'pre_add_paths']:
-            setattr(self, fn, getattr(self.wrapper, fn))
-
     @property
     def staging_area_location(self):
         return 'sandbox:///' + self.folder_name + '/staging_area'

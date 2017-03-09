@@ -20,9 +20,6 @@ class Resource(StorableMixin):
 
         self.wrapper = wrapper
 
-        for fn in ['add_path', 'add_conda_env', 'setenv', 'pre_add_paths']:
-            setattr(self, fn, getattr(self.wrapper, fn))
-
 
 class AllegroCluster(Resource):
     """
