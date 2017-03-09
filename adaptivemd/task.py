@@ -48,8 +48,11 @@ class BaseTask(StorableMixin):
 
     @staticmethod
     def _format_environment(env):
-        envs = [(key, env[key]) for key in sorted(list(env))]
-        return ['export {0}={1}'.format(key, value) for key, value in envs]
+        if env:
+            envs = [(key, env[key]) for key in sorted(list(env))]
+            return ['export {0}={1}'.format(key, value) for key, value in envs]
+        else:
+            return []
 
     @property
     def pre_add_paths(self):
@@ -529,9 +532,11 @@ class EnclosedTask(Task):
     @property
     def environment(self):
         env = {}
-        env.update(self._wrapper.environment)
-        env.update(self._task.environment)
-        return self._environment
+        if self._wrapper.environment:
+            env.update(self._wrapper.environment)
+        if self._task.environment:
+            env.update(self._task.environment)
+        return env
 
     @classmethod
     def from_dict(cls, dct):
