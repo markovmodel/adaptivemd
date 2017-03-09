@@ -678,14 +678,3 @@ class PythonTask(Task):
             'kwargs': self._python_kwargs
         }
         return scheduler.flatten_location(dct)
-
-
-class TaskList(list):
-    """
-    A list of Tasks
-
-    Behaves exactly like a list and add some convenience function and mapping
-    """
-
-    def is_done(self):
-        return [x.is_done for x in self]

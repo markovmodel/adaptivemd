@@ -3,7 +3,6 @@ import time
 from adaptivemd.scheduler import Scheduler
 from adaptivemd.reducer import filter_dict, apply_reducer, parse_action, filter_str, \
     parse_action_stage_in
-from adaptivemd.task import TaskList
 
 from radical import pilot as rp
 
@@ -219,7 +218,7 @@ class RPScheduler(Scheduler):
         events = self._to_events(submission)
         map(self._events.append, events)
 
-        return TaskList(tasks)
+        return tasks
 
     def add_event(self, event):
         if isinstance(event, (tuple, list)):

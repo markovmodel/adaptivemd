@@ -1,7 +1,7 @@
 from event import Event
 from file import Location
 from mongodb import ObjectJSON
-from task import Task, TaskList, DummyTask
+from task import Task, DummyTask
 
 
 class Scheduler(object):
@@ -207,9 +207,7 @@ class Scheduler(object):
             the list of tasks actually executed after looking at all objects
 
         """
-        tasks = self._to_tasks(submission)
-
-        return TaskList(tasks)
+        return self._to_tasks(submission)
 
     def add_event(self, event):
         if isinstance(event, (tuple, list)):
