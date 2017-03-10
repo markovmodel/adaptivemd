@@ -6,8 +6,8 @@ package:
   version: "{version}"
 
 source:
-#  git_url: ../../.git
-  path: ../../
+  git_url: ../../.git
+#  path: ../../
 
 build:
   preserve_egg_dir: True
@@ -18,6 +18,7 @@ requirements:
     - python
     - setuptools
     - pyyaml
+{requires}
 
   run:
 {requires}
@@ -56,7 +57,7 @@ def main():
             version=prefs['version'],
             dev='-dev',
             requires=tag + ('\n' + tag).join(
-                [x.replace('==', ' ==') for x in prefs['install_requires']]),
+                [x.replace('==', ' ==') for x in prefs['requires']]),
             home=prefs['download_url'],
             license=prefs['license'],
             description="'" + prefs['description'] + "'"

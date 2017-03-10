@@ -2,7 +2,7 @@ import base64
 import importlib
 
 import numpy as np
-from simtk import unit as units
+# from simtk import unit as units
 import math
 import abc
 from uuid import UUID
@@ -97,21 +97,21 @@ class ObjectJSON(object):
                 '_integer': str(obj)}
 
         elif obj.__class__.__module__ != '__builtin__':
-            if obj.__class__ is units.Quantity:
-                # This is number with a unit so turn it into a list
-                if self.unit_system is not None:
-                    return {
-                        '_value': self.simplify(
-                            obj.value_in_unit_system(self.unit_system)),
-                        '_units': self.unit_to_dict(
-                            obj.unit.in_unit_system(self.unit_system))
-                    }
-                else:
-                    return {
-                        '_value': self.simplify(obj / obj.unit, base_type),
-                        '_units': self.unit_to_dict(obj.unit)
-                    }
-            elif obj.__class__ is np.ndarray:
+            # if obj.__class__ is units.Quantity:
+            #     # This is number with a unit so turn it into a list
+            #     if self.unit_system is not None:
+            #         return {
+            #             '_value': self.simplify(
+            #                 obj.value_in_unit_system(self.unit_system)),
+            #             '_units': self.unit_to_dict(
+            #                 obj.unit.in_unit_system(self.unit_system))
+            #         }
+            #     else:
+            #         return {
+            #             '_value': self.simplify(obj / obj.unit, base_type),
+            #             '_units': self.unit_to_dict(obj.unit)
+            #         }
+            if obj.__class__ is np.ndarray:
                 # this is maybe not the best way to store large numpy arrays!
                 return {
                     '_numpy': self.simplify(obj.shape),
@@ -177,11 +177,11 @@ class ObjectJSON(object):
 
     def build(self, obj):
         if type(obj) is dict:
-            if '_units' in obj and '_value' in obj:
-                return self.build(
-                    obj['_value']) * self.unit_from_dict(obj['_units'])
+            # if '_units' in obj and '_value' in obj:
+            #     return self.build(
+            #         obj['_value']) * self.unit_from_dict(obj['_units'])
 
-            elif '_slice' in obj:
+            if '_slice' in obj:
                 return slice(*obj['_slice'])
 
             elif '_numpy' in obj:
@@ -263,19 +263,19 @@ class ObjectJSON(object):
     def unit_to_symbol(unit):
         return str(1.0 * unit).split()[1]
 
-    @staticmethod
-    def unit_to_dict(unit):
-        unit_dict = {
-            p.name: int(fac) for p, fac in unit.iter_base_or_scaled_units()}
-        return unit_dict
-
-    @staticmethod
-    def unit_from_dict(unit_dict):
-        unit = units.Unit({})
-        for unit_name, unit_multiplication in unit_dict.iteritems():
-            unit *= getattr(units, unit_name) ** unit_multiplication
-
-        return unit
+    # @staticmethod
+    # def unit_to_dict(unit):
+    #     unit_dict = {
+    #         p.name: int(fac) for p, fac in unit.iter_base_or_scaled_units()}
+    #     return unit_dict
+    #
+    # @staticmethod
+    # def unit_from_dict(unit_dict):
+    #     unit = units.Unit({})
+    #     for unit_name, unit_multiplication in unit_dict.iteritems():
+    #         unit *= getattr(units, unit_name) ** unit_multiplication
+    #
+    #     return unit
 
     @staticmethod
     def callable_to_dict(c):
@@ -489,12 +489,12 @@ class ObjectJSON(object):
         simplified = ujson.loads(json_string)
         return self.build(simplified)
 
-    def unit_to_json(self, unit):
-        simple = self.unit_to_dict(unit)
-        return self.to_json(simple)
-
-    def unit_from_json(self, json_string):
-        return self.unit_from_dict(self.from_json(json_string))
+    # def unit_to_json(self, unit):
+    #     simple = self.unit_to_dict(unit)
+    #     return self.to_json(simple)
+    #
+    # def unit_from_json(self, json_string):
+    #     return self.unit_from_dict(self.from_json(json_string))
 
     def from_simple_dict(self, simplified):
         obj = self.build(simplified)
