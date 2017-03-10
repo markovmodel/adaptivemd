@@ -132,24 +132,6 @@ def lazy_loading_attributes(*attributes):
     This decorator will obfuscate the __init__ signature in Python 2.
     This is fixed in Python 3.4+
 
-    Examples
-    --------
-    Set an attribute to a LoaderProxy
-
-    >>> my_obj.lazy_attribute = LoaderProxy(snapshot_store, 13)
-
-    >>> print my_obj.lazy_attribute
-    openpathsampling.Snapshot object
-
-    It will not return the proxy. This is completely hidden.
-
-    If you want to use the intelligent saving that will remove the reference
-    to the object you can do
-    >>> sample_store.write('parent', index, my_sample)
-
-    After this call the attribute `my_sample.parent` will be turned into
-    a proxy
-
     """
     def _decorator(cls):
         for attr in attributes:
