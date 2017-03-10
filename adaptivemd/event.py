@@ -4,6 +4,8 @@ from condition import Condition
 from itertools import chain
 from task import Task
 
+import functools
+
 
 class Event(object):
     """
@@ -298,3 +300,13 @@ class StopEvent(Event):
     """
     def __call__(self, scheduler):
         return StopIteration
+
+
+# decorator @event to convert a generator function into an callable event
+
+def event(fnc):
+    @functools.wraps(fnc)
+    def _wrapper(*args, **kwargs):
+        return FunctionalEvent(fnc(*args, **kwargs))
+
+    return _wrapper
