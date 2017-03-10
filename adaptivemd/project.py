@@ -519,10 +519,10 @@ class Project(object):
             # check worker status
             now = time.time()
             for w in self.workers:
-                if w.seen - now > self._worker_dead_time:
+                if now - w.seen > self._worker_dead_time:
                     # worker seems dead, what now!
                     w.state = 'dead'
-                    w.current
+                    w.current = None
 
     def run(self):
         """
