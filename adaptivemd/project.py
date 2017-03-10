@@ -516,12 +516,20 @@ class Project(object):
                 else:
                     found_iteration = 0
 
-            # check worker status
+            # check worker status and mark as dead if not responding for long times
             now = time.time()
             for w in self.workers:
-                if now - w.seen > self._worker_dead_time:
+                if w.state not in ['dead', 'down'] and now - w.seen > self._worker_dead_time:
                     # worker seems dead, what now!
                     w.state = 'dead'
+
+                    # get current executing task
+                    current = w.current
+                    if current is not None and not current.is_done:
+                        # seems it was running a task
+                        # now chose (for now restart the task at another worker)
+                        current.state = 'created'
+
                     w.current = None
 
     def run(self):
