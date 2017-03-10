@@ -82,19 +82,19 @@ class ObjectStore(StorableMixin):
 
     default_store_chunk_size = 256
 
-    class DictDelegator(object):
-        def __init__(self, store, dct):
-            self.name = store.name + '_'
-            self.dct = dct
-
-        def __getitem__(self, item):
-            return self.dct[self.name + item]
-
-        def __contains__(self, item):
-            return (self.name + item) in self.dct
-
-    def name_delegate(self, dct):
-        return ObjectStore.DictDelegator(self, dct)
+    # class DictDelegator(object):
+    #     def __init__(self, store, dct):
+    #         self.name = store.name + '_'
+    #         self.dct = dct
+    #
+    #     def __getitem__(self, item):
+    #         return self.dct[self.name + item]
+    #
+    #     def __contains__(self, item):
+    #         return (self.name + item) in self.dct
+    #
+    # def name_delegate(self, dct):
+    #     return ObjectStore.DictDelegator(self, dct)
 
     default_cache = 10000
 
@@ -219,6 +219,7 @@ class ObjectStore(StorableMixin):
     def load_indices(self):
         # self.index.clear()
         # self.index.extend(
+        print 'load IDX'
         self.index = [int(UUID(x)) for x in self._document.distinct('_id')]
 
     @property
