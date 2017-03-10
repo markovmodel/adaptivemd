@@ -308,21 +308,21 @@ class SyncVariable(object):
             return self
         else:
             if self.fix_fnc:
-                val = self.values.get(instance.__uuid__)
+                val = self.values.get(instance)
                 if val is not None and self.fix_fnc(val):
                     return val
 
             if instance.__store__ is not None:
                 idx = self._idx(instance)
                 value = self._update(instance.__store__, idx)
-                self.values[instance.__uuid__] = value
+                self.values[instance] = value
                 return value
             else:
-                return self.values.get(instance.__uuid__)
+                return self.values.get(instance)
 
     def __set__(self, instance, value):
         if self.fix_fnc:
-            val = self.values.get(instance.__uuid__)
+            val = self.values.get(instance)
             if val is not None and self.fix_fnc(val):
                 return
 
@@ -334,7 +334,7 @@ class SyncVariable(object):
                 upsert=False
                 )
 
-        self.values[instance.__uuid__] = value
+        self.values[instance] = value
 
 
 class NoneOrValueSyncVariable(SyncVariable):
@@ -346,16 +346,16 @@ class NoneOrValueSyncVariable(SyncVariable):
         if instance is None:
             return self
         else:
-            if self.values.get(instance.__uuid__) is None:
+            if self.values.get(instance) is None:
                 idx = self._idx(instance)
                 value = self._update(instance.__store__, idx)
-                self.values[instance.__uuid__] = value
+                self.values[instance] = value
                 return value
 
-            return self.values.get(instance.__uuid__)
+            return self.values.get(instance)
 
     def __set__(self, instance, value):
-        if self.values.get(instance.__uuid__) is None and value is not None:
+        if self.values.get(instance) is None and value is not None:
             if instance.__store__ is not None:
                 idx = self._idx(instance)
                 instance.__store__._document.find_and_modify(
@@ -365,7 +365,7 @@ class NoneOrValueSyncVariable(SyncVariable):
                     )
                 value = self._update(instance.__store__, idx)
 
-            self.values[instance.__uuid__] = value
+            self.values[instance] = value
 
 
 class IncreasingNumericSyncVariable(SyncVariable):
@@ -374,7 +374,7 @@ class IncreasingNumericSyncVariable(SyncVariable):
     """
 
     def __set__(self, instance, value):
-        val = self.values.get(instance.__uuid__)
+        val = self.values.get(instance)
 
         if self.fix_fnc:
             if val is not None and self.fix_fnc(val):
@@ -394,7 +394,7 @@ class IncreasingNumericSyncVariable(SyncVariable):
 
                 value = current
 
-            self.values[instance.__uuid__] = value
+            self.values[instance] = value
 
 
 class ObjectSyncVariable(SyncVariable):
@@ -415,7 +415,7 @@ class ObjectSyncVariable(SyncVariable):
     def __set__(self, instance, value):
         if instance.__store__ is not None:
             if self.fix_fnc:
-                val = self.values.get(instance.__uuid__)
+                val = self.values.get(instance)
                 if val is not None and self.fix_fnc(val):
                     return val
 
@@ -435,4 +435,4 @@ class ObjectSyncVariable(SyncVariable):
                     upsert=False
                     )
 
-        self.values[instance.__uuid__] = value
+        self.values[instance] = value

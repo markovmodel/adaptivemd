@@ -143,16 +143,16 @@ class Location(StorableMixin):
                 p = os.path.abspath(self.path)
                 self.location = 'file://' + p
 
-    def __hash__(self):
-        return hash(self.resource_location)
-
-    def __eq__(self, other):
-        if other is None:
-            return False
-        elif isinstance(other, Location):
-            return self.resource_location == other.resource_location
-
-        return NotImplemented
+    # def __hash__(self):
+    #     return hash(self.resource_location)
+    #
+    # def __eq__(self, other):
+    #     if other is None:
+    #         return False
+    #     elif isinstance(other, Location):
+    #         return self.resource_location == other.resource_location
+    #
+    #     return NotImplemented
 
     def clone(self):
         return self.__class__(self.location)
