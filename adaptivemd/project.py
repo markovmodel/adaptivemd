@@ -108,6 +108,15 @@ class Project(object):
         # timeout if a worker is not changing its heartbeat in the last n seconds
         self._worker_dead_time = 60
 
+        # tasks from dead workers that were started or queue should do what?
+        self._set_task_state_from_dead_workers = 'created'
+
+        # instead mark these as failed and decide manually
+        # self._set_task_state_from_dead_workers = 'fail'
+
+        # or do not care. This is fast but not recommended
+        # self._set_task_state_from_dead_workers = None
+
     def initialize(self, resource):
         """
         Initialize a project with a specific resource.
@@ -520,15 +529,17 @@ class Project(object):
             now = time.time()
             for w in self.workers:
                 if w.state not in ['dead', 'down'] and now - w.seen > self._worker_dead_time:
-                    # worker seems dead, what now!
+                    # make sure it will end and not finish any jobs, just in case
+                    w.command = 'kill'
+
+                    # and mark it dead
                     w.state = 'dead'
 
-                    # get current executing task
-                    current = w.current
-                    if current is not None and not current.is_done:
-                        # seems it was running a task
-                        # now chose (for now restart the task at another worker)
-                        current.state = 'created'
+                    # search for abandoned tasks and do something with them
+                    if self._set_task_state_from_dead_workers:
+                        for t in self.tasks:
+                            if t.worker == w and t.state in ['queued', 'running']:
+                                t.state = self._set_task_state_from_dead_workers
 
                     w.current = None
 
