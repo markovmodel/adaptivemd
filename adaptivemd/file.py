@@ -301,7 +301,6 @@ class File(Location):
 
         """
         scheduler.unroll_staging_path(self)
-        print self.short, 'created'
         self.created = time.time()
 
     def modified(self):
@@ -315,7 +314,6 @@ class File(Location):
         """
         stamp = self.created
         if stamp is not None and stamp > 0:
-            print self.short, 'modified'
             self.created = - time.time()
 
     @property
