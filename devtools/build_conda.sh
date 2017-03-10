@@ -9,7 +9,9 @@ BUILD_PATH=~/anaconda/conda-bld
 BUILD_OS=osx-64
 
 # install conda-build
-conda install --yes conda-build
+if conda list | grep conda-build ; then
+    conda install --yes conda-build
+fi
 
 # build the conda package
 conda build conda-recipe
