@@ -3,6 +3,7 @@ version: 0.2.0
 
 authors:
   - Jan-Hendrik Prinz
+  - Frank Noe
 
 emails:
   - jan-hendrik.prinz@fu-berlin.de
@@ -28,8 +29,8 @@ classifiers: |
   Operating System :: Unix
   Operating System :: MacOS
 
-download_url: https://github.com/markovmodel/adaptive-sampling
-url: https://github.com/markovmodel/adaptive-sampling
+download_url: https://github.com/markovmodel/adaptivemd
+url: https://github.com/markovmodel/adaptivemd
 
 packages:
   - adaptivemd
@@ -51,10 +52,9 @@ released: false
 scripts:
   - adaptivemd/scripts/adaptivemdworker
 
-install_requires:
+requires:
   - python
   - numpy
-  - pyyaml
   - pymongo==2.8
   - ujson
 
