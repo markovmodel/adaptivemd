@@ -42,7 +42,7 @@ class StorableMixin(object):
         if isinstance(other, StorableMixin):
             return self.__uuid__ == other.__uuid__
 
-        raise NotImplemented
+        return NotImplemented
 
     def named(self, name):
         self.name = name

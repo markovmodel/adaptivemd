@@ -13,7 +13,7 @@ class BaseBundle(object):
         if isinstance(other, BaseBundle):
             return AndBundle(self, other)
 
-        raise NotImplemented
+        return NotImplemented
 
     def __len__(self):
         return len([None for _ in self])
@@ -22,7 +22,7 @@ class BaseBundle(object):
         if isinstance(other, BaseBundle):
             return OrBundle(self, other)
 
-        raise NotImplemented
+        return NotImplemented
 
     def __getitem__(self, item):
         """

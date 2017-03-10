@@ -152,7 +152,7 @@ class Location(StorableMixin):
         elif isinstance(other, Location):
             return self.resource_location == other.resource_location
 
-        raise NotImplemented
+        return NotImplemented
 
     def clone(self):
         return self.__class__(self.location)
@@ -161,7 +161,7 @@ class Location(StorableMixin):
         if isinstance(other, str):
             return str(self) + other
 
-        raise NotImplemented
+        return NotImplemented
 
     def __radd__(self, other):
         if isinstance(other, str):

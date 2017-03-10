@@ -419,7 +419,7 @@ class Worker(StorableMixin):
                         # remove all pending tasks as much as possible
                         for t in list(scheduler.tasks.values()):
                             if t is not scheduler.current_task:
-                                if t.worker == self:
+                                if t.worker is self:
                                     t.state = 'created'
                                     t.worker = None
 
@@ -428,7 +428,7 @@ class Worker(StorableMixin):
                         # see, if we can salvage the currently running task
                         # unless it has been cancelled and is running with another worker
                         t = scheduler.current_task
-                        if t.worker == self and t.state == 'running':
+                        if t.worker is self and t.state == 'running':
                             print 'continuing current task'
                             # seems like the task is still ours to finish
                             pass

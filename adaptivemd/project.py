@@ -599,7 +599,7 @@ class NTrajectories(Condition):
         if isinstance(other, int):
             return NTrajectories(self.project, self.number + other)
 
-        raise NotImplemented
+        return NotImplemented
 
 
 class NModels(Condition):
@@ -622,4 +622,4 @@ class NModels(Condition):
         if isinstance(other, int):
             return NModels(self.project, self.number + other)
 
-        raise NotImplemented
+        return NotImplemented
