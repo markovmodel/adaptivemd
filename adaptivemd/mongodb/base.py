@@ -324,7 +324,7 @@ class SyncVariable(object):
         if self.fix_fnc:
             val = self.values.get(instance)
             if val is not None and self.fix_fnc(val):
-                return val
+                return
 
         if instance.__store__ is not None:
             idx = str(uuid.UUID(int=instance.__uuid__))

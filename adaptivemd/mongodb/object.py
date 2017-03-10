@@ -311,7 +311,7 @@ class ObjectStore(StorableMixin):
         """
         # we want to iterator in the order object were saved!
 
-        self.check_size()
+        print self.check_size()
         for uuid in list(self.index):
             yield self.load(uuid)
 
