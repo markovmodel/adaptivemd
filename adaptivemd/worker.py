@@ -329,7 +329,7 @@ class Worker(StorableMixin):
 
     _find_by = ['state', 'n_tasks', 'seen', 'verbose', 'prefetch', 'current']
 
-    state = SyncVariable('state')
+    state = SyncVariable('state', lambda x: x in ['dead', 'down'])
     n_tasks = SyncVariable('n_tasks')
     seen = SyncVariable('seen')
     verbose = SyncVariable('verbose')

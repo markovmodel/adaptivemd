@@ -124,10 +124,10 @@ class Task(BaseTask):
 
     _find_by = ['state', 'worker', 'stderr', 'stdout']
 
-    state = SyncVariable('state')
+    state = SyncVariable('state', lambda x: x in ['success', 'cancelled'])
     worker = ObjectSyncVariable('worker', 'workers')
-    stdout = ObjectSyncVariable('stdout', 'logs')
-    stderr = ObjectSyncVariable('stderr', 'logs')
+    stdout = ObjectSyncVariable('stdout', 'logs', lambda x: x is not None)
+    stderr = ObjectSyncVariable('stderr', 'logs', lambda x: x is not None)
 
     def __init__(self, generator=None):
         super(Task, self).__init__()

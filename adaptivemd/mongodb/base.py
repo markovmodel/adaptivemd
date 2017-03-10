@@ -288,8 +288,9 @@ class SyncVariable(object):
     """
     A DB synced variable
     """
-    def __init__(self, name):
+    def __init__(self, name, fix_fnc=None):
         self.name = name
+        self.fix_fnc = fix_fnc
         self.values = weakref.WeakKeyDictionary()
 
     def _idx(self, instance):
@@ -306,6 +307,11 @@ class SyncVariable(object):
         if instance is None:
             return self
         else:
+            if self.fix_fnc:
+                val = self.values.get(instance)
+                if val is not None and self.fix_fnc(val):
+                    return val
+
             if instance.__store__ is not None:
                 idx = self._idx(instance)
                 value = self._update(instance.__store__, idx)
@@ -315,6 +321,11 @@ class SyncVariable(object):
                 return self.values.get(instance)
 
     def __set__(self, instance, value):
+        if self.fix_fnc:
+            val = self.values.get(instance)
+            if val is not None and self.fix_fnc(val):
+                return val
+
         if instance.__store__ is not None:
             idx = str(uuid.UUID(int=instance.__uuid__))
             instance.__store__._document.find_and_modify(
@@ -363,7 +374,13 @@ class IncreasingNumericSyncVariable(SyncVariable):
     """
 
     def __set__(self, instance, value):
-        if value > self.values.get(instance):
+        val = self.values.get(instance)
+
+        if self.fix_fnc:
+            if val is not None and self.fix_fnc(val):
+                return val
+
+        if value > val:
             if instance.__store__ is not None:
                 idx = self._idx(instance)
                 current = self._update(instance.__store__, idx)
@@ -381,8 +398,8 @@ class IncreasingNumericSyncVariable(SyncVariable):
 
 
 class ObjectSyncVariable(SyncVariable):
-    def __init__(self, name, store):
-        super(ObjectSyncVariable, self).__init__(name)
+    def __init__(self, name, store, fix_fnc=None):
+        super(ObjectSyncVariable, self).__init__(name, fix_fnc)
         self.store = store
 
     def _update(self, store, idx):
@@ -397,6 +414,11 @@ class ObjectSyncVariable(SyncVariable):
 
     def __set__(self, instance, value):
         if instance.__store__ is not None:
+            if self.fix_fnc:
+                val = self.values.get(instance)
+                if val is not None and self.fix_fnc(val):
+                    return val
+
             idx = self._idx(instance)
             if value is not None:
                 instance.__store__._document.find_and_modify(

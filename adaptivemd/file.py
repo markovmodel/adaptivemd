@@ -249,7 +249,7 @@ class Location(StorableMixin):
 class File(Location):
     _find_by = ['created', 'state']
 
-    created = SyncVariable('created')
+    created = SyncVariable('created', lambda x: x is not None and x < 0)
 
     def __init__(self, location):
         super(File, self).__init__(location)
