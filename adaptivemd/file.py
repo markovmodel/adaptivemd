@@ -63,58 +63,47 @@ class FileTransaction(FileAction):
             self.target.short
         )
 
-    # @classmethod
+    @property
+    def added(self):
+        return [self.target]
+
+            # @classmethod
     # def from_dict(cls, dct):
     #     obj = super(FileTransaction, cls).from_dict(dct)
     #     obj.target = dct['target']
     #     return obj
 
 
+class Touch(FileAction):
+    pass
+
+
 class Copy(FileTransaction):
-    @property
-    def added(self):
-        return [self.target]
+    pass
 
 
 class Transfer(FileTransaction):
-    @property
-    def added(self):
-        return [self.target]
-
-
-class Move(FileTransaction):
-
-    @property
-    def added(self):
-        return [self.target]
-
-    @property
-    def removed(self):
-        return [self.source]
+    pass
 
 
 class Link(FileTransaction):
-    @property
-    def added(self):
-        return [self.target]
+    pass
 
 
-class Remove(FileAction):
-    def __init__(self, source):
-        super(Remove, self).__init__(source)
-
+class Move(FileTransaction):
     @property
     def removed(self):
         return [self.source]
 
 
-class Touch(FileAction):
-    def __init__(self, source):
-        super(Touch, self).__init__(source)
+class Remove(FileAction):
+    @property
+    def removed(self):
+        return [self.source]
 
     @property
     def added(self):
-        return [self.source]
+        return []
 
 
 class Location(StorableMixin):

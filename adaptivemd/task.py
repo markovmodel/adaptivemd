@@ -213,7 +213,7 @@ class Task(BaseTask):
                 f.modified()
                 scheduler.project.files.add(f)
 
-            for f in self.added_files:
+            for f in self.targets:
                 f.create(scheduler)
                 scheduler.project.files.add(f)
 
@@ -229,7 +229,7 @@ class Task(BaseTask):
 
         s += ['']
         s += ['Required : %s' % [x.short for x in task.unstaged_input_files]]
-        s += ['Output : %s' % [x.short for x in task.added_files]]
+        s += ['Output : %s' % [x.short for x in task.targets]]
         s += ['Modified : %s' % [x.short for x in task.modified_files]]
 
         s += ['']
@@ -288,25 +288,36 @@ class Task(BaseTask):
             self._add_files += files
 
     @property
-    def added_files(self):
+    def targets(self):
+        """
+        Return a list of all new and overwritten files
+        :return:
+        """
         return sum(filter(bool, [
-            transaction.added for transaction in self._post_stage
+            t.added for t in self._post_stage
             ]), []) + self._add_files
 
     @property
-    def modified_files(self):
+    def sources(self):
         """
-        List all files where input names match output names and hence will be overwritten
-
-        Returns
-        -------
-        list of `File`
-            the list of potentially overwritten files
-
+        Return a list of all new and overwritten files
+        :return:
         """
-        in_names = set([x.source for x in self._pre_stage])
-        out_names = set([x.target for x in self._post_stage])
-        return in_names & out_names
+        return sum(filter(bool, [
+            t.added for t in self._pre_stage
+            ]), []) + self._add_files
+
+
+    @property
+    def new_files(self):
+        ins = set(x.source for x in self._pre_stage if x.source.exists)
+        # outs = set(x.target for x in self._post_stage)
+
+        # check for
+        # in_names = set([x.url for x in ins])
+        out_names = set([x.url for x in self.targets])
+
+        return {x for x in ins if x.url not in out_names}
 
     @property
     def modified_files(self):
@@ -319,13 +330,14 @@ class Task(BaseTask):
             the list of potentially overwritten files
 
         """
-        in_names = set([x.source for x in self._pre_stage])
-        out_names = set([x.target for x in self._post_stage])
+        ins = set(x.source for x in self._pre_stage if x.source.exists)
+        # outs = set(x.target for x in self._post_stage)
 
-        # the __contains__ uses `==` for comparison and for files this matches
-        # using a str compare of the location. To make sure we get the object
-        # from the input parts
-        return [x for x in in_names if x in out_names]
+        # check for
+        # in_names = set([x.url for x in ins])
+        out_names = set([x.url for x in self.targets])
+
+        return [x for x in ins if x.url in out_names]
 
     @property
     def unstaged_input_files(self):
@@ -342,12 +354,15 @@ class Task(BaseTask):
             the set of `File` objects that are needed and not staged
 
         """
+        staged = {}
         if self.generator is not None:
-            staged = {t.added[0] for t in self.generator.stage_in}
-        else:
-            staged = {}
+            staged.update(t.added.url for t in self.generator.stage_in)
 
-        return {r.required[0] for r in self._pre_stage if r.required[0] not in staged}
+        reqs = {}
+        for r in self._pre_stage:
+            reqs.update(r.required)
+
+        return {r for r in reqs if r.url not in staged}
 
     def setenv(self, key, value):
         """

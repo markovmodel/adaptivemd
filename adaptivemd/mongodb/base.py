@@ -321,12 +321,12 @@ class SyncVariable(object):
                 return self.values.get(instance)
 
     def __set__(self, instance, value):
-        if self.fix_fnc:
-            val = self.values.get(instance)
-            if val is not None and self.fix_fnc(val):
-                return
-
         if instance.__store__ is not None:
+            if self.fix_fnc:
+                val = self.values.get(instance)
+                if val is not None and self.fix_fnc(val):
+                    return
+
             idx = str(uuid.UUID(int=instance.__uuid__))
             instance.__store__._document.find_and_modify(
                 query={'_id': idx},
@@ -417,7 +417,7 @@ class ObjectSyncVariable(SyncVariable):
             if self.fix_fnc:
                 val = self.values.get(instance)
                 if val is not None and self.fix_fnc(val):
-                    return val
+                    return
 
             idx = self._idx(instance)
             if value is not None:
