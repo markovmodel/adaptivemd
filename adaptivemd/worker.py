@@ -4,6 +4,8 @@ import subprocess
 import time
 import sys
 import random
+import signal
+import ctypes
 
 from adaptivemd.mongodb import StorableMixin, SyncVariable, create_to_dict, ObjectSyncVariable
 
@@ -14,6 +16,8 @@ from util import DT
 from file import Transfer
 
 import pymongo.errors
+
+libc = ctypes.CDLL("libc.so.6")
 
 
 class WorkerScheduler(Scheduler):
@@ -112,9 +116,16 @@ class WorkerScheduler(Scheduler):
         task.state = 'running'
         task.fire(task.state, self)
 
+        def set_pdeathsig(sig=signal.SIGTERM):
+            def callable():
+                return libc.prctl(1, sig)
+
+            return callable
+
         self._current_sub = subprocess.Popen(
             ['/bin/bash', script_location + '/running.sh'],
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            preexec_fn=set_pdeathsig(signal.SIGTERM))
 
     def stop_current(self):
         if self._current_sub is not None:
