@@ -470,7 +470,7 @@ class Worker(StorableMixin):
                             scheduler.release_queued_tasks()
 
                         elif command and command.startswith('!'):
-                            result = subprocess.call(command[1:].split(' '))
+                            result = subprocess.check_output(command[1:].split(' '))
                             project.logs.add(
                                 LogEntry(
                                     'command', 'called `%s` on worker' % command[1:], result
