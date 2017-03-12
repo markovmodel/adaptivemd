@@ -41,7 +41,7 @@ class Project(object):
     Notes
     -----
 
-    You will later create `Scheduler` objects that explicitely correspond to
+    You will later create `Scheduler` objects that explicitly correspond to
     a specific cue on a specific cluster that is accessible from within this
     shared FS resource.
 
@@ -173,7 +173,7 @@ class Project(object):
             self.storage.tasks.set_caching(True)
             self.storage.workers.set_caching(True)
 
-            #todo: Use better caching options for tasks and or logs
+            # todo: Use better caching options for tasks and or logs
 
             # make sure that the file number will be new
             self.traj_name.initialize_from_files(self.trajectories)
@@ -347,14 +347,15 @@ class Project(object):
         ----------
         frame : `File` or `Frame`
             if given a `File` it is assumed to be a `.pdb` file that contains
-            initial cooridinates. If a frame is given one assumes that this
+            initial coordinates. If a frame is given one assumes that this
             `Frame` is the initial structure / frame zero in this trajectory
         length : int
             the length of the trajectory
         number : int
             the number of trajectory objects to be returned. If `1` it will be
             a single object. Otherwise a list of `Trajectory` objects.
-        restart
+        restart : bool
+            if `True` (default) the trajectory is created with a restart file.
 
         Returns
         -------
@@ -372,7 +373,7 @@ class Project(object):
 
     def on_ntraj(self, numbers):
         """
-        Return a `Condition` that is `true` as soon a the project has n trajs
+        Return a `Condition` that is `true` as soon a the project has n trajectories
 
         Parameters
         ----------
