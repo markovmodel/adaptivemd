@@ -290,54 +290,104 @@ class Task(BaseTask):
     @property
     def targets(self):
         """
-        Return a list of all new and overwritten files
-        :return:
+        Return a set of all new and overwritten files
+
+        Returns
+        -------
+        set of `File`
+            the list of files that are created or overwritten by this task
         """
-        return sum(filter(bool, [
-            t.added for t in self._post_stage
-            ]), []) + self._add_files
+        return set(
+            sum(filter(bool, [t.added for t in self._post_stage]), [])
+            + self._add_files)
+
+    @property
+    def target_locations(self):
+        """
+        Return a set of all new and overwritten file urls
+
+        Returns
+        -------
+        set of str
+            the list of file urls that are created or overwritten by this task
+        """
+        return {x.url for x in self.targets}
 
     @property
     def sources(self):
         """
-        Return a list of all new and overwritten files
-        :return:
-        """
-        return sum(filter(bool, [
-            t.added for t in self._pre_stage
-            ]), []) + self._add_files
+        Return a set of all required input files
 
+        Returns
+        -------
+        set of `File`
+            the list of files that are required by this task
+        """
+        return set(sum(filter(bool, [t.required for t in self._pre_stage]), []))
+
+    @property
+    def source_locations(self):
+        """
+        Return a set of all required file urls
+
+        Returns
+        -------
+        set of str
+            the list of file urls that are required by this task
+        """
+        return {x.url for x in self.sources}
 
     @property
     def new_files(self):
-        ins = set(x.source for x in self._pre_stage if x.source.exists)
-        # outs = set(x.target for x in self._post_stage)
+        """
+        Return a set of all files the will be newly created by this task
 
-        # check for
-        # in_names = set([x.url for x in ins])
-        out_names = set([x.url for x in self.targets])
+        Returns
+        -------
+        set of `File`
+            the set of files that are created by this task
+        """
 
-        return {x for x in ins if x.url not in out_names}
+        outs = self.targets
+        in_names = self.source_locations
+
+        return {x for x in outs if x.url not in in_names}
 
     @property
     def modified_files(self):
         """
-        List all files where input names match output names and hence will be overwritten
+        A set of all input files whose names match output names and hence will be overwritten
 
         Returns
         -------
         list of `File`
-            the list of potentially overwritten files
+            the list of potentially overwritten input files
 
         """
-        ins = set(x.source for x in self._pre_stage if x.source.exists)
-        # outs = set(x.target for x in self._post_stage)
+        ins = self.sources
+        out_names = self.target_locations
 
-        # check for
-        # in_names = set([x.url for x in ins])
-        out_names = set([x.url for x in self.targets])
+        return {x for x in ins if x.url in out_names}
 
-        return [x for x in ins if x.url in out_names]
+    @property
+    def staged_files(self):
+        """
+        Set of all staged files by the tasks generator
+
+        Returns
+        -------
+        set of `File`
+            files that are staged by the tasks generator
+
+        Notes
+        -----
+        There might be more files stages by other generators
+
+        """
+        if self.generator is not None:
+            return set(sum(filter(bool, [t.required for t in self.generator.stage_in]), []))
+        else:
+            return {}
 
     @property
     def unstaged_input_files(self):
@@ -354,13 +404,8 @@ class Task(BaseTask):
             the set of `File` objects that are needed and not staged
 
         """
-        staged = {}
-        if self.generator is not None:
-            staged.update(t.added.url for t in self.generator.stage_in)
-
-        reqs = {}
-        for r in self._pre_stage:
-            reqs.update(r.required)
+        staged = self.staged_files
+        reqs = self.sources
 
         return {r for r in reqs if r.url not in staged}
 
