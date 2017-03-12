@@ -10,6 +10,15 @@ import numpy as np
 
 
 if __name__ == '__main__':
+
+    # add further auto options here
+    platform_properties = {
+        'CUDA': ['Device_Index', 'Precision', 'Use_Cpu_Pme', 'Cuda_Compiler',
+                 'Temp_Directory', 'Use_Blocking_Sync', 'Deterministic_Forces'],
+        'OpenCL': ['Device_Index', 'Precision', 'Use_Cpu_Pme', 'OpenCL_Platform_Index'],
+        'CPU': ['Threads']
+    }
+
     parser = argparse.ArgumentParser(
         description='Run an MD simulation using OpenMM')
 
@@ -62,11 +71,6 @@ if __name__ == '__main__':
         help='if set then text output is send to the ' +
              'console.')
 
-    # add further auto options here
-    platform_properties = {
-        'CUDA': ['CUDA_DEVICE_INDEX', 'CUDA_PRECISION']
-    }
-
     for p in platform_properties:
         for v in platform_properties[p]:
             parser.add_argument(
@@ -99,13 +103,13 @@ if __name__ == '__main__':
         properties = {}
         vars = platform_properties[args.platform]
         for v in vars:
-            value = os.environ.get(v, None)
+            value = os.environ.get(v.upper(), None)
             if hasattr(args, v.lower()):
                 value = getattr(args, v.lower())
 
             if value:
                 properties[
-                    ''.join([x[0] + x[1:].lower() for x in v.split('_')])
+                    args.platform + '_' + v.replace('_', '')
                 ] = value
 
     if args.platform == 'fastest':
