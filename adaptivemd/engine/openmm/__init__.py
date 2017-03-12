@@ -1,1 +1,1 @@
-from openmm import OpenMMEngine, OpenMMEngine4CUDA
+from openmm import OpenMMEngine
