@@ -469,7 +469,7 @@ class Worker(StorableMixin):
                         elif command == 'release':
                             scheduler.release_queued_tasks()
 
-                        elif command.startswith('!'):
+                        elif command and command.startswith('!'):
                             result = subprocess.call(command[1:].split(' '))
                             project.logs.add(
                                 LogEntry(
