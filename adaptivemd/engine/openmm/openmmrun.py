@@ -73,11 +73,12 @@ if __name__ == '__main__':
 
     for p in platform_properties:
         for v in platform_properties[p]:
+            p_name = (p + '_' + v)
             parser.add_argument(
-                '--' + v.lower().replace('_', '-'),
+                '--' + p_name.lower().replace('_', '-'),
                 dest=v.lower(), type=str,
                 default="",
-                help='If not set the environment variable %s will be used instead.' % v)
+                help='If not set the environment variable `%s` will be used instead.' % p_name)
 
     parser.add_argument(
         '-r', '--report',
@@ -103,8 +104,9 @@ if __name__ == '__main__':
         properties = {}
         vars = platform_properties[args.platform]
         for v in vars:
-            value = os.environ.get(v.upper(), None)
-            if hasattr(args, v.lower()):
+            p_name = args.platform + '_' + v
+            value = os.environ.get(p_name.upper(), None)
+            if hasattr(args, p_name.lower()):
                 value = getattr(args, v.lower())
 
             if value:
