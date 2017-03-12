@@ -14,8 +14,11 @@ from task import Task
 from worker import Worker
 from logentry import LogEntry
 
-
 from mongodb import MongoDBStorage, ObjectStore
+
+
+import logging
+logger = logging.getLogger(__name__)
 
 
 class Project(object):
@@ -280,7 +283,6 @@ class Project(object):
         self._close_db()
 
     def __enter__(self):
-        self.open_rp()
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
@@ -333,7 +335,7 @@ class Project(object):
 
         return d
 
-    def new_trajectory(self, frame, length, number=1, restart=False):
+    def new_trajectory(self, frame, length, number=1, restart=True):
         """
         Convenience function to create a new `Trajectory` object
 
@@ -352,6 +354,7 @@ class Project(object):
         number : int
             the number of trajectory objects to be returned. If `1` it will be
             a single object. Otherwise a list of `Trajectory` objects.
+        restart
 
         Returns
         -------
@@ -429,6 +432,8 @@ class Project(object):
         """
         if len(self.models) > 0:
             model = self.models.last
+
+            assert(isinstance(model, Model))
             data = model.data
 
             frame_state_list = {n: [] for n in range(data['clustering']['k'])}
@@ -489,7 +494,7 @@ class Project(object):
         else:
             self._events.append(event)
 
-        print 'Events added. Remaining', len(self._events)
+        logger.info('Events added. Remaining %d' % len(self._events))
 
         self.trigger()
         return event
@@ -504,7 +509,6 @@ class Project(object):
             while found_iteration > 0:
                 found_new_events = False
                 for event in list(self._events):
-                    # print event, bool(event), len(event._finish_conditions)
                     if event:
                         new_events = event.trigger(self)
 
@@ -517,10 +521,10 @@ class Project(object):
 
                         # todo: wait for completion
                         del self._events[idx]
-                        print 'Event finished! Remaining', len(self._events)
+                        logger.info('Event finished! Remaining %d' % len(self._events))
 
                 if found_new_events:
-                    # if new events or tasks we should retrigger
+                    # if new events or tasks we should re-trigger
                     found_iteration -= 1
                 else:
                     found_iteration = 0
