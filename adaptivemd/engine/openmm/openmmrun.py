@@ -109,6 +109,8 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
+    print 'GO...'
+
     properties = None
 
     if args.platform in platform_properties:
@@ -130,7 +132,11 @@ if __name__ == '__main__':
     else:
         platform = Platform.getPlatformByName(args.platform)
 
+    print 'Reading PDB'
+
     pdb = PDBFile(args.topology_pdb)
+
+    print 'Done'
 
     with open(args.system_xml) as f:
         system_xml = f.read()
@@ -139,6 +145,8 @@ if __name__ == '__main__':
     with open(args.integrator_xml) as f:
         integrator_xml = f.read()
         integrator = XmlSerializer.deserialize(integrator_xml)
+
+    print 'Initialize Simulation'
 
     try:
         simulation = Simulation(
@@ -151,6 +159,8 @@ if __name__ == '__main__':
     except Exception:
         print('EXCEPTION', (socket.gethostname()))
         raise
+
+    print 'Done.'
 
     print('# platform used:', simulation.context.getPlatform().getName())
 
@@ -199,7 +209,11 @@ if __name__ == '__main__':
 
     restart_file_name = args.file + '.restart'
 
+    print 'START SIMULATION'
+
     simulation.step(args.length * args.interval_store)
+
+    print 'DONE'
 
     state = simulation.context.getState(getPositions=True, getVelocities=True)
     pbv = state.getPeriodicBoxVectors(asNumpy=True)
