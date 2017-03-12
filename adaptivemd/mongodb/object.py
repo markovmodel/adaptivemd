@@ -308,8 +308,6 @@ class ObjectStore(StorableMixin):
         """
         Add iteration over all elements in the storage
         """
-        # we want to iterator in the order object were saved!
-
         for uuid in list(self.index):
             yield self.load(uuid)
 
