@@ -2,7 +2,7 @@ import os
 import time
 import base64
 
-from mongodb import StorableMixin, SyncVariable, IncreasingNumericSyncVariable
+from mongodb import StorableMixin, SyncVariable
 
 
 class Action(StorableMixin):
@@ -66,12 +66,6 @@ class FileTransaction(FileAction):
     @property
     def added(self):
         return [self.target]
-
-            # @classmethod
-    # def from_dict(cls, dct):
-    #     obj = super(FileTransaction, cls).from_dict(dct)
-    #     obj.target = dct['target']
-    #     return obj
 
 
 class Touch(FileAction):
@@ -407,6 +401,5 @@ class URLGenerator(object):
             try:
                 g = int(f.basename[left:-right]) + 1
                 self.count = max(g, self.count)
-            except:
-                # print f.basename, f.basename[left:-right]
+            except Exception:
                 pass

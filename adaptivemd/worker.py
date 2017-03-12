@@ -469,6 +469,13 @@ class Worker(StorableMixin):
                         elif command == 'release':
                             scheduler.release_queued_tasks()
 
+                        elif command.startswith('!'):
+                            result = subprocess.call(command[1:].split(' '))
+                            project.logs.add(
+                                LogEntry(
+                                    'command', 'called `%s` on worker' % command[1:], result
+                                )
+                            )
                         elif command:
                             if hasattr(scheduler, 'cmd_' + command):
                                 getattr(scheduler, 'cmd_' + command)()

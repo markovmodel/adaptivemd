@@ -155,7 +155,7 @@ class TrajectoryGenerationTask(Task):
         t = self.generator.task_extend_trajectory(self.trajectory, length)
 
         # this is not really necessary since we require internally that the source exists
-        # and this is the same as requiring that the previous task is done
+        # but this will cause all dependencies to be submitted, too
         t.dependencies = [self]
         return t
 
