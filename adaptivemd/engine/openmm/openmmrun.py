@@ -135,25 +135,18 @@ if __name__ == '__main__':
         print('EXCEPTION', (socket.gethostname()))
         raise
 
-    print('# platforms available')
-    for no_platform in range(Platform.getNumPlatforms()):
-        # noinspection PyCallByClass,PyTypeChecker
-        print('(%d) %s' % (no_platform, Platform.getPlatform(no_platform).getName()))
-
     print('# platform used:', simulation.context.getPlatform().getName())
 
-    print(os.environ)
+    if args.verbose:
+        print('# platforms available')
+        for no_platform in range(Platform.getNumPlatforms()):
+            # noinspection PyCallByClass,PyTypeChecker
+            print('(%d) %s' % (no_platform, Platform.getPlatform(no_platform).getName()))
 
-    print(Platform.getPluginLoadFailures())
-    print(Platform.getDefaultPluginsDirectory())
+        print(os.environ)
 
-    try:
-        temperature = integrator.getTemperature()
-    except AttributeError:
-        assert args.temperature > 0
-        temperature = args.temperature * u.kelvin
-
-    print('# temperature:', temperature)
+        print(Platform.getPluginLoadFailures())
+        print(Platform.getDefaultPluginsDirectory())
 
     if args.restart:
         os.link(args.restart, 'input.restart.npz')
@@ -166,11 +159,19 @@ if __name__ == '__main__':
         pbv = pdb.getTopology().getPeriodicBoxVectors()
         simulation.context.setPeriodicBoxVectors(*pbv)
         # set velocities to temperature in integrator
+        try:
+            temperature = integrator.getTemperature()
+        except AttributeError:
+            assert args.temperature > 0
+            temperature = args.temperature * u.kelvin
+
+        print('# temperature:', temperature)
+
         simulation.context.setVelocitiesToTemperature(temperature)
 
     simulation.reporters.append(DCDReporter(args.file, args.interval_store))
 
-    if args.report:
+    if args.report and args.verbose:
         simulation.reporters.append(
             StateDataReporter(
                 stdout,
