@@ -219,7 +219,6 @@ class ObjectStore(StorableMixin):
     def load_indices(self):
         # self.index.clear()
         # self.index.extend(
-        print 'load IDX'
         self.index = [int(UUID(x)) for x in self._document.distinct('_id')]
 
     @property
@@ -311,7 +310,6 @@ class ObjectStore(StorableMixin):
         """
         # we want to iterator in the order object were saved!
 
-        print self.check_size()
         for uuid in list(self.index):
             yield self.load(uuid)
 
