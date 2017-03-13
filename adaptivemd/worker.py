@@ -17,8 +17,11 @@ from file import Transfer
 
 import pymongo.errors
 
-libc = ctypes.CDLL("libc.so.6")
-
+try:
+    # works on linux
+    libc = ctypes.CDLL("libc.so.6")
+except OSError:
+    libc = None
 
 class WorkerScheduler(Scheduler):
     def __init__(self, resource, verbose=False):
@@ -116,16 +119,21 @@ class WorkerScheduler(Scheduler):
         task.state = 'running'
         task.fire(task.state, self)
 
-        def set_pdeathsig(sig=signal.SIGTERM):
-            def callable():
-                return libc.prctl(1, sig)
+        if libc is not None:
+            def set_pdeathsig(sig=signal.SIGTERM):
+                def callable():
+                    return libc.prctl(1, sig)
 
-            return callable
+                return callable
 
-        self._current_sub = subprocess.Popen(
-            ['/bin/bash', script_location + '/running.sh'],
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-            preexec_fn=set_pdeathsig(signal.SIGTERM))
+            self._current_sub = subprocess.Popen(
+                ['/bin/bash', script_location + '/running.sh'],
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                preexec_fn=set_pdeathsig(signal.SIGTERM))
+        else:
+            self._current_sub = subprocess.Popen(
+                ['/bin/bash', script_location + '/running.sh'],
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
     def stop_current(self):
         if self._current_sub is not None:
