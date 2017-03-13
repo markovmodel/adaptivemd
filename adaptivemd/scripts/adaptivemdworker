@@ -162,8 +162,9 @@ if __name__ == '__main__':
         print 'got SIGTERM'
         worker.shutdown()
 
-
     signal.signal(signal.SIGTERM, signal_term_handler)
+
+    print 'RUN NOW'
 
     worker.run()
 
