@@ -446,6 +446,13 @@ class MongoDBStorage(object):
             if uuid in store.index:
                 return store[uuid]
 
+        # need to update
+        for store in self.objects.values():
+            store.check_size()
+            if uuid in store.index:
+                return store[uuid]
+
+        # nothing found.
         raise KeyError("UUID %s not found in storage" % uuid)
 
     def cache_image(self):

@@ -356,6 +356,3 @@ class StoredBundle(Bundle):
 
         if self._set is not None:
             return [x for x in self._set if getattr(x, key) == value]
-
-    def __call__(self, item):
-        self.add(item)

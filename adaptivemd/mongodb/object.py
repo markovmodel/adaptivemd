@@ -308,6 +308,7 @@ class ObjectStore(StorableMixin):
         """
         Add iteration over all elements in the storage
         """
+        self.check_size()
         for uuid in list(self.index):
             yield self.load(uuid)
 
