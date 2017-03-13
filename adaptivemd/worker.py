@@ -366,9 +366,11 @@ class Worker(StorableMixin):
         self.verbose = verbose
         self.current = None
         self._last_current = None
+        self.pid = os.getpid()
 
     to_dict = create_to_dict([
-        'walltime', 'generators', 'sleep', 'heartbeat', 'hostname', 'cwd', 'seen', 'prefetch'
+        'walltime', 'generators', 'sleep', 'heartbeat', 'hostname', 'cwd', 'seen', 'prefetch',
+        'pid'
     ])
 
     @classmethod
@@ -377,6 +379,7 @@ class Worker(StorableMixin):
         obj.hostname = dct['hostname']
         obj.cwd = dct['cwd']
         obj.seen = dct['seen']
+        obj.pid = dct['pid']
 
         return obj
 
