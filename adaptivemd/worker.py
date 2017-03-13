@@ -315,8 +315,8 @@ class WorkerScheduler(Scheduler):
         if wait_to_finish:
             self.change_state('waitcurrent')
             curr = time.time()
-            max_wait = 15
-            while len(self.tasks) > 0 and time.time() - curr < max_wait:
+            grace_period = 10
+            while len(self.tasks) > 0 and time.time() - curr < grace_period:
                 self.advance()
                 time.sleep(2.0)
 
@@ -524,3 +524,6 @@ class Worker(StorableMixin):
         except KeyboardInterrupt:
             scheduler.shut_down()
             pass
+
+    def shutdown(self, gracefully=True):
+        self._scheduler.shut_down(gracefully)
