@@ -10,6 +10,21 @@ import numpy as np
 
 
 if __name__ == '__main__':
+
+    # add further auto options here
+    platform_properties = {
+        'CUDA': ['Cuda_Device_Index', 'Cuda_Precision', 'Cuda_Use_Cpu_Pme', 'Cuda_Cuda_Compiler',
+                 'Cuda_Temp_Directory', 'Cuda_Use_Blocking_Sync', 'Cuda_Deterministic_Forces'],
+        'OpenCL': ['OpenCL_Device_Index', 'OpenCL_Precision', 'OpenCL_Use_Cpu_Pme',
+                   'OpenCL_OpenCL_Platform_Index'],
+        'CPU': ['CPU_Threads'],
+        'Reference': []
+    }
+
+    platform_names = [
+        Platform.getPlatform(no_platform).getName()
+        for no_platform in range(Platform.getNumPlatforms())]
+
     parser = argparse.ArgumentParser(
         description='Run an MD simulation using OpenMM')
 
@@ -62,18 +77,17 @@ if __name__ == '__main__':
         help='if set then text output is send to the ' +
              'console.')
 
-    # add further auto options here
-    platform_properties = {
-        'CUDA': ['CUDA_DEVICE_INDEX', 'CUDA_PRECISION']
-    }
-
     for p in platform_properties:
         for v in platform_properties[p]:
+            p_name = (p + '_' + v)
             parser.add_argument(
-                '--' + v.lower().replace('_', '-'),
+                '--' + p_name.lower().replace('_', '-'),
                 dest=v.lower(), type=str,
                 default="",
-                help='If not set the environment variable %s will be used instead.' % v)
+                help=('This will set the platform property `%s`. ' % p_name.replace('_', '') +
+                      'If not set the environment variable '
+                      '`%s` will be used instead. ' % p_name.upper()) +
+                      '[NOT INSTALLED!]' if p not in platform_names else '')
 
     parser.add_argument(
         '-r', '--report',
@@ -84,7 +98,9 @@ if __name__ == '__main__':
     parser.add_argument(
         '-p', '--platform', dest='platform',
         type=str, default='fastest', nargs='?',
-        help='the platform to be used')
+        help=('used platform. Currently allowed choices are ' +
+              ', '.join(['`%s`' % p if p in platform_names else '`(%s)`' % p for p in platform_properties.keys()]) +
+              ' but are machine and installation dependend'))
 
     parser.add_argument(
         '--temperature',
@@ -93,19 +109,22 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
+    print 'GO...'
+
     properties = None
 
     if args.platform in platform_properties:
         properties = {}
         vars = platform_properties[args.platform]
         for v in vars:
-            value = os.environ.get(v, None)
-            if hasattr(args, v.lower()):
+            p_name = args.platform + '_' + v
+            value = os.environ.get(p_name.upper(), None)
+            if hasattr(args, p_name.lower()):
                 value = getattr(args, v.lower())
 
             if value:
                 properties[
-                    ''.join([x[0] + x[1:].lower() for x in v.split('_')])
+                    args.platform + '_' + v.replace('_', '')
                 ] = value
 
     if args.platform == 'fastest':
@@ -113,7 +132,11 @@ if __name__ == '__main__':
     else:
         platform = Platform.getPlatformByName(args.platform)
 
+    print 'Reading PDB'
+
     pdb = PDBFile(args.topology_pdb)
+
+    print 'Done'
 
     with open(args.system_xml) as f:
         system_xml = f.read()
@@ -122,6 +145,8 @@ if __name__ == '__main__':
     with open(args.integrator_xml) as f:
         integrator_xml = f.read()
         integrator = XmlSerializer.deserialize(integrator_xml)
+
+    print 'Initialize Simulation'
 
     try:
         simulation = Simulation(
@@ -135,25 +160,20 @@ if __name__ == '__main__':
         print('EXCEPTION', (socket.gethostname()))
         raise
 
-    print('# platforms available')
-    for no_platform in range(Platform.getNumPlatforms()):
-        # noinspection PyCallByClass,PyTypeChecker
-        print('(%d) %s' % (no_platform, Platform.getPlatform(no_platform).getName()))
+    print 'Done.'
 
     print('# platform used:', simulation.context.getPlatform().getName())
 
-    print(os.environ)
+    if args.verbose:
+        print('# platforms available')
+        for no_platform in range(Platform.getNumPlatforms()):
+            # noinspection PyCallByClass,PyTypeChecker
+            print('(%d) %s' % (no_platform, Platform.getPlatform(no_platform).getName()))
 
-    print(Platform.getPluginLoadFailures())
-    print(Platform.getDefaultPluginsDirectory())
+        print(os.environ)
 
-    try:
-        temperature = integrator.getTemperature()
-    except AttributeError:
-        assert args.temperature > 0
-        temperature = args.temperature * u.kelvin
-
-    print('# temperature:', temperature)
+        print(Platform.getPluginLoadFailures())
+        print(Platform.getDefaultPluginsDirectory())
 
     if args.restart:
         os.link(args.restart, 'input.restart.npz')
@@ -166,11 +186,19 @@ if __name__ == '__main__':
         pbv = pdb.getTopology().getPeriodicBoxVectors()
         simulation.context.setPeriodicBoxVectors(*pbv)
         # set velocities to temperature in integrator
+        try:
+            temperature = integrator.getTemperature()
+        except AttributeError:
+            assert args.temperature > 0
+            temperature = args.temperature * u.kelvin
+
+        print('# temperature:', temperature)
+
         simulation.context.setVelocitiesToTemperature(temperature)
 
     simulation.reporters.append(DCDReporter(args.file, args.interval_store))
 
-    if args.report:
+    if args.report and args.verbose:
         simulation.reporters.append(
             StateDataReporter(
                 stdout,
@@ -181,7 +209,11 @@ if __name__ == '__main__':
 
     restart_file_name = args.file + '.restart'
 
+    print 'START SIMULATION'
+
     simulation.step(args.length * args.interval_store)
+
+    print 'DONE'
 
     state = simulation.context.getState(getPositions=True, getVelocities=True)
     pbv = state.getPeriodicBoxVectors(asNumpy=True)

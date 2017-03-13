@@ -1,9 +1,12 @@
 import os
 
-from adaptivemd.task import Task, PythonTask
+from adaptivemd.task import PythonTask
 from adaptivemd.file import Location, File
 from adaptivemd.engine import Engine, Frame, Trajectory, \
     TrajectoryGenerationTask, RestartFile, TrajectoryExtensionTask
+
+
+exec_file = File('file://' + os.path.join(os.path.dirname(__file__), 'openmmrun.py')).load()
 
 
 class OpenMMEngine(Engine):
@@ -189,110 +192,6 @@ class OpenMMEngine(Engine):
         return t
 
 
-exec_file = File('file://' + os.path.join(os.path.dirname(__file__), 'openmmrun.py')).load()
-
-
-class OpenMMEngine4CUDA(OpenMMEngine):
-    """
-    OpenMM Engine to be used by Adaptive MD that runs 4 trajectories in parallel
-
-    Attributes
-    ----------
-    system_file : `File`
-        the system.xml file for OpenMM
-    integrator_file : `File`
-        the integrator.xml file for OpenMM
-    pdb_file : `File`
-        the .pdb file for the topology
-    args : str
-        a list of arguments passed to the openmmrun.py script
-    """
-    trajectory_ext = 'dcd'
-
-    def __init__(self, system_file, integrator_file, pdb_file, device_indices=None, args=None):
-        if args is None:
-            args = '--store-interval 1'
-
-        if device_indices is None:
-            device_indices = range(4)
-
-        device_indices = map(str, device_indices)
-        super(OpenMMEngine4CUDA, self).__init__(system_file, integrator_file, pdb_file, args)
-
-        self.device_indices = device_indices
-
-    @property
-    def call_format_str(self):
-        return 'python openmmrun.py %s {3} -t {0} --length {1} {2} &' % self.args
-
-    def task_run_trajectory(self, targets):
-        t = Task(self)
-
-        initial_pdb = t.link(self['pdb_file_stage'], Location('initial.pdb'))
-        t.link(self['system_file_stage'])
-        t.link(self['integrator_file_stage'])
-        t.link(self['_executable_file_stage'])
-
-        outs = [
-            self._make_single_traj_cmd(
-                t, target, initial_pdb, str(idx),
-                '--cuda-device==' + str(self.device_indices[idx]))
-            for idx, target in enumerate(targets)]
-
-        # wait until all are finished
-        t.pre_bash('wait')
-        t.call('echo "DONE!"')
-
-        for out, target in zip(outs, targets):
-            if target.restart:
-                t.put(out[1], target.restart)
-
-            t.put(out[0], target)
-
-        return t
-
-    # todo: fix this!
-    def task_restart_trajectory(self, sources, lengths):
-        if isinstance(lengths, int):
-            lengths = [lengths] * len(sources)
-
-        for source, length in zip(sources, lengths):
-            if not source.restart or length <= source.length:
-                # either we already have a long trajectory or there is no restart file
-                return []
-
-        t = Task(self)
-
-        initial_pdb = t.link(self['pdb_file_stage'], Location('initial.pdb'))
-        t.link(self['system_file_stage'])
-        t.link(self['integrator_file_stage'])
-        t.link(self['_executable_file_stage'])
-
-        targets = []
-        outs = []
-
-        for idx, (source, length) in enumerate(zip(sources, lengths)):
-            # link the source and its restart file
-            t.link(source, 'source%s.dcd' % str(idx))
-            restart_file = t.link(source.restart, 'restart%s.restart' % str(idx))
-
-            target = source.clone()
-            target.length = length
-            targets.append(target)
-
-            outs.append(self._make_single_traj_cmd(t, restart_file, initial_pdb))
-
-        t.call('echo "DONE!"')
-
-        for out, target in zip(outs, targets):
-            if target.restart:
-                t.put(out[1], target.restart)
-
-            t.put(out[0], target)
-
-        return t
-
-
 def scan_trajectories(source):
     import glob
     import mdtraj as md
@@ -315,7 +214,7 @@ def scan_trajectories(source):
         else:
             p = 'worker://' + os.path.abspath(f)
 
-        print f, rel, p
+        # print f, rel, p
 
         traj = md.load(f, top='initial.pdb')
         reference = Trajectory(p, None, len(traj))

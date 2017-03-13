@@ -6,6 +6,9 @@ import re
 from adaptivemd import Project, Worker
 from adaptivemd.mongodb import MongoDBStorage
 
+import signal
+import sys
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
@@ -73,11 +76,11 @@ if __name__ == '__main__':
         help='polling interval for new jobs in seconds. Default is 2 seconds. Increase '
              'to get less traffic on the DB')
 
-    parser.add_argument(
-        '-p', '--prefetch', dest='prefetch',
-        type=int, default=2, nargs='?',
-        help='number of tasks to prefetch. Once the queue is empty, the worker will '
-             'queue up to this number of tasks and reserve it for execution.')
+    # parser.add_argument(
+    #     '-p', '--prefetch', dest='prefetch',
+    #     type=int, default=2, nargs='?',
+    #     help='number of tasks to prefetch. Once the queue is empty, the worker will '
+    #          'queue up to this number of tasks and reserve it for execution.')
 
     parser.add_argument(
         '--heartbeat', dest='heartbeat',
@@ -117,8 +120,7 @@ if __name__ == '__main__':
         generators=generators,
         sleep=args.sleep,
         heartbeat=args.heartbeat,
-        verbose=args.verbose,
-        prefetch=args.prefetch
+        verbose=args.verbose
     )
 
     project.workers.add(worker)
@@ -155,6 +157,14 @@ if __name__ == '__main__':
         print '[limited to generators `%s`]' % ', '.join(worker.generators),
 
     print
+
+    def signal_term_handler(signal, frame):
+        print 'got SIGTERM'
+        worker.shutdown()
+
+    signal.signal(signal.SIGTERM, signal_term_handler)
+
+    print 'RUN NOW'
 
     worker.run()
 

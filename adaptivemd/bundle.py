@@ -1,6 +1,9 @@
 import fnmatch
 import random
 
+import logging
+logger = logging.getLogger(__name__)
+
 
 class BaseBundle(object):
     """
@@ -13,7 +16,7 @@ class BaseBundle(object):
         if isinstance(other, BaseBundle):
             return AndBundle(self, other)
 
-        raise NotImplemented
+        return NotImplemented
 
     def __len__(self):
         return len([None for _ in self])
@@ -22,7 +25,7 @@ class BaseBundle(object):
         if isinstance(other, BaseBundle):
             return OrBundle(self, other)
 
-        raise NotImplemented
+        return NotImplemented
 
     def __getitem__(self, item):
         """
@@ -284,7 +287,7 @@ class StoredBundle(Bundle):
 
     def add(self, item):
         if self._set is not None and item not in self._set:
-            print 'Added file', item.__class__.__name__
+            logger.info('Added file of type `%s`' % item.__class__.__name__)
             self._set.save(item)
 
     @property
@@ -353,6 +356,3 @@ class StoredBundle(Bundle):
 
         if self._set is not None:
             return [x for x in self._set if getattr(x, key) == value]
-
-    def __call__(self, item):
-        self.add(item)

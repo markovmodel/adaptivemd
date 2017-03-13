@@ -82,19 +82,19 @@ class ObjectStore(StorableMixin):
 
     default_store_chunk_size = 256
 
-    class DictDelegator(object):
-        def __init__(self, store, dct):
-            self.name = store.name + '_'
-            self.dct = dct
-
-        def __getitem__(self, item):
-            return self.dct[self.name + item]
-
-        def __contains__(self, item):
-            return (self.name + item) in self.dct
-
-    def name_delegate(self, dct):
-        return ObjectStore.DictDelegator(self, dct)
+    # class DictDelegator(object):
+    #     def __init__(self, store, dct):
+    #         self.name = store.name + '_'
+    #         self.dct = dct
+    #
+    #     def __getitem__(self, item):
+    #         return self.dct[self.name + item]
+    #
+    #     def __contains__(self, item):
+    #         return (self.name + item) in self.dct
+    #
+    # def name_delegate(self, dct):
+    #     return ObjectStore.DictDelegator(self, dct)
 
     default_cache = 10000
 
@@ -308,8 +308,6 @@ class ObjectStore(StorableMixin):
         """
         Add iteration over all elements in the storage
         """
-        # we want to iterator in the order object were saved!
-
         self.check_size()
         for uuid in list(self.index):
             yield self.load(uuid)
@@ -621,20 +619,21 @@ class ObjectStore(StorableMixin):
             the loaded object
         """
 
-        self.check_size()
 
         if type(idx) is str:
             idx = int(UUID(self._document.find_one({'name': idx})['_id']))
 
         if type(idx) is long:
             if idx not in self.index:
-                raise ValueError(
-                    'str %s not found in storage' % idx)
+                self.check_size()
+                if idx not in self.index:
+                    raise ValueError(
+                        'str %s not found in storage' % idx)
 
-        elif type(idx) is not int:
+        else:
             raise ValueError((
                 'indices of type "%s" are not allowed in named storage '
-                '(only str and int)') % type(idx).__name__
+                '(only str and long)') % type(idx).__name__
             )
 
         # if it is in the cache, return it

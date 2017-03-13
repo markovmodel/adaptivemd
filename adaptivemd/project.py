@@ -14,8 +14,11 @@ from task import Task
 from worker import Worker
 from logentry import LogEntry
 
-
 from mongodb import MongoDBStorage, ObjectStore
+
+
+import logging
+logger = logging.getLogger(__name__)
 
 
 class Project(object):
@@ -38,7 +41,7 @@ class Project(object):
     Notes
     -----
 
-    You will later create `Scheduler` objects that explicitely correspond to
+    You will later create `Scheduler` objects that explicitly correspond to
     a specific cue on a specific cluster that is accessible from within this
     shared FS resource.
 
@@ -170,7 +173,7 @@ class Project(object):
             self.storage.tasks.set_caching(True)
             self.storage.workers.set_caching(True)
 
-            #todo: Use better caching options for tasks and or logs
+            # todo: Use better caching options for tasks and or logs
 
             # make sure that the file number will be new
             self.traj_name.initialize_from_files(self.trajectories)
@@ -280,7 +283,6 @@ class Project(object):
         self._close_db()
 
     def __enter__(self):
-        self.open_rp()
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
@@ -333,7 +335,7 @@ class Project(object):
 
         return d
 
-    def new_trajectory(self, frame, length, number=1, restart=False):
+    def new_trajectory(self, frame, length, number=1, restart=True):
         """
         Convenience function to create a new `Trajectory` object
 
@@ -345,13 +347,15 @@ class Project(object):
         ----------
         frame : `File` or `Frame`
             if given a `File` it is assumed to be a `.pdb` file that contains
-            initial cooridinates. If a frame is given one assumes that this
+            initial coordinates. If a frame is given one assumes that this
             `Frame` is the initial structure / frame zero in this trajectory
         length : int
             the length of the trajectory
         number : int
             the number of trajectory objects to be returned. If `1` it will be
             a single object. Otherwise a list of `Trajectory` objects.
+        restart : bool
+            if `True` (default) the trajectory is created with a restart file.
 
         Returns
         -------
@@ -369,7 +373,7 @@ class Project(object):
 
     def on_ntraj(self, numbers):
         """
-        Return a `Condition` that is `true` as soon a the project has n trajs
+        Return a `Condition` that is `true` as soon a the project has n trajectories
 
         Parameters
         ----------
@@ -429,6 +433,8 @@ class Project(object):
         """
         if len(self.models) > 0:
             model = self.models.last
+
+            assert(isinstance(model, Model))
             data = model.data
 
             frame_state_list = {n: [] for n in range(data['clustering']['k'])}
@@ -489,7 +495,7 @@ class Project(object):
         else:
             self._events.append(event)
 
-        print 'Events added. Remaining', len(self._events)
+        logger.info('Events added. Remaining %d' % len(self._events))
 
         self.trigger()
         return event
@@ -504,7 +510,6 @@ class Project(object):
             while found_iteration > 0:
                 found_new_events = False
                 for event in list(self._events):
-                    # print event, bool(event), len(event._finish_conditions)
                     if event:
                         new_events = event.trigger(self)
 
@@ -517,10 +522,10 @@ class Project(object):
 
                         # todo: wait for completion
                         del self._events[idx]
-                        print 'Event finished! Remaining', len(self._events)
+                        logger.info('Event finished! Remaining %d' % len(self._events))
 
                 if found_new_events:
-                    # if new events or tasks we should retrigger
+                    # if new events or tasks we should re-trigger
                     found_iteration -= 1
                 else:
                     found_iteration = 0
@@ -599,7 +604,7 @@ class NTrajectories(Condition):
         if isinstance(other, int):
             return NTrajectories(self.project, self.number + other)
 
-        raise NotImplemented
+        return NotImplemented
 
 
 class NModels(Condition):
@@ -622,4 +627,4 @@ class NModels(Condition):
         if isinstance(other, int):
             return NModels(self.project, self.number + other)
 
-        raise NotImplemented
+        return NotImplemented

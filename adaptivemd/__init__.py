@@ -19,7 +19,7 @@ from analysis import Analysis, DoAnalysis
 # specific generators that should be available
 # this simplifies loading objects
 
-from engine.openmm import OpenMMEngine, OpenMMEngine4CUDA
+from engine.openmm import OpenMMEngine
 from analysis.pyemma import PyEMMAAnalysis
 
 import util

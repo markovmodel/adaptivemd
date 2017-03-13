@@ -2,7 +2,7 @@ import os
 import time
 import base64
 
-from mongodb import StorableMixin, SyncVariable, IncreasingNumericSyncVariable
+from mongodb import StorableMixin, SyncVariable
 
 
 class Action(StorableMixin):
@@ -63,58 +63,41 @@ class FileTransaction(FileAction):
             self.target.short
         )
 
-    # @classmethod
-    # def from_dict(cls, dct):
-    #     obj = super(FileTransaction, cls).from_dict(dct)
-    #     obj.target = dct['target']
-    #     return obj
-
-
-class Copy(FileTransaction):
     @property
     def added(self):
         return [self.target]
-
-
-class Transfer(FileTransaction):
-    @property
-    def added(self):
-        return [self.target]
-
-
-class Move(FileTransaction):
-
-    @property
-    def added(self):
-        return [self.target]
-
-    @property
-    def removed(self):
-        return [self.source]
-
-
-class Link(FileTransaction):
-    @property
-    def added(self):
-        return [self.target]
-
-
-class Remove(FileAction):
-    def __init__(self, source):
-        super(Remove, self).__init__(source)
-
-    @property
-    def removed(self):
-        return [self.source]
 
 
 class Touch(FileAction):
-    def __init__(self, source):
-        super(Touch, self).__init__(source)
+    pass
+
+
+class Copy(FileTransaction):
+    pass
+
+
+class Transfer(FileTransaction):
+    pass
+
+
+class Link(FileTransaction):
+    pass
+
+
+class Move(FileTransaction):
+    @property
+    def removed(self):
+        return [self.source]
+
+
+class Remove(FileAction):
+    @property
+    def removed(self):
+        return [self.source]
 
     @property
     def added(self):
-        return [self.source]
+        return []
 
 
 class Location(StorableMixin):
@@ -143,16 +126,16 @@ class Location(StorableMixin):
                 p = os.path.abspath(self.path)
                 self.location = 'file://' + p
 
-    def __hash__(self):
-        return hash(self.resource_location)
-
-    def __eq__(self, other):
-        if other is None:
-            return False
-        elif isinstance(other, Location):
-            return self.resource_location == other.resource_location
-
-        raise NotImplemented
+    # def __hash__(self):
+    #     return hash(self.resource_location)
+    #
+    # def __eq__(self, other):
+    #     if other is None:
+    #         return False
+    #     elif isinstance(other, Location):
+    #         return self.resource_location == other.resource_location
+    #
+    #     return NotImplemented
 
     def clone(self):
         return self.__class__(self.location)
@@ -161,7 +144,7 @@ class Location(StorableMixin):
         if isinstance(other, str):
             return str(self) + other
 
-        raise NotImplemented
+        return NotImplemented
 
     def __radd__(self, other):
         if isinstance(other, str):
@@ -249,7 +232,7 @@ class Location(StorableMixin):
 class File(Location):
     _find_by = ['created', 'state']
 
-    created = SyncVariable('created')
+    created = SyncVariable('created', lambda x: x is not None and x < 0)
 
     def __init__(self, location):
         super(File, self).__init__(location)
@@ -418,6 +401,5 @@ class URLGenerator(object):
             try:
                 g = int(f.basename[left:-right]) + 1
                 self.count = max(g, self.count)
-            except:
-                # print f.basename, f.basename[left:-right]
+            except Exception:
                 pass
