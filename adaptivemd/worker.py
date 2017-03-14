@@ -23,6 +23,7 @@ try:
 except OSError:
     libc = None
 
+
 class WorkerScheduler(Scheduler):
     def __init__(self, resource, verbose=False):
         super(WorkerScheduler, self).__init__(resource)
