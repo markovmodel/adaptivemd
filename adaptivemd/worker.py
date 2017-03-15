@@ -428,6 +428,7 @@ class Worker(StorableMixin):
                 if sc.stop_current():
                     # success, so mark the task as cancelled
                     task.state = mode
+                    task.worker = None
                     print 'Stopped a task [%s] from generator `%s` and set to `%s`' % (
                         task.__class__.__name__,
                         task.generator.name if task.generator else '---',
