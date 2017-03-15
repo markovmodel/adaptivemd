@@ -431,6 +431,11 @@ class Worker(StorableMixin):
         """
         self._stop_current('halted')
 
+    def execute(self, command):
+        self.command = command
+
+        # todo: add a wait here until worker responds with timeout
+
     def run(self):
         scheduler = self._scheduler
         project = self._project
@@ -497,6 +502,8 @@ class Worker(StorableMixin):
 
                                 self.n_tasks = len(scheduler.tasks)
 
+                        # handle commands
+                        # todo: Place all commands in a separate store and consume ?!?
                         command = self.command
 
                         if command == 'shutdown':
@@ -510,9 +517,9 @@ class Worker(StorableMixin):
                         elif command == 'release':
                             scheduler.release_queued_tasks()
 
-                        elif command:
-                            if hasattr(scheduler, 'cmd_' + command):
-                                getattr(scheduler, 'cmd_' + command)()
+                        elif command in ['halt', 'cancel']:
+                            if hasattr(scheduler, command):
+                                getattr(scheduler, command)()
 
                         if command:
                             self.command = None
