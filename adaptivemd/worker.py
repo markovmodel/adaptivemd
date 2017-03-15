@@ -4,6 +4,8 @@ import subprocess
 import time
 import sys
 import random
+import signal
+import ctypes
 
 from adaptivemd.mongodb import StorableMixin, SyncVariable, create_to_dict, ObjectSyncVariable
 
@@ -14,6 +16,12 @@ from util import DT
 from file import Transfer
 
 import pymongo.errors
+
+try:
+    # works on linux
+    libc = ctypes.CDLL("libc.so.6")
+except OSError:
+    libc = None
 
 
 class WorkerScheduler(Scheduler):
@@ -112,9 +120,21 @@ class WorkerScheduler(Scheduler):
         task.state = 'running'
         task.fire(task.state, self)
 
-        self._current_sub = subprocess.Popen(
-            ['/bin/bash', script_location + '/running.sh'],
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        if libc is not None:
+            def set_pdeathsig(sig=signal.SIGTERM):
+                def callable():
+                    return libc.prctl(1, sig)
+
+                return callable
+
+            self._current_sub = subprocess.Popen(
+                ['/bin/bash', script_location + '/running.sh'],
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                preexec_fn=set_pdeathsig(signal.SIGTERM))
+        else:
+            self._current_sub = subprocess.Popen(
+                ['/bin/bash', script_location + '/running.sh'],
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
     def stop_current(self):
         if self._current_sub is not None:
@@ -359,9 +379,11 @@ class Worker(StorableMixin):
         self.verbose = verbose
         self.current = None
         self._last_current = None
+        self.pid = os.getpid()
 
     to_dict = create_to_dict([
-        'walltime', 'generators', 'sleep', 'heartbeat', 'hostname', 'cwd', 'seen', 'prefetch'
+        'walltime', 'generators', 'sleep', 'heartbeat', 'hostname', 'cwd', 'seen', 'prefetch',
+        'pid'
     ])
 
     @classmethod
@@ -370,6 +392,7 @@ class Worker(StorableMixin):
         obj.hostname = dct['hostname']
         obj.cwd = dct['cwd']
         obj.seen = dct['seen']
+        obj.pid = dct['pid']
 
         return obj
 
@@ -521,6 +544,14 @@ class Worker(StorableMixin):
                             if hasattr(scheduler, command):
                                 getattr(scheduler, command)()
 
+                        elif command and command.startswith('!'):
+                            result = subprocess.check_output(command[1:].split(' '))
+                            project.logs.add(
+                                LogEntry(
+                                    'command', 'called `%s` on worker' % command[1:], result
+                                )
+                            )
+
                         if command:
                             self.command = None
 
@@ -554,3 +585,6 @@ class Worker(StorableMixin):
         except KeyboardInterrupt:
             scheduler.shut_down()
             pass
+
+    def shutdown(self, gracefully=True):
+        self._scheduler.shut_down(gracefully)
