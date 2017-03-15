@@ -4,8 +4,6 @@ import subprocess
 import time
 import sys
 import random
-import signal
-import ctypes
 
 from adaptivemd.mongodb import StorableMixin, SyncVariable, create_to_dict, ObjectSyncVariable
 
@@ -16,12 +14,6 @@ from util import DT
 from file import Transfer
 
 import pymongo.errors
-
-try:
-    # works on linux
-    libc = ctypes.CDLL("libc.so.6")
-except OSError:
-    libc = None
 
 
 class WorkerScheduler(Scheduler):
@@ -120,21 +112,9 @@ class WorkerScheduler(Scheduler):
         task.state = 'running'
         task.fire(task.state, self)
 
-        if libc is not None:
-            def set_pdeathsig(sig=signal.SIGTERM):
-                def callable():
-                    return libc.prctl(1, sig)
-
-                return callable
-
-            self._current_sub = subprocess.Popen(
-                ['/bin/bash', script_location + '/running.sh'],
-                stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                preexec_fn=set_pdeathsig(signal.SIGTERM))
-        else:
-            self._current_sub = subprocess.Popen(
-                ['/bin/bash', script_location + '/running.sh'],
-                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        self._current_sub = subprocess.Popen(
+            ['/bin/bash', script_location + '/running.sh'],
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
     def stop_current(self):
         if self._current_sub is not None:
@@ -143,6 +123,10 @@ class WorkerScheduler(Scheduler):
             del self.tasks[task.__uuid__]
 
             self.current_task = None
+
+            return True
+        else:
+            return False
 
     def advance(self):
         if self.current_task is None:
@@ -324,8 +308,8 @@ class WorkerScheduler(Scheduler):
         if wait_to_finish:
             self.change_state('waitcurrent')
             curr = time.time()
-            grace_period = 10
-            while len(self.tasks) > 0 and time.time() - curr < grace_period:
+            max_wait = 15
+            while len(self.tasks) > 0 and time.time() - curr < max_wait:
                 self.advance()
                 time.sleep(2.0)
 
@@ -349,7 +333,7 @@ class Worker(StorableMixin):
 
     _find_by = ['state', 'n_tasks', 'seen', 'verbose', 'prefetch', 'current']
 
-    state = SyncVariable('state', lambda x: x in ['dead', 'down'])
+    state = SyncVariable('state')
     n_tasks = SyncVariable('n_tasks')
     seen = SyncVariable('seen')
     verbose = SyncVariable('verbose')
@@ -375,11 +359,9 @@ class Worker(StorableMixin):
         self.verbose = verbose
         self.current = None
         self._last_current = None
-        self.pid = os.getpid()
 
     to_dict = create_to_dict([
-        'walltime', 'generators', 'sleep', 'heartbeat', 'hostname', 'cwd', 'seen', 'prefetch',
-        'pid'
+        'walltime', 'generators', 'sleep', 'heartbeat', 'hostname', 'cwd', 'seen', 'prefetch'
     ])
 
     @classmethod
@@ -388,7 +370,6 @@ class Worker(StorableMixin):
         obj.hostname = dct['hostname']
         obj.cwd = dct['cwd']
         obj.seen = dct['seen']
-        obj.pid = dct['pid']
 
         return obj
 
@@ -412,6 +393,43 @@ class Worker(StorableMixin):
 
     _running_states = ['running', 'waitandshutdown']
     _accepting_states = ['running']
+
+    def _stop_current(self, mode):
+        sc = self.scheduler
+        task = sc._current_task
+
+        if task:
+            attempt = self.project.storage.tasks.modify_test_one(
+                lambda x: x == task, 'state', 'running', 'stopping')
+            if attempt is not None:
+                if sc.stop_current():
+                    # success, so mark the task as cancelled
+                    task.state = mode
+            else:
+                # seems that in the meantime the task has finished (success/fail)
+                pass
+
+    def cancel(self):
+        """
+        Cancel the current task
+
+        Returns
+        -------
+
+        """
+        self._stop_current('cancelled')
+
+    def halt(self):
+        """
+        Halt the current task. The task will be stopped immediately and marked `halted`
+
+        A halted task can be resumed, by calling `task.restart`
+
+        Returns
+        -------
+
+        """
+        self._stop_current('halted')
 
     def run(self):
         scheduler = self._scheduler
@@ -442,7 +460,7 @@ class Worker(StorableMixin):
                         # remove all pending tasks as much as possible
                         for t in list(scheduler.tasks.values()):
                             if t is not scheduler.current_task:
-                                if t.worker is self:
+                                if t.worker == self:
                                     t.state = 'created'
                                     t.worker = None
 
@@ -451,7 +469,7 @@ class Worker(StorableMixin):
                         # see, if we can salvage the currently running task
                         # unless it has been cancelled and is running with another worker
                         t = scheduler.current_task
-                        if t.worker is self and t.state == 'running':
+                        if t.worker == self and t.state == 'running':
                             print 'continuing current task'
                             # seems like the task is still ours to finish
                             pass
@@ -492,13 +510,6 @@ class Worker(StorableMixin):
                         elif command == 'release':
                             scheduler.release_queued_tasks()
 
-                        elif command and command.startswith('!'):
-                            result = subprocess.check_output(command[1:].split(' '))
-                            project.logs.add(
-                                LogEntry(
-                                    'command', 'called `%s` on worker' % command[1:], result
-                                )
-                            )
                         elif command:
                             if hasattr(scheduler, 'cmd_' + command):
                                 getattr(scheduler, 'cmd_' + command)()
@@ -536,6 +547,3 @@ class Worker(StorableMixin):
         except KeyboardInterrupt:
             scheduler.shut_down()
             pass
-
-    def shutdown(self, gracefully=True):
-        self._scheduler.shut_down(gracefully)
