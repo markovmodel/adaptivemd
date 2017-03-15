@@ -428,31 +428,14 @@ class Worker(StorableMixin):
                 if sc.stop_current():
                     # success, so mark the task as cancelled
                     task.state = mode
+                    print 'Stopped a task [%s] from generator `%s` and set to `%s`' % (
+                        task.__class__.__name__,
+                        task.generator.name if task.generator else '---',
+                        task.state)
+
             else:
                 # seems that in the meantime the task has finished (success/fail)
                 pass
-
-    def cancel(self):
-        """
-        Cancel the current task
-
-        Returns
-        -------
-
-        """
-        self._stop_current('cancelled')
-
-    def halt(self):
-        """
-        Halt the current task. The task will be stopped immediately and marked `halted`
-
-        A halted task can be resumed, by calling `task.restart`
-
-        Returns
-        -------
-
-        """
-        self._stop_current('halted')
 
     def execute(self, command):
         self.command = command
@@ -540,9 +523,11 @@ class Worker(StorableMixin):
                         elif command == 'release':
                             scheduler.release_queued_tasks()
 
-                        elif command in ['halt', 'cancel']:
-                            if hasattr(self, command):
-                                getattr(self, command)()
+                        elif command == 'halt':
+                            self._stop_current('halted')
+
+                        elif command == 'cancel':
+                            self._stop_current('cancelled')
 
                         elif command and command.startswith('!'):
                             result = subprocess.check_output(command[1:].split(' '))
