@@ -179,6 +179,21 @@ class Task(BaseTask):
 
         return False
 
+    def cancel(self):
+        """
+        Mark a task as cancelled if it it not running or has been halted
+
+        Returns
+        -------
+
+        """
+        state = self.state
+        if state in ['halted', 'created']:
+            self.state = 'cancelled'
+            return True
+
+        return False
+
     @property
     def dependency_okay(self):
         dependencies = self.dependencies
