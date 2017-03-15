@@ -122,10 +122,10 @@ class WorkerScheduler(Scheduler):
 
         if libc is not None:
             def set_pdeathsig(sig=signal.SIGTERM):
-                def callable():
+                def death_fnc():
                     return libc.prctl(1, sig)
 
-                return callable
+                return death_fnc
 
             self._current_sub = subprocess.Popen(
                 ['/bin/bash', script_location + '/running.sh'],
@@ -419,7 +419,7 @@ class Worker(StorableMixin):
 
     def _stop_current(self, mode):
         sc = self.scheduler
-        task = sc._current_task
+        task = sc.current_task
 
         if task:
             attempt = self.project.storage.tasks.modify_test_one(
@@ -541,8 +541,8 @@ class Worker(StorableMixin):
                             scheduler.release_queued_tasks()
 
                         elif command in ['halt', 'cancel']:
-                            if hasattr(scheduler, command):
-                                getattr(scheduler, command)()
+                            if hasattr(self, command):
+                                getattr(self, command)()
 
                         elif command and command.startswith('!'):
                             result = subprocess.check_output(command[1:].split(' '))
