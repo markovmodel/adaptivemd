@@ -6,6 +6,7 @@ import sys
 import random
 import signal
 import ctypes
+from fcntl import fcntl, F_GETFL, F_SETFL
 
 from adaptivemd.mongodb import StorableMixin, SyncVariable, create_to_dict, ObjectSyncVariable
 
@@ -36,6 +37,8 @@ class WorkerScheduler(Scheduler):
         self._state_cb = None
         self._save_log_to_db = True
         self.verbose = verbose
+
+        self._std = {}
 
     @property
     def path(self):
@@ -127,26 +130,95 @@ class WorkerScheduler(Scheduler):
 
                 return death_fnc
 
-            self._current_sub = subprocess.Popen(
-                ['/bin/bash', script_location + '/running.sh'],
-                stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                preexec_fn=set_pdeathsig(signal.SIGTERM))
+            preexec_fn = set_pdeathsig(signal.SIGTERM)
         else:
-            self._current_sub = subprocess.Popen(
-                ['/bin/bash', script_location + '/running.sh'],
-                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            preexec_fn = None
+
+        self._current_sub = subprocess.Popen(
+            ['/bin/bash', script_location + '/running.sh'],
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            preexec_fn=preexec_fn, shell=False)
+
+        # this is a special hack that allows to read from stdout and stderr
+        # without a blocking `.read`, let's hope this works
+        flags = fcntl(self._current_sub.stdout, F_GETFL)  # get current p.stdout flags
+        fcntl(self._current_sub.stdout, F_SETFL, flags | os.O_NONBLOCK)
+
+        flags = fcntl(self._current_sub.stderr, F_GETFL)  # get current p.stderr flags
+        fcntl(self._current_sub.stderr, F_SETFL, flags | os.O_NONBLOCK)
+
+        # prepare std catching
+        self._start_std()
 
     def stop_current(self):
         if self._current_sub is not None:
             task = self.current_task
             self._current_sub.kill()
             del self.tasks[task.__uuid__]
-
+            self._final_std()
             self.current_task = None
 
             return True
         else:
             return False
+
+    def _start_std(self):
+        self._std = {
+            'stdout': '',
+            'stderr': ''
+        }
+
+    def _advance_std(self):
+        """
+        Advance the stdout and stderr for some bytes, save it and redirect if desired
+
+        """
+        for s in ['stdout', 'stderr']:
+            try:
+                new_std = os.read(getattr(self._current_sub, s).fileno(), 1024)
+                self._std[s] += new_std
+                if self.verbose:
+                    # send to stdout, stderr
+                    std = getattr(sys, s)
+                    std.write(new_std)
+                    std.flush()
+
+            except OSError:
+                pass
+
+    def _final_std(self):
+        task = self.current_task
+        try:
+            out, err = self._current_sub.communicate()
+            if self.verbose:
+                sys.stderr.write(err)
+                sys.stdout.write(out)
+
+            # save full message
+            stdout = self._std['stdout'] + out
+            stderr = self._std['stderr'] + err
+
+            if self._save_log_to_db:
+                log_err = LogEntry(
+                    'worker',
+                    'stdout from running task',
+                    stderr,
+                    objs={'task': task}
+                )
+                log_out = LogEntry(
+                    'worker',
+                    'stderr from running task',
+                    stdout,
+                    objs={'task': task}
+                )
+                self.project.logs.add(log_err)
+                self.project.logs.add(log_out)
+
+                task.stdout = log_out
+                task.stderr = log_err
+
+        except ValueError:
+            pass
 
     def advance(self):
         if self.current_task is None:
@@ -158,34 +230,14 @@ class WorkerScheduler(Scheduler):
             task = self.current_task
             # get current outputs
             return_code = self._current_sub.poll()
+
+            # update current stdout and stderr by 1024 bytes
+
+            self._advance_std()
+
             if return_code is not None:
-                try:
-                    stdout, stderr = self._current_sub.communicate()
-                    if self._save_log_to_db:
-                        log_err = LogEntry(
-                            'worker',
-                            'stdout from running task',
-                            stderr,
-                            objs={'task': task}
-                        )
-                        log_out = LogEntry(
-                            'worker',
-                            'stderr from running task',
-                            stdout,
-                            objs={'task': task}
-                        )
-                        self.project.logs.add(log_err)
-                        self.project.logs.add(log_out)
-
-                        task.stdout = log_out
-                        task.stderr = log_err
-                    if self.verbose:
-                        # relay STD from subprocess to main process
-                        sys.stderr.write('TASK:' + stderr)
-                        sys.stdout.write('TASK:' + stdout)
-
-                except ValueError:
-                    pass
+                # finish std catching
+                self._final_std()
 
                 if return_code == 0:
                     # success
@@ -397,7 +449,7 @@ class Worker(StorableMixin):
         return obj
 
     def create(self, project):
-        scheduler = WorkerScheduler(project.resource)
+        scheduler = WorkerScheduler(project.resource, self.verbose)
         scheduler._state_cb = self._state_cb
         self._scheduler = scheduler
         self._project = project
