@@ -249,14 +249,6 @@ class File(Location):
     def _ignore(self):
         return self.drive == 'worker' or self.drive == 'staging'
 
-    def on(self, resource):
-        if resource == self.resource:
-            return self
-        else:
-            obj = self.clone()
-            obj.resource = resource
-            return obj
-
     def clone(self):
         f = self.__class__(self.location)
         f.resource = self.resource
@@ -373,6 +365,12 @@ class Directory(File):
     @property
     def is_folder(self):
         return True
+
+
+class Group(StorableMixin):
+    """
+    A tuple of files considered as one
+    """
 
 
 class URLGenerator(object):
