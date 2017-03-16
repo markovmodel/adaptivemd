@@ -458,10 +458,16 @@ class Task(BaseTask):
         self._user_pre_exec.extend(script)
 
     def pre_stage(self, transaction):
-        self._pre_stage.append(transaction)
+        if isinstance(transaction, (tuple, list)):
+            self._pre_stage.extend(transaction)
+        else:
+            self._pre_stage.append(transaction)
 
     def post_stage(self, transaction):
-        self._post_stage.append(transaction)
+        if isinstance(transaction, (tuple, list)):
+            self._post_stage.extend(transaction)
+        else:
+            self._post_stage.append(transaction)
 
     def get(self, f, name=None):
         """

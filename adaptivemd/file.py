@@ -126,17 +126,6 @@ class Location(StorableMixin):
                 p = os.path.abspath(self.path)
                 self.location = 'file://' + p
 
-    # def __hash__(self):
-    #     return hash(self.resource_location)
-    #
-    # def __eq__(self, other):
-    #     if other is None:
-    #         return False
-    #     elif isinstance(other, Location):
-    #         return self.resource_location == other.resource_location
-    #
-    #     return NotImplemented
-
     def clone(self):
         return self.__class__(self.location)
 
@@ -296,7 +285,7 @@ class File(Location):
         created = self.created
         return created is not None and created > 0
 
-    def _complete_target(self, target):
+    def _complete_target(self, target, extension=False):
         if target is None:
             target = Location('')
 
@@ -306,6 +295,9 @@ class File(Location):
         if isinstance(target, Location):
             if target.basename == '':
                 target.location = target.location + self.basename
+
+            if extension:
+                target.location = target.location + '.' + self.extension
 
         return target
 
@@ -361,16 +353,57 @@ class File(Location):
         return bool(self._file)
 
 
+class MultiFile(File):
+
+    _file_attributes = {}
+
+    def __init__(self, location):
+        super(MultiFile, self).__init__(location)
+
+    def _multi_action(self, cls, target=None):
+        if self._file_attributes:
+            target = self._complete_target(target)
+            ret = [cls(self, target)]
+            for attr in self._file_attributes.items():
+                f = getattr(self, attr)
+                target = f._complete_target(target, True)
+                ret += [cls(f, target)]
+
+        else:
+            target = self._complete_target(target)
+            ret = cls(self, target)
+
+        return ret
+
+    def copy(self, target=None):
+        return self._multi_action(Copy, target)
+
+    def move(self, target=None):
+        return self._multi_action(Move, target)
+
+    def link(self, target=None):
+        return self._multi_action(Link, target)
+
+    def transfer(self, target=None):
+        return self._multi_action(Transfer, target)
+
+    def remove(self):
+        if self._file_attributes:
+            ret = [Remove(self)]
+            for ext, attr in self._file_attributes.items():
+                f = getattr(self, attr)
+                ret += [Remove(f)]
+        else:
+            ret = Remove(self)
+
+        return ret
+
+
 class Directory(File):
     @property
     def is_folder(self):
         return True
 
-
-class Group(StorableMixin):
-    """
-    A tuple of files considered as one
-    """
 
 
 class URLGenerator(object):
