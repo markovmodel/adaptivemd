@@ -159,6 +159,10 @@ class BaseBundle(object):
         else:
             return None
 
+    @property
+    def all(self):
+        return BundleDelegator(self)
+
 
 class Bundle(BaseBundle):
     """
@@ -193,10 +197,6 @@ class Bundle(BaseBundle):
             return iter(self._set)
         else:
             return iter([])
-
-    @property
-    def all(self):
-        return BundleDelegator(self)
 
 
 class LogicBundle(BaseBundle):
