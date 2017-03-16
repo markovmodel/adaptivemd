@@ -14,7 +14,8 @@ def remote_analysis(
 
     Parameters
     ----------
-    trajfiles : list of `Trajectory`
+    files : list of `Trajectory`
+        a list of `Trajectory` objects
     topfile : `File`
         a reference to the `.pdb` file using in pyemma
     tica_lag : int
