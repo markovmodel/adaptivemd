@@ -78,7 +78,7 @@ class OpenMMEngine(Engine):
 
             return
 
-        restart_file = File( 'output%s.dcd.restart' % idx)
+        restart_file = RestartFile('output%s.dcd.restart' % idx)
 
         output_traj = Trajectory(
             'output%s.dcd' % idx, target.frame, length=target.length)
@@ -101,7 +101,6 @@ class OpenMMEngine(Engine):
             in_restart_file = t.link(source.restart, loc)
             args = ('--restart %s ' % in_restart_file.basename) + args
         else:
-            restart_file = None
             input_traj = t.link(source, Location('input%s.dcd' % idx))
             input_pdb = File('input%s.pdb' % idx)
 
@@ -135,10 +134,7 @@ class OpenMMEngine(Engine):
         output_traj, restart_file = \
             self._make_single_traj_cmd(t, target, initial_pdb)
 
-        t.call('echo "DONE!"')
-
-        if target.restart:
-            t.put(restart_file, target.restart)
+        t.call('echo {}', 'DONE!')
 
         t.put(output_traj, target)
 
@@ -165,7 +161,7 @@ class OpenMMEngine(Engine):
             self._extend_single_traj_cmd(t, source, target, initial_pdb)
 
         output_traj = Trajectory(
-            'output%s.dcd' % '', target.frame, length=target.length)
+            'output%s.dcd' % '', target.frame, length=target.length, restart_file=)
 
         # join both trajectories
         t.pre_bash('mdconvert -o %s -t %s %s %s' % (

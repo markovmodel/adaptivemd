@@ -355,7 +355,7 @@ class File(Location):
 
 class MultiFile(File):
 
-    _file_attributes = {}
+    _file_attributes = []
 
     def __init__(self, location):
         super(MultiFile, self).__init__(location)
@@ -364,7 +364,7 @@ class MultiFile(File):
         if self._file_attributes:
             target = self._complete_target(target)
             ret = [cls(self, target)]
-            for attr in self._file_attributes.items():
+            for attr in self._file_attributes:
                 f = getattr(self, attr)
                 target = f._complete_target(target, True)
                 ret += [cls(f, target)]
