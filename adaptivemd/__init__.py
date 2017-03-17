@@ -1,7 +1,8 @@
 from brain import Brain
 from event import StopEvent, Event, TasksFinished, FunctionalEvent
 from condition import Condition, Now, Never
-from file import File, Copy, Link, Move, Remove, Transfer, Directory, AddPathAction, Location
+from file import File, Copy, Link, Move, Remove, Transfer, Directory, AddPathAction, Location, \
+    JSONFile
 from bundle import Bundle, SortedBundle, ViewBundle
 from resource import AllegroCluster, LocalCluster
 from task import Task, PythonTask, DummyTask

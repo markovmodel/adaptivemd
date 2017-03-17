@@ -2,8 +2,8 @@ import os
 import time
 import base64
 
-from mongodb import StorableMixin, SyncVariable, JSONDataSyncVariable
-
+from mongodb import StorableMixin, ObjectJSON, ObjectSyncVariable, \
+    JSONDataSyncVariable, SyncVariable
 
 class Action(StorableMixin):
     def __init__(self):
@@ -340,9 +340,14 @@ class File(Location):
     def __repr__(self):
         return "'%s'" % self.basename
 
-    def load(self):
+    def load(self, scheduler=None):
         if self.drive == 'file':
-            with open(self.path, 'r') as f:
+            if scheduler is not None:
+                path = scheduler.replace_prefix(self.url)
+            else:
+                path = self.path
+
+            with open(path, 'r') as f:
                 self._file = f.read()
 
         return self
@@ -373,15 +378,19 @@ class File(Location):
         self._file = content
 
 
-class DataFile(File):
+_json_file_simplifier = ObjectJSON()
 
+
+class JSONFile(File):
     _find_by = ['created', 'state', '_data']
 
     _data = JSONDataSyncVariable('_data', lambda x: not None)
-    _file = SyncVariable('_data', lambda x: not None)
+    # _file = SyncVariable('_data', lambda x: not None)
+    _file = None
+    # _data = ObjectSyncVariable('_data', 'data', lambda x: not None)
 
     def __init__(self, location):
-        super(DataFile, self).__init__(location)
+        super(JSONFile, self).__init__(location)
         self._data = None
 
     def to_dict(self):
@@ -409,7 +418,30 @@ class DataFile(File):
         return True
 
     def get_file(self):
-        return '(datastream)'
+        return ''
+
+    def load(self, scheduler=None):
+        if self.drive == 'file':
+            if scheduler is not None:
+                path = scheduler.replace_prefix(self.url)
+            else:
+                path = self.path
+
+            with open(path, 'r') as f:
+                self._data = _json_file_simplifier.from_json(f.read())
+
+        return self
+
+    def exists(self):
+        if self.data is not None:
+            return True
+
+        created = self.created
+
+        if created is not None and created > 0:
+            return True
+
+        return False
 
 
 class Directory(File):

@@ -1,9 +1,10 @@
 import os
 import uuid
 
-from file import File
+from file import File, JSONFile
 from util import get_function_source
-from mongodb import StorableMixin, SyncVariable, ObjectSyncVariable
+from mongodb import StorableMixin
+from mongodb import SyncVariable, ObjectSyncVariable
 
 
 class BaseTask(StorableMixin):
@@ -688,9 +689,9 @@ class PythonTask(Task):
         self.then_func_name = 'then_func'
 
         self._rpc_input_file = \
-            File('file://_rpc_input_%s.json' % hex(self.__uuid__))
+            JSONFile('file://_rpc_input_%s.json' % hex(self.__uuid__))
         self._rpc_output_file = \
-            File('file://_rpc_output_%s.json' % hex(self.__uuid__))
+            JSONFile('file://_rpc_output_%s.json' % hex(self.__uuid__))
 
         self._task_pre_stage.append(
             self._rpc_input_file.transfer('input.json'))
@@ -705,10 +706,11 @@ class PythonTask(Task):
 
     def _cb_success(self, scheduler):
         # here is the logic to retrieve the result object
+        # the output file is a JSON and these know how to load itself
+        self._rpc_output_file.load(scheduler)
         filename = scheduler.replace_prefix(self._rpc_output_file.url)
 
-        with open(filename, 'r') as f:
-            data = scheduler.simplifier.from_json(f.read())
+        data = self._rpc_output_file.data
 
         if self.generator is not None and hasattr(self.generator, self.then_func_name):
             getattr(self.generator, self.then_func_name)(

@@ -8,7 +8,7 @@ import signal
 import ctypes
 from fcntl import fcntl, F_GETFL, F_SETFL
 
-from adaptivemd.mongodb import StorableMixin, SyncVariable, create_to_dict, ObjectSyncVariable
+from mongodb import StorableMixin, SyncVariable, create_to_dict, ObjectSyncVariable
 
 from scheduler import Scheduler
 from reducer import filter_str, apply_reducer, parse_transfer_worker, parse_action
