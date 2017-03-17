@@ -137,11 +137,11 @@ def parse_transfer_worker(scheduler, action):
             if source.has_file:
                 with open(sp, 'w') as f:
                     f.write(source.get_file())
-                    print 'WRITING file `%s`' % sp
+                    print 'WRITING file `%s`' % tp
 
-                ret += ['# write file `%s` from DB' % sp]
+                ret += ['# write file `%s` from DB' % tp]
 
-            ret += ['mv %s %s' % (sp, tp)]
+            # ret += ['mv %s %s' % (sp, tp)]
 
             return ret
 
