@@ -102,8 +102,6 @@ class WorkerScheduler(Scheduler):
         return tasks
 
     def _start_job(self, task):
-        script = self.task_to_script(task >> self.wrapper >> self.resource.wrapper)
-
         self._current_unit_dir = 'worker.%s' % hex(task.__uuid__)
 
         script_location = self.path + '/workers/' + self._current_unit_dir
@@ -113,6 +111,7 @@ class WorkerScheduler(Scheduler):
 
         os.chdir(script_location)
 
+        script = self.task_to_script(task >> self.wrapper >> self.resource.wrapper)
         task.fire('submit', self)
 
         # write the script
@@ -201,13 +200,13 @@ class WorkerScheduler(Scheduler):
             if self._save_log_to_db:
                 log_err = LogEntry(
                     'worker',
-                    'stdout from running task',
+                    'stderr from running task',
                     stderr,
                     objs={'task': task}
                 )
                 log_out = LogEntry(
                     'worker',
-                    'stderr from running task',
+                    'stdout from running task',
                     stdout,
                     objs={'task': task}
                 )
