@@ -132,6 +132,15 @@ class ObjectJSON(object):
             elif type(obj) is UUID:
                 return {
                     '_uuid': str(UUID(int=obj))}
+
+            # we will convert numpy scalars to python scalar (and cross fingers)
+            elif isinstance(obj, np.bool_):
+                return bool(obj)
+            elif isinstance(obj, np.int_):
+                return int(obj)
+            elif isinstance(obj, np.float_):
+                # todo: this might be dangerous - potential loss of accuracy
+                return float(obj)
             else:
                 return None
         elif type(obj) is list:

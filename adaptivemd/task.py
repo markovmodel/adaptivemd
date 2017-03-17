@@ -129,6 +129,10 @@ class Task(BaseTask):
     stdout = ObjectSyncVariable('stdout', 'logs', lambda x: x is not None)
     stderr = ObjectSyncVariable('stderr', 'logs', lambda x: x is not None)
 
+    FINAL_STATES = ['success', 'cancelled']
+    RESTARTABLE_STATES = ['fail', 'halted']
+    RUNNABLE_STATES = ['created']
+
     def __init__(self, generator=None):
         super(Task, self).__init__()
 
@@ -159,6 +163,36 @@ class Task(BaseTask):
         self.state = 'created'
 
         self.worker = None
+
+    def restart(self):
+        """
+        Mark a task as being runnable if it was stopped or failed before
+
+        Returns
+        -------
+
+        """
+        state = self.state
+        if state in Task.RESTARTABLE_STATES:
+            self.state = 'created'
+            return True
+
+        return False
+
+    def cancel(self):
+        """
+        Mark a task as cancelled if it it not running or has been halted
+
+        Returns
+        -------
+
+        """
+        state = self.state
+        if state in ['halted', 'created']:
+            self.state = 'cancelled'
+            return True
+
+        return False
 
     @property
     def dependency_okay(self):

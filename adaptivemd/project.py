@@ -84,6 +84,7 @@ class Project(object):
         self.tasks = StoredBundle()
         self.workers = StoredBundle()
         self.logs = StoredBundle()
+        # self.commands = StoredBundle()
         self.resource = None
 
         self._all_trajectories = self.files.c(Trajectory)
@@ -147,6 +148,7 @@ class Project(object):
         st.create_store(ObjectStore('tasks', Task))
         st.create_store(ObjectStore('workers', Worker))
         st.create_store(ObjectStore('logs', LogEntry))
+        # st.create_store(ObjectStore('commands', Command))
 
         st.save(self.resource)
 
@@ -165,6 +167,7 @@ class Project(object):
             self.tasks.set_store(self.storage.tasks)
             self.workers.set_store(self.storage.workers)
             self.logs.set_store(self.storage.logs)
+            # self.commands.set_store(self.storage.commands)
             self.resource = self.storage.resources.find_one({})
 
             self.storage.files.set_caching(True)
