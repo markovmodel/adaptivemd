@@ -67,6 +67,7 @@ class TaskGenerator(StorableMixin):
 
 rpc_exec = File('file://' + os.path.join(os.path.dirname(__file__), 'scripts/_run_.py')).load()
 
+print 'file://' + os.path.join(os.path.dirname(__file__), 'scripts/_run_.py')
 
 class PythonRPCTaskGenerator(TaskGenerator):
     """

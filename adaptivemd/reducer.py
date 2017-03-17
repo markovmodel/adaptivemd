@@ -1,6 +1,7 @@
 from file import Remove, FileTransaction, Copy, Transfer, Link, Move, \
     AddPathAction, FileAction, Touch
 
+import os
 
 def parse_action_stage_in(scheduler, action):
     if isinstance(action, FileTransaction):
@@ -123,27 +124,31 @@ def parse_transfer_worker(scheduler, action):
 
     """
 
+    # all of this is to keep RP compatibility which works with files
     if isinstance(action, FileTransaction):
         source = action.source
         target = action.target
-        if (source.drive == 'file' and target.drive != 'file') or (target.drive == 'file' and source.drive != 'file'):
+        if source.drive == 'file' and target.drive != 'file':
+            # create file from
             sp = scheduler.replace_prefix(source.url)
             tp = scheduler.replace_prefix(target.url)
 
-            ret = []
-
-            print source, source.has_file
-
             if source.has_file:
-                with open(sp, 'w') as f:
+                with open(tp, 'w') as f:
                     f.write(source.get_file())
-                    print 'WRITING file `%s`' % tp
 
-                ret += ['# write file `%s` from DB' % tp]
+                return ['# write file `%s` from DB' % tp]
+            elif os.path.exists(sp):
+                # in case someone already created the file we need, rename it
+                if sp != tp:
+                    return ['ln %s %s' % (sp, tp)]
 
-            # ret += ['mv %s %s' % (sp, tp)]
+        elif target.drive == 'file' and source.drive != 'file':
+            # move back to virtual location
+            sp = scheduler.replace_prefix(source.url)
+            tp = scheduler.replace_prefix(target.url)
 
-            return ret
+            return ['ln -s %s %s' % (sp, tp)]
 
     return action
 

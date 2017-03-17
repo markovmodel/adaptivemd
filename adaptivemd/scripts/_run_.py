@@ -8,6 +8,9 @@ a reference to the function and module as well as arguments and keyword argument
 
 import importlib
 from adaptivemd.mongodb import ObjectJSON
+import os
+import sys
+sys.path.insert(0, os.path.abspath('.'))
 
 simplifier = ObjectJSON()
 
@@ -15,6 +18,10 @@ with open('input.json', 'r') as f:
     data = simplifier.from_json(f.read())
 
 parts = data['function'].split('.')
+
+print data
+
+print os.listdir('.')
 
 fnc = importlib.import_module('.'.join(parts[:-1]))
 

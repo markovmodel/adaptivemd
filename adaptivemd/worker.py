@@ -111,8 +111,9 @@ class WorkerScheduler(Scheduler):
 
         os.chdir(script_location)
 
-        script = self.task_to_script(task >> self.wrapper >> self.resource.wrapper)
         task.fire('submit', self)
+
+        script = self.task_to_script(task >> self.wrapper >> self.resource.wrapper)
 
         # write the script
 

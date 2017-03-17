@@ -2,7 +2,7 @@ import os
 import time
 import base64
 
-from mongodb import StorableMixin, SyncVariable
+from mongodb import StorableMixin, SyncVariable, JSONDataSyncVariable
 
 
 class Action(StorableMixin):
@@ -230,9 +230,10 @@ class Location(StorableMixin):
 
 
 class File(Location):
-    _find_by = ['created', 'state']
+    _find_by = ['created', 'state', '_file']
 
     created = SyncVariable('created', lambda x: x is not None and x < 0)
+    _file = SyncVariable('_file', lambda x: not bool(x))
 
     def __init__(self, location):
         super(File, self).__init__(location)
@@ -249,13 +250,13 @@ class File(Location):
     def _ignore(self):
         return self.drive == 'worker' or self.drive == 'staging'
 
-    def on(self, resource):
-        if resource == self.resource:
-            return self
-        else:
-            obj = self.clone()
-            obj.resource = resource
-            return obj
+    # def on(self, resource):
+    #     if resource == self.resource:
+    #         return self
+    #     else:
+    #         obj = self.clone()
+    #         obj.resource = resource
+    #         return obj
 
     def clone(self):
         f = self.__class__(self.location)
@@ -367,6 +368,48 @@ class File(Location):
     @property
     def has_file(self):
         return bool(self._file)
+
+    def set_file(self, content):
+        self._file = content
+
+
+class DataFile(File):
+
+    _find_by = ['created', 'state', '_data']
+
+    _data = JSONDataSyncVariable('_data', lambda x: not None)
+    _file = SyncVariable('_data', lambda x: not None)
+
+    def __init__(self, location):
+        super(DataFile, self).__init__(location)
+        self._data = None
+
+    def to_dict(self):
+        ret = super(File, self).to_dict()
+        ret['_data'] = self._data
+
+        return ret
+
+    @classmethod
+    def from_dict(cls, dct):
+        obj = super(File, cls).from_dict(dct)
+        obj._data = dct['_data']
+        return obj
+
+    @property
+    def data(self):
+        return self._data
+
+    @data.setter
+    def data(self, value):
+        self._data = value
+
+    @property
+    def has_file(self):
+        return True
+
+    def get_file(self):
+        return '(datastream)'
 
 
 class Directory(File):

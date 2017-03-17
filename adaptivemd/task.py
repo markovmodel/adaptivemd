@@ -666,7 +666,7 @@ class PythonTask(Task):
         '_python_import', '_python_source_files', '_python_function_name',
         '_python_args', '_python_kwargs', '_param_uid',
         '_rpc_input_file', '_rpc_output_file',
-        'then_func_name']
+        'then_func_name', '']
 
     then_func = None
 
@@ -688,9 +688,9 @@ class PythonTask(Task):
         self.then_func_name = 'then_func'
 
         self._rpc_input_file = \
-            File('file://_rpc_input_%s.json' % self._param_uid)
+            File('file://_rpc_input_%s.json' % hex(self.__uuid__))
         self._rpc_output_file = \
-            File('file://_rpc_output_%s.json' % self._param_uid)
+            File('file://_rpc_output_%s.json' % hex(self.__uuid__))
 
         self._task_pre_stage.append(
             self._rpc_input_file.transfer('input.json'))

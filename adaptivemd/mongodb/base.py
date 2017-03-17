@@ -4,6 +4,8 @@ import uuid
 import time
 import weakref
 
+from dictify import ObjectJSON
+
 logger = logging.getLogger(__name__)
 
 
@@ -426,6 +428,46 @@ class ObjectSyncVariable(SyncVariable):
                     update={"$set": {self.name: {
                         '_hex_uuid': self._idx(value),
                         '_store': self.store}}},
+                    upsert=False
+                    )
+            else:
+                instance.__store__._document.find_and_modify(
+                    query={'_id': idx},
+                    update={"$set": {self.name: None}},
+                    upsert=False
+                    )
+
+        self.values[instance] = value
+
+
+_json_sync_simplifier = ObjectJSON()
+
+
+class JSONDataSyncVariable(SyncVariable):
+    def __init__(self, name, fix_fnc=None):
+        super(JSONDataSyncVariable, self).__init__(name, fix_fnc)
+
+    def _update(self, store, idx):
+        if store is not None:
+            data = store._document.find_one(
+                {'_id': idx})[self.name]
+            if data is None:
+                return None
+            else:
+                return _json_sync_simplifier.build(data)
+
+    def __set__(self, instance, value):
+        if instance.__store__ is not None:
+            if self.fix_fnc:
+                val = self.values.get(instance)
+                if val is not None and self.fix_fnc(val):
+                    return
+
+            idx = self._idx(instance)
+            if value is not None:
+                instance.__store__._document.find_and_modify(
+                    query={'_id': idx},
+                    update={"$set": {self.name: _json_sync_simplifier.simplify(value)}},
                     upsert=False
                     )
             else:
