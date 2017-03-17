@@ -130,11 +130,17 @@ def parse_transfer_worker(scheduler, action):
             sp = scheduler.replace_prefix(source.url)
             tp = scheduler.replace_prefix(target.url)
 
+            ret = []
+
             if source.has_file:
-                with open(tp, 'w') as f:
+                with open(sp, 'w') as f:
                     f.write(source.get_file())
 
-            return ['ln -s %s %s' % (sp, tp)]
+                ret += ['# write file `%s` from DB' % tp]
+
+            ret += ['mv -s %s %s' % (sp, tp)]
+
+            return ret
 
     return action
 
