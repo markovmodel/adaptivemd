@@ -138,7 +138,7 @@ def parse_transfer_worker(scheduler, action):
 
                 ret += ['# write file `%s` from DB' % sp]
 
-            ret += ['mv -s %s %s' % (sp, tp)]
+            ret += ['mv %s %s' % (sp, tp)]
 
             return ret
 

@@ -728,7 +728,7 @@ class PythonTask(Task):
             get_function_source(command)
 
         for f in self._python_source_files:
-            self._task_pre_stage.append(File('file://' + f).transfer())
+            self._task_pre_stage.append(File('file://' + f).load().transfer())
 
     def _get_json(self, scheduler):
         dct = {
