@@ -432,6 +432,7 @@ class JSONFile(File):
 
         return self
 
+    @property
     def exists(self):
         if self.data is not None:
             return True
