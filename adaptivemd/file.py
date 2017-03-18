@@ -55,7 +55,7 @@ class FileTransaction(FileAction):
         elif isinstance(target, Location) and not isinstance(target, File):
             self.target = source.clone()
             self.target.location = target.location
-        else:
+        else:  # e.g. when it is already a `File` object
             self.target = target
 
     def __str__(self):
