@@ -37,6 +37,7 @@ class WorkerScheduler(Scheduler):
         self._state_cb = None
         self._save_log_to_db = True
         self.verbose = verbose
+        self._fail_after_each_command = True
 
         self._std = {}
 
@@ -68,6 +69,10 @@ class WorkerScheduler(Scheduler):
                 apply_reducer(parse_action, self, wrapped_task.post_exec, bash_only=True)))
 
         script = pre_exec + [wrapped_task.command] + post_exec
+
+        if self._fail_after_each_command:
+            # make sure that a script exits if ANY command fails not just the last one
+            script = ['set -e'] + script
 
         return script
 
