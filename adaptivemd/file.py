@@ -2,8 +2,10 @@ import os
 import time
 import base64
 
-from mongodb import StorableMixin, ObjectJSON, ObjectSyncVariable, \
+from mongodb import StorableMixin, ObjectJSON, \
     JSONDataSyncVariable, SyncVariable
+# from mongodb import ObjectSyncVariable
+
 
 class Action(StorableMixin):
     def __init__(self):
@@ -415,18 +417,24 @@ class JSONFile(File):
 
     @property
     def has_file(self):
-        return True
+        return self._data is not None
 
     def get_file(self):
-        return ''
+        if self._data is not None:
+            return _json_file_simplifier.to_json(self._data)
+
+        return None
 
     def load(self, scheduler=None):
-        if self.drive == 'file':
-            if scheduler is not None:
-                path = scheduler.replace_prefix(self.url)
-            else:
-                path = self.path
+        path = None
 
+        if self.drive == 'file':
+            path = self.path
+
+        if scheduler is not None:
+            path = scheduler.get_path(self)
+
+        if path:
             with open(path, 'r') as f:
                 self._data = _json_file_simplifier.from_json(f.read())
 

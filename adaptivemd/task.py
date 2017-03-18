@@ -665,9 +665,9 @@ class PythonTask(Task):
 
     _copy_attributes = Task._copy_attributes + [
         '_python_import', '_python_source_files', '_python_function_name',
-        '_python_args', '_python_kwargs', '_param_uid',
+        '_python_args', '_python_kwargs',
         '_rpc_input_file', '_rpc_output_file',
-        'then_func_name', '']
+        'then_func_name']
 
     then_func = None
 
@@ -684,7 +684,6 @@ class PythonTask(Task):
         self.arguments = '_run_.py'
 
         self._json = None
-        self._param_uid = str(uuid.uuid4())
 
         self.then_func_name = 'then_func'
 
@@ -708,9 +707,11 @@ class PythonTask(Task):
         # here is the logic to retrieve the result object
         # the output file is a JSON and these know how to load itself
         self._rpc_output_file.load(scheduler)
-        filename = scheduler.replace_prefix(self._rpc_output_file.url)
 
+        filename = scheduler.get_path(self._rpc_output_file)
         data = self._rpc_output_file.data
+
+        print filename, data
 
         if self.generator is not None and hasattr(self.generator, self.then_func_name):
             getattr(self.generator, self.then_func_name)(
@@ -720,13 +721,29 @@ class PythonTask(Task):
                     'kwargs': self._python_kwargs})
 
         # remove the RPC file.
+
+        # mark as changed / deleted
         os.remove(filename)
-        os.remove(scheduler.replace_prefix(self._rpc_input_file.url))
+        self._rpc_output_file.modified()
+        os.remove(scheduler.get_path(self._rpc_input_file))
+        self._rpc_input_file.modified()
 
     def _cb_submit(self, scheduler):
         filename = scheduler.replace_prefix(self._rpc_input_file.url)
         with open(filename, 'w') as f:
             f.write(scheduler.simplifier.to_json(self._get_json(scheduler)))
+
+    @property
+    def output(self):
+        """
+        Return the data contained in the output file
+
+        Returns
+        -------
+        object
+
+        """
+        return self._rpc_output_file.data
 
     def then(self, func_name):
         """

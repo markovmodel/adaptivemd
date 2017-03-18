@@ -19,12 +19,7 @@ with open('input.json', 'r') as f:
 
 parts = data['function'].split('.')
 
-print data
-
-print os.listdir('.')
-
 fnc = importlib.import_module('.'.join(parts[:-1]))
-
 fnc = getattr(fnc, parts[-1])
 
 result = fnc(*data['args'], **data['kwargs'])
