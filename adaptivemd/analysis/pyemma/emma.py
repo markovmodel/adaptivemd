@@ -1,7 +1,6 @@
 from adaptivemd import PythonTask
 from adaptivemd.analysis import Analysis
 from _remote import remote_analysis
-from adaptivemd import Model
 
 
 class PyEMMAAnalysis(Analysis):
@@ -34,7 +33,14 @@ class PyEMMAAnalysis(Analysis):
         model.data['input']['pdb'] = inputs['kwargs']['topfile']
         project.models.add(model)
 
-    def task_run_msm_files(self, files):
+    def task_run_msm_files(
+            self,
+            files,
+            tica_lag=2,
+            tica_dim=2,
+            msm_states=5,
+            msm_lag=2,
+            stride=1):
         """
         Create a task that computes an msm using a given set of trajecories
 
@@ -42,6 +48,16 @@ class PyEMMAAnalysis(Analysis):
         ----------
         files : list of `Trajectory`
             the list of trajectory references to be used in the computation
+        tica_lag : int
+            the lag-time used for tCIA
+        tica_dim : int
+            number of dimensions using in tICA. This refers to the number of tIC used
+        msm_states : int
+            number of micro-states used for the MSM
+        msm_lag : int
+            lagtime used for the MSM construction
+        stride : int
+            a stride to be used on the data. Can speed up computation at reduced accuracy
 
         Returns
         -------
@@ -55,6 +71,15 @@ class PyEMMAAnalysis(Analysis):
         t = PythonTask(self)
 
         input_pdb = t.link(self['pdb_file_stage'], 'input.pdb')
-        t.call(remote_analysis, files=list(files), topfile=input_pdb)
+        t.call(
+            remote_analysis,
+            files=list(files),
+            topfile=input_pdb,
+            tica_lag=tica_lag,
+            tica_dim=tica_dim,
+            msm_states=msm_states,
+            msm_lag=msm_lag,
+            stride=stride
+        )
 
         return t

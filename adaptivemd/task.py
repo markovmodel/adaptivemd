@@ -1,9 +1,10 @@
 import os
 import uuid
 
-from file import File
+from file import File, JSONFile
 from util import get_function_source
-from mongodb import StorableMixin, SyncVariable, ObjectSyncVariable
+from mongodb import StorableMixin
+from mongodb import SyncVariable, ObjectSyncVariable
 
 
 class BaseTask(StorableMixin):
@@ -129,6 +130,10 @@ class Task(BaseTask):
     stdout = ObjectSyncVariable('stdout', 'logs', lambda x: x is not None)
     stderr = ObjectSyncVariable('stderr', 'logs', lambda x: x is not None)
 
+    FINAL_STATES = ['success', 'cancelled']
+    RESTARTABLE_STATES = ['fail', 'halted']
+    RUNNABLE_STATES = ['created']
+
     def __init__(self, generator=None):
         super(Task, self).__init__()
 
@@ -159,6 +164,36 @@ class Task(BaseTask):
         self.state = 'created'
 
         self.worker = None
+
+    def restart(self):
+        """
+        Mark a task as being runnable if it was stopped or failed before
+
+        Returns
+        -------
+
+        """
+        state = self.state
+        if state in Task.RESTARTABLE_STATES:
+            self.state = 'created'
+            return True
+
+        return False
+
+    def cancel(self):
+        """
+        Mark a task as cancelled if it it not running or has been halted
+
+        Returns
+        -------
+
+        """
+        state = self.state
+        if state in ['halted', 'created']:
+            self.state = 'cancelled'
+            return True
+
+        return False
 
     @property
     def dependency_okay(self):
@@ -636,7 +671,7 @@ class PythonTask(Task):
 
     _copy_attributes = Task._copy_attributes + [
         '_python_import', '_python_source_files', '_python_function_name',
-        '_python_args', '_python_kwargs', '_param_uid',
+        '_python_args', '_python_kwargs',
         '_rpc_input_file', '_rpc_output_file',
         'then_func_name']
 
@@ -655,14 +690,13 @@ class PythonTask(Task):
         self.arguments = '_run_.py'
 
         self._json = None
-        self._param_uid = str(uuid.uuid4())
 
         self.then_func_name = 'then_func'
 
         self._rpc_input_file = \
-            File('file://_rpc_input_%s.json' % self._param_uid)
+            JSONFile('file://_rpc_input_%s.json' % hex(self.__uuid__))
         self._rpc_output_file = \
-            File('file://_rpc_output_%s.json' % self._param_uid)
+            JSONFile('file://_rpc_output_%s.json' % hex(self.__uuid__))
 
         self._task_pre_stage.append(
             self._rpc_input_file.transfer('input.json'))
@@ -677,10 +711,11 @@ class PythonTask(Task):
 
     def _cb_success(self, scheduler):
         # here is the logic to retrieve the result object
-        filename = scheduler.replace_prefix(self._rpc_output_file.url)
+        # the output file is a JSON and these know how to load itself
+        self._rpc_output_file.load(scheduler)
 
-        with open(filename, 'r') as f:
-            data = scheduler.simplifier.from_json(f.read())
+        filename = scheduler.get_path(self._rpc_output_file)
+        data = self._rpc_output_file.data
 
         if self.generator is not None and hasattr(self.generator, self.then_func_name):
             getattr(self.generator, self.then_func_name)(
@@ -690,13 +725,29 @@ class PythonTask(Task):
                     'kwargs': self._python_kwargs})
 
         # remove the RPC file.
+
+        # mark as changed / deleted
         os.remove(filename)
-        os.remove(scheduler.replace_prefix(self._rpc_input_file.url))
+        self._rpc_output_file.modified()
+        os.remove(scheduler.get_path(self._rpc_input_file))
+        self._rpc_input_file.modified()
 
     def _cb_submit(self, scheduler):
         filename = scheduler.replace_prefix(self._rpc_input_file.url)
         with open(filename, 'w') as f:
             f.write(scheduler.simplifier.to_json(self._get_json(scheduler)))
+
+    @property
+    def output(self):
+        """
+        Return the data contained in the output file
+
+        Returns
+        -------
+        object
+
+        """
+        return self._rpc_output_file.data
 
     def then(self, func_name):
         """
@@ -734,7 +785,7 @@ class PythonTask(Task):
             get_function_source(command)
 
         for f in self._python_source_files:
-            self._task_pre_stage.append(File('file://' + f).transfer())
+            self._task_pre_stage.append(File('file://' + f).load().transfer())
 
     def _get_json(self, scheduler):
         dct = {

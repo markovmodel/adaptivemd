@@ -1,5 +1,6 @@
-from base import StorableMixin, create_to_dict, SyncVariable, \
-    IncreasingNumericSyncVariable, NoneOrValueSyncVariable, ObjectSyncVariable
+from base import StorableMixin, create_to_dict
+from syncvar import SyncVariable, NoneOrValueSyncVariable, \
+    IncreasingNumericSyncVariable, ObjectSyncVariable, JSONDataSyncVariable
 from cache import WeakKeyCache, WeakLRUCache, WeakValueCache, MaxCache, \
     NoCache, Cache, LRUCache
 from dictify import ObjectJSON, UUIDObjectJSON

@@ -131,7 +131,7 @@ class BaseBundle(object):
             return None
 
     def __str__(self):
-        return '<%s with %d file(s) @ %s>' % (
+        return '<%s for with %d file(s) @ %s>' % (
             self.__class__.__name__, len(self), hex(id(self)))
 
     def __contains__(self, item):
@@ -158,6 +158,10 @@ class BaseBundle(object):
             return next(iter(self))
         else:
             return None
+
+    @property
+    def all(self):
+        return BundleDelegator(self)
 
 
 class Bundle(BaseBundle):
@@ -250,6 +254,34 @@ class LongestViewBundle(BaseBundle):
         for o in self.bundle:
             if self.view(o):
                 yield o
+
+
+class BundleDelegator(object):
+    """
+    This will delegate attribute calls to all elements
+    """
+    def __init__(self, bundle):
+        self._bundle = bundle
+
+    def __getattr__(self, item):
+        one = self._bundle.one
+        if hasattr(one, item):
+            attr = getattr(one, item)
+            if callable(attr):
+                return FunctionDelegator(self._bundle, item)
+            else:
+                return [getattr(x, item) for x in self._bundle]
+        else:
+            AttributeError('Not all objects have attribute `%s`' % item)
+
+
+class FunctionDelegator(object):
+    def __init__(self, bundle, item):
+        self._bundle = bundle
+        self._item = item
+
+    def __call__(self, *args, **kwargs):
+        return [getattr(x, self._item)(*args, **kwargs) for x in self._bundle]
 
 
 class StoredBundle(Bundle):
