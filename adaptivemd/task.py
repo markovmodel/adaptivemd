@@ -711,8 +711,6 @@ class PythonTask(Task):
         filename = scheduler.get_path(self._rpc_output_file)
         data = self._rpc_output_file.data
 
-        print filename, data
-
         if self.generator is not None and hasattr(self.generator, self.then_func_name):
             getattr(self.generator, self.then_func_name)(
                 scheduler.project,
