@@ -17,7 +17,6 @@ class ACEMDEngine(Engine):
         arguments passed to the AceMD command line
 
     """
-    trajectory_ext = 'xtc'
 
     def __init__(self, conf_file, pdb_file, args=None):
         super(ACEMDEngine, self).__init__()
@@ -57,13 +56,13 @@ class ACEMDEngine(Engine):
             input_traj = t.link(target.frame.trajectory, Location('input.xtc'))
             input_pdb = File('input.pdb')
 
-            t.pre_bash('mdconvert -o %s -i %d -t %s %s' % (
+            t.append('mdconvert -o %s -i %d -t %s %s' % (
                 input_pdb, target.frame.index, initial_pdb, input_traj))
         else:
             # todo: Raise execption here
             return
 
-        t.pre_bash('echo "structure %s\nrun %f" >> %s' % (
+        t.append('echo "structure %s\nrun %f" >> %s' % (
             input_pdb, target.length, self['conf_file_stage']))
 
         output_traj = Trajectory(
@@ -76,5 +75,3 @@ class ACEMDEngine(Engine):
         t.put(output_traj, target)
 
         return t
-
-

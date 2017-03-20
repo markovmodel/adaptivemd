@@ -11,7 +11,7 @@ from fcntl import fcntl, F_GETFL, F_SETFL
 from mongodb import StorableMixin, SyncVariable, create_to_dict, ObjectSyncVariable
 
 from scheduler import Scheduler
-from reducer import filter_str, apply_reducer, parse_transfer_worker, parse_action
+from reducer import StrFilterParser, WorkerParser, BashParser, PrefixParser
 from logentry import LogEntry
 from util import DT
 from file import Transfer
@@ -58,17 +58,9 @@ class WorkerScheduler(Scheduler):
 
         wrapped_task = task >> self.wrapper >> self.project.resource.wrapper
 
-        pre_exec = filter_str(
-            apply_reducer(
-                parse_transfer_worker, self,
-                apply_reducer(parse_action, self, wrapped_task.pre_exec, bash_only=True)))
+        reducer = StrFilterParser() >> PrefixParser() >> WorkerParser() >> BashParser()
 
-        post_exec = filter_str(
-            apply_reducer(
-                parse_transfer_worker, self,
-                apply_reducer(parse_action, self, wrapped_task.post_exec, bash_only=True)))
-
-        script = pre_exec + [wrapped_task.command] + post_exec
+        script = reducer(self, wrapped_task.pre_exec + [wrapped_task.command] +  wrapped_task.post_exec)
 
         if self._fail_after_each_command:
             # make sure that a script exits if ANY command fails not just the last one
@@ -366,8 +358,7 @@ class WorkerScheduler(Scheduler):
         # file side and then transfers it. The trick we use is to just create the file
         # directly on the remote side and do the link as usual. The requires to alter
         # a file:// path to be on the remote side.
-        if path.startswith('file://'):
-            path = 'worker://_file_' + os.path.basename(path)
+        path.replace('file://', 'worker://_file_' + os.path.basename(path))
 
         path = super(WorkerScheduler, self).replace_prefix(path)
         return path

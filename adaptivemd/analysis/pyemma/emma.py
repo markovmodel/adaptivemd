@@ -42,7 +42,7 @@ class PyEMMAAnalysis(Analysis):
             msm_lag=2,
             stride=1):
         """
-        Create a task that computes an msm using a given set of trajecories
+        Create a task that computes an msm using a given set of trajectories
 
         Parameters
         ----------

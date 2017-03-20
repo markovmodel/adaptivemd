@@ -12,6 +12,8 @@ from model import Model
 from generator import TaskGenerator
 from worker import WorkerScheduler, Worker
 from logentry import LogEntry
+from reducer import ActionParser, BashParser, ChainedParser, DictFilterParser, \
+    PrefixParser, StageParser, StrFilterParser, StageInParser
 
 from engine import Engine, Trajectory, Frame, \
     TrajectoryGenerationTask, TrajectoryExtensionTask

@@ -3,164 +3,229 @@ from file import Remove, FileTransaction, Copy, Transfer, Link, Move, \
 
 import os
 
-def parse_action_stage_in(scheduler, action):
-    if isinstance(action, FileTransaction):
-        source = action.source
-        target = action.target
 
-        sp = source.url
-        tp = target.url
-
-        ret = {
-            'source': sp,
-            'target': tp,
-            'action': 'Transfer'  # rp.TRANSFER
-        }
-        return ret
-
-    return action
-
-
-def parse_action(scheduler, action, bash_only=False):
+class ActionParser(object):
     """
-    Interprete an action to be run using RP
-
-    Parameters
-    ----------
-    scheduler : `Scheduler`
-        the `Scheduler` the action should be prepared for
-    action : `Action`
-        the `Action` to be parsed
-    bash_only : bool
-        if True this will return only bash commands and no RP staging dicts
-
-    Returns
-    -------
-    list or dict
-        A list of bash commands or a dict the represents a staging command in RP
-
+    A class that can interprete actions into scheduler understandable language
     """
-    sa_location = scheduler.staging_area_location
 
-    if isinstance(action, FileAction):
-        sp = action.source.url
+    def __init__(self):
+        self.parent = None
+        self.scheduler = None
 
-        if sp.startswith(sa_location):
-            sp = 'staging://' + sp.split(sa_location)[1]
+    def parse(self, scheduler, action):
+        """
+        Parse a single action
 
-        sd = sp.split('://')[0]
+        Parameters
+        ----------
+        scheduler : `Scheduler`
+            the used scheduler which knows about specifics in the parsing process
+        action : `Action` or dict or list of str
+            the actual action to be parsed
 
-        if sd == 'worker':
-            sp = sp.split('://')[1]
+        Returns
+        -------
+        list of (`Action` or dict or str)
 
-        if isinstance(action, Transfer):
-            if sd == 'file':
+        """
+        return action
+
+    def __call__(self, scheduler, actions):
+        return self._f([self.parse(scheduler, x) for x in actions])
+
+    def __rshift__(self, other):
+        return ChainedParser(self, other)
+
+    def _f(self, actions):
+        """
+        Flatten lists
+
+        Returns
+        -------
+        list of str or dict `Action`
+
+        """
+
+        return sum([x if isinstance(x, list) else [x] for x in actions], [])
+
+
+class DictFilterParser(ActionParser):
+    def parse(self, scheduler, action):
+        if isinstance(action, dict):
+            return action
+
+        return None
+
+
+class StrFilterParser(ActionParser):
+    def parse(self, scheduler, action):
+        if isinstance(action, basestring):
+            return action
+
+        return None
+
+
+class ChainedParser(ActionParser):
+    def __init__(self, parent, child):
+        super(ChainedParser, self).__init__()
+        self.parent = parent
+        self.child = child
+
+    def __call__(self, scheduler, actions):
+        return self.parent(scheduler, self.child(scheduler, actions))
+
+
+class StageInParser(ActionParser):
+    def parse(self, scheduler, action):
+        if isinstance(action, FileTransaction):
+            source = action.source
+            target = action.target
+
+            sp = source.url
+            tp = target.url
+
+            ret = {
+                'source': sp,
+                'target': tp,
+                'action': 'Transfer'  # rp.TRANSFER
+            }
+            return ret
+
+        return action
+
+
+class BashParser(ActionParser):
+    def parse(self, scheduler, action):
+        if isinstance(action, FileAction):
+            sp = action.source.url
+            sd = sp.split('://')[0]
+
+            if sd == 'worker':
                 sp = sp.split('://')[1]
 
-        if isinstance(action, Remove):
-            return ['rm %s %s' % (
-                '-r' if action.source.is_folder else '', sp)]
-        elif isinstance(action, Touch):
-            return ['touch %s' % sp]
-        elif isinstance(action, FileTransaction):
-
-            tp = action.target.url
-            td = action.target.drive
-            if td == 'worker':
-                tp = tp.split('://')[1]
-
             if isinstance(action, Transfer):
-                if td == 'file':
+                if sd == 'file':
+                    sp = sp.split('://')[1]
+
+            if isinstance(action, Remove):
+                return ['rm %s %s' % (
+                    '-r' if action.source.is_folder else '', sp)]
+            elif isinstance(action, Touch):
+                return ['touch %s' % sp]
+            elif isinstance(action, FileTransaction):
+
+                tp = action.target.url
+                td = action.target.drive
+                if td == 'worker':
                     tp = tp.split('://')[1]
 
-            rules = stage_rules[action.__class__]
-            signature = (sd, td)
+                if isinstance(action, Transfer):
+                    if td == 'file':
+                        tp = tp.split('://')[1]
 
-            action_models = rules['folder' if action.source.is_folder else 'file']
-            action_mode = action_models.get(signature)
-            if bash_only:
-                # make sure there is a bash equivalent otherwise pass
+                rules = stage_rules[action.__class__]
                 if rules['bash_cmd']:
-                    action_mode = 'bash'
+                    return ['%s %s %s' % (rules['bash_cmd'], sp, tp)]
                 else:
                     return action
+        else:
+            if isinstance(action, AddPathAction):
+                return ['export PATH=%s:$PATH' % action.path]
 
-            if action_mode == 'stage':
-                ret = {
-                    'source': sp,
-                    'target': tp,
-                    'action': rules['rp_action']
-                }
-                return ret
-            elif action_mode == 'bash':
-                s = ['%s %s %s' % (rules['bash_cmd'], sp, tp)]
-                return s
-
-    else:
-        if isinstance(action, AddPathAction):
-            return ['export PATH=%s:$PATH' % action.path]
-
-    return action
+        return action
 
 
-def parse_transfer_worker(scheduler, action):
+class StageParser(ActionParser):
     """
-    Parse a file transaction transfer for workers
-
-    Parameters
-    ----------
-    scheduler
-    action
-
-    Returns
-    -------
-
+    Parse into possible RP Stage commands
     """
+    def parse(self, scheduler, action):
+        sa_location = scheduler.staging_area_location
 
-    # all of this is to keep RP compatibility which works with files
-    if isinstance(action, FileTransaction):
-        source = action.source
-        target = action.target
-        if source.drive == 'file' and target.drive != 'file':
-            # create file from
-            sp = source.url
-            tp = target.url
+        if isinstance(action, FileAction):
+            sp = action.source.url
 
-            if source.has_file:
-                tp = scheduler.replace_prefix(target.url)
-                with open(tp, 'w') as f:
-                    f.write(source.get_file())
+            # useful for RP only
+            if sp.startswith(sa_location):
+                sp = 'staging://' + sp.split(sa_location)[1]
 
-                return ['# write file `%s` from DB' % tp]
-            elif os.path.exists(sp):
-                # in case someone already created the file we need, rename it
-                if sp != tp:
-                    return ['ln %s %s' % (sp, tp)]
+            sd = sp.split('://')[0]
 
-        elif target.drive == 'file' and source.drive != 'file':
-            # move back to virtual location
-            sp = source.url
-            tp = target.url
+            if sd == 'worker':
+                sp = sp.split('://')[1]
 
-            return ['ln -s %s %s' % (sp, tp)]
+            if isinstance(action, Transfer):
+                if sd == 'file':
+                    sp = sp.split('://')[1]
 
-    return action
+            if isinstance(action, FileTransaction):
+
+                tp = action.target.url
+                td = action.target.drive
+                if td == 'worker':
+                    tp = tp.split('://')[1]
+
+                if isinstance(action, Transfer):
+                    if td == 'file':
+                        tp = tp.split('://')[1]
+
+                rules = stage_rules[action.__class__]
+                signature = (sd, td)
+
+                action_models = rules['folder' if action.source.is_folder else 'file']
+                action_mode = action_models.get(signature)
+
+                if action_mode == 'stage':
+                    ret = {
+                        'source': sp,
+                        'target': tp,
+                        'action': rules['rp_action']
+                    }
+                    return ret
+
+        return action
 
 
-def apply_reducer(reducer, scheduler, actions, *args, **kwargs):
-    return [reducer(scheduler, action, *args, **kwargs) for action in actions]
+class WorkerParser(ActionParser):
+    def parse(self, scheduler, action):
+        # all of this is to keep RP compatibility which works with files
+        if isinstance(action, FileTransaction):
+            source = action.source
+            target = action.target
+            if source.drive == 'file' and target.drive != 'file':
+                # create file from
+                sp = source.url
+                tp = target.url
+
+                if source.has_file:
+                    tp = scheduler.replace_prefix(target.url)
+                    with open(tp, 'w') as f:
+                        f.write(source.get_file())
+
+                    return ['# write file `%s` from DB' % tp]
+                elif os.path.exists(sp):
+                    # in case someone already created the file we need, rename it
+                    if sp != tp:
+                        return ['ln %s %s' % (sp, tp)]
+
+            elif target.drive == 'file' and source.drive != 'file':
+                # move back to virtual location
+                sp = source.url
+                tp = target.url
+
+                return ['ln -s %s %s' % (sp, tp)]
+
+        return action
 
 
-def filter_dict(actions):
-    return filter(bool, filter(lambda x: isinstance(x, dict), actions))
+class PrefixParser(ActionParser):
+    def parse(self, scheduler, action):
+        if isinstance(action, basestring):
+            # a bash command, look for prefixes to be parsed
+            return [scheduler.replace_prefix(action)]
 
-
-def filter_str(actions):
-    return \
-        sum([x if isinstance(x, list) else [x] for x in
-            filter(bool, filter(
-                lambda y: isinstance(y, (list, str)), actions))], [])
-
+        return action
 
 
 stage_rules = {

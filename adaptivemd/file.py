@@ -4,7 +4,6 @@ import base64
 
 from mongodb import StorableMixin, ObjectJSON, \
     JSONDataSyncVariable, SyncVariable
-# from mongodb import ObjectSyncVariable
 
 
 class Action(StorableMixin):
@@ -142,6 +141,10 @@ class Location(StorableMixin):
             return other + str(self)
 
     @property
+    def is_temp(self):
+        return self.drive != 'worker'
+
+    @property
     def short(self):
         if self.path == self.basename:
             return '%s://%s' % (self.drive, self.basename)
@@ -210,14 +213,11 @@ class Location(StorableMixin):
             return self.default_drive, parts[0]
 
     def __repr__(self):
-        return "'%s'" % self.basename
+        return "'%s'" % self.location
 
     def __str__(self):
-        # todo: should be unit location by default
-        if self.drive == 'worker':
-            return self.path
-        else:
-            return self.location
+        # return the full location so we can later parse it accordingly
+        return self.url
 
 
 class File(Location):
@@ -496,7 +496,6 @@ class Directory(File):
     @property
     def is_folder(self):
         return True
-
 
 
 class URLGenerator(object):
