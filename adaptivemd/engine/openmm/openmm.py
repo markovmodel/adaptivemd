@@ -73,7 +73,7 @@ class OpenMMEngine(Engine):
             input_pdb = t.get(target.frame, loc)
 
         elif isinstance(target.frame, Frame):
-            input_traj = t.link(target.frame.trajectory)
+            input_traj = t.link(target.frame.trajectory.file('output.dcd'))
             input_pdb = File('input.pdb')
 
             t.append('mdconvert -o %s -i %d -t %s %s' % (

@@ -770,6 +770,7 @@ class PythonTask(PrePostTask):
 
     def _cb_submit(self, scheduler):
         filename = scheduler.replace_prefix(self._rpc_input_file.url)
+        print 'SUBMIT', filename
         with open(filename, 'w') as f:
             f.write(scheduler.simplifier.to_json(self._get_json(scheduler)))
 

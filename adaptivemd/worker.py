@@ -6,6 +6,7 @@ import sys
 import random
 import signal
 import ctypes
+import re
 from fcntl import fcntl, F_GETFL, F_SETFL
 
 from mongodb import StorableMixin, SyncVariable, create_to_dict, ObjectSyncVariable
@@ -357,9 +358,13 @@ class WorkerScheduler(Scheduler):
         # file side and then transfers it. The trick we use is to just create the file
         # directly on the remote side and do the link as usual. The requires to alter
         # a file:// path to be on the remote side.
-        path.replace('file://', 'worker://_file_' + os.path.basename(path))
+        print path
+        # path.replace('file://', 'worker://_file_' + os.path.basename(path))
+
+        path = re.sub(r"(file:\/\/[^ ]*\/)([^ \/]*)", r"worker://_file_\2", path)
 
         path = super(WorkerScheduler, self).replace_prefix(path)
+        print path
         return path
 
     def change_state(self, new_state):

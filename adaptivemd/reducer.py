@@ -48,7 +48,7 @@ class ActionParser(object):
 
         """
 
-        return sum([x if isinstance(x, list) else [x] for x in actions], [])
+        return filter(bool, sum([x if isinstance(x, list) else [x] for x in actions], []))
 
 
 class DictFilterParser(ActionParser):
