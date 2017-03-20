@@ -16,7 +16,7 @@ class BaseTask(StorableMixin):
     """
 
     _copy_attributes = [
-        'main', '_add_paths', '_environment', '_wrapper'
+        '_main', '_add_paths', '_environment'
         ]
 
     def __init__(self):
@@ -129,9 +129,7 @@ class Task(BaseTask):
     _events = ['submit', 'fail', 'success', 'change']
 
     _copy_attributes = BaseTask._copy_attributes + [
-        'executable', 'arguments',
-        'cores', 'mpi', 'stdout',
-        'stderr', 'kernel', 'name', 'restartable', 'cleanup',
+        'stdout', 'stderr', 'restartable', 'cleanup',
         'generator', 'dependencies', 'state', 'worker'
         ]
 
@@ -641,7 +639,7 @@ class MPITask(PrePostTask):
             'prepend does nothing for MPITasks. Use .pre.prepend or .post.prepend')
 
 
-class DummyTask(Task):
+class DummyTask(PrePostTask):
     """
     A Task not to be executed
     """

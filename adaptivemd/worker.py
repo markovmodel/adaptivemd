@@ -60,7 +60,7 @@ class WorkerScheduler(Scheduler):
 
         reducer = StrFilterParser() >> PrefixParser() >> WorkerParser() >> BashParser()
 
-        script = reducer(self, wrapped_task.pre_exec + [wrapped_task.command] +  wrapped_task.post_exec)
+        script = reducer(self, wrapped_task.script)
 
         if self._fail_after_each_command:
             # make sure that a script exits if ANY command fails not just the last one

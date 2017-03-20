@@ -142,7 +142,7 @@ class Location(StorableMixin):
 
     @property
     def is_temp(self):
-        return self.drive != 'worker'
+        return self.drive == 'worker'
 
     @property
     def short(self):
