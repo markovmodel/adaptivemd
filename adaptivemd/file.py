@@ -73,6 +73,10 @@ class Touch(FileAction):
     pass
 
 
+class MakeDir(FileAction):
+    pass
+
+
 class Copy(FileTransaction):
     pass
 
@@ -89,6 +93,7 @@ class Move(FileTransaction):
     @property
     def removed(self):
         return [self.source]
+
 
 
 class Remove(FileAction):

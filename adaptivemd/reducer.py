@@ -1,5 +1,5 @@
 from file import Remove, FileTransaction, Copy, Transfer, Link, Move, \
-    AddPathAction, FileAction, Touch
+    AddPathAction, FileAction, Touch, MakeDir
 
 import os
 
@@ -113,6 +113,8 @@ class BashParser(ActionParser):
                     '-r' if action.source.is_folder else '', sp)]
             elif isinstance(action, Touch):
                 return ['touch %s' % sp]
+            elif isinstance(action, MakeDir):
+                return ['mkdir -p %s' % sp]
             elif isinstance(action, FileTransaction):
 
                 tp = action.target.url
