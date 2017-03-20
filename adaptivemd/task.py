@@ -522,6 +522,9 @@ class Task(BaseTask):
         self.append(transaction)
         return transaction.target
 
+    def touch(self, f):
+        self.append(f.touch())
+
     def link(self, f, name=None):
         transaction = f.link(name)
         self.append(transaction)

@@ -37,7 +37,8 @@ class ActionParser(object):
     def __rshift__(self, other):
         return ChainedParser(self, other)
 
-    def _f(self, actions):
+    @staticmethod
+    def _f(actions):
         """
         Flatten lists
 
@@ -112,25 +113,35 @@ class BashParser(ActionParser):
                 return ['rm %s %s' % (
                     '-r' if action.source.is_folder else '', sp)]
             elif isinstance(action, Touch):
-                return ['touch %s' % sp]
+                if action.source.is_folder:
+                    return ['mkdir -p %s' % sp]
+                else:
+                    return ['touch %s' % sp]
             elif isinstance(action, MakeDir):
-                return ['mkdir -p %s' % sp]
+                if action.source.is_folder:
+                    return ['mkdir -p %s' % sp]
             elif isinstance(action, FileTransaction):
 
-                tp = action.target.url
-                td = action.target.drive
-                if td == 'worker':
-                    tp = tp.split('://')[1]
-
-                if isinstance(action, Transfer):
-                    if td == 'file':
+                if action.target.is_folder == action.source.is_folder:
+                    # file to file and folder to folder
+                    tp = action.target.url
+                    td = action.target.drive
+                    if td == 'worker':
                         tp = tp.split('://')[1]
 
-                rules = stage_rules[action.__class__]
-                if rules['bash_cmd']:
-                    return ['%s %s %s' % (rules['bash_cmd'], sp, tp)]
-                else:
-                    return action
+                    if isinstance(action, Transfer):
+                        if td == 'file':
+                            tp = tp.split('://')[1]
+
+                    if isinstance(action, Link):
+                        # links must not end in `/`
+                        if action.target.is_folder:
+                            tp = tp[:-1]
+                            sp = sp[:-1]
+
+                    rules = stage_rules[action.__class__]
+                    if rules['bash_cmd']:
+                        return ['%s %s %s' % (rules['bash_cmd'], sp, tp)]
         else:
             if isinstance(action, AddPathAction):
                 return ['export PATH=%s:$PATH' % action.path]

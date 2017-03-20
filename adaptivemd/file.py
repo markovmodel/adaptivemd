@@ -172,7 +172,7 @@ class Location(StorableMixin):
 
     @property
     def is_folder(self):
-        return self.path.endswith('/')
+        return not self.basename
 
     @property
     def path(self):
@@ -337,6 +337,9 @@ class File(Location):
     def remove(self):
         return Remove(self)
 
+    def touch(self):
+        return Touch(self)
+
     def __repr__(self):
         return "'%s'" % self.basename
 
@@ -498,9 +501,10 @@ class JSONFile(File):
 
 
 class Directory(File):
-    @property
-    def is_folder(self):
-        return True
+    def __init__(self, location):
+        super(Directory, self).__init__(location)
+        if not self.is_folder:
+            self.location = os.path.join(self.location, '')
 
 
 class URLGenerator(object):

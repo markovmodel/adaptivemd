@@ -1,7 +1,7 @@
 import os
 
 from adaptivemd.task import PythonTask
-from adaptivemd.file import Location, File, MakeDir
+from adaptivemd.file import Location, File
 from adaptivemd.engine import Engine, Frame, Trajectory, \
     TrajectoryGenerationTask, TrajectoryExtensionTask
 
@@ -78,14 +78,18 @@ class OpenMMEngine(Engine):
 
             return
 
-        t.append(MakeDir('traj'))
-        output = Trajectory('traj/', target.frame, length=target.length)
+        # this represents our output trajectory
+        output = Trajectory('traj/', target.frame, length=target.length, engine=self)
 
-        cmd = self.call_format_str.format(
-            input_pdb,
-            target.length,
-            output,
-            args
+        # create the directory
+        t.touch(output)
+
+        cmd = 'python openmmrun.py {args1} {args2} -t {pdb} --length {length} {output}'.format(
+            pdb=input_pdb,
+            length=target.length,
+            output=output,
+            args1=args,
+            args2=args
         )
         t.append(cmd)
 

@@ -29,9 +29,9 @@ if __name__ == '__main__':
         description='Run an MD simulation using OpenMM')
 
     parser.add_argument(
-        'file',
-        metavar='outout.dcd',
-        help='the output .dcd file',
+        'output_dir',
+        metavar='output/',
+        help='the output directory',
         type=str)
 
     parser.add_argument(
@@ -196,7 +196,11 @@ if __name__ == '__main__':
 
         simulation.context.setVelocitiesToTemperature(temperature)
 
-    simulation.reporters.append(DCDReporter(args.file, args.interval_store))
+    output_dir = args.output_dir
+
+    output_file = os.path.join(output_dir, 'output.dcd')
+    simulation.reporters.append(
+        DCDReporter(output_file, args.interval_store))
 
     if args.report and args.verbose:
         simulation.reporters.append(
@@ -207,7 +211,7 @@ if __name__ == '__main__':
                 potentialEnergy=True,
                 temperature=True))
 
-    restart_file_name = args.file + '.restart'
+    restart_file = os.path.join(output_dir, 'restart.npz')
 
     print 'START SIMULATION'
 
@@ -220,11 +224,9 @@ if __name__ == '__main__':
     vel = state.getVelocities(asNumpy=True)
     pos = state.getPositions(asNumpy=True)
 
-    # dirty hack, but numpy cannot save without an additional extension
-    np.savez('output.restart.npz', positions=pos, box_vectors=pbv, velocities=vel, index=args.length)
-    os.rename('output.restart.npz', restart_file_name)
+    np.savez(restart_file, positions=pos, box_vectors=pbv, velocities=vel, index=args.length)
 
     print('Written to file', args.file)
-    print('Written to file', restart_file_name)
+    print('Written to file', restart_file)
 
     exit(0)
