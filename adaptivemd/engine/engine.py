@@ -2,7 +2,7 @@
 import random
 import os
 
-from adaptivemd.file import File
+from adaptivemd.file import File, Location
 from adaptivemd.generator import TaskGenerator
 from adaptivemd.mongodb import StorableMixin, SyncVariable
 from adaptivemd.task import Task
@@ -104,7 +104,7 @@ class Trajectory(File):
         return True
 
     def file(self, f):
-        return os.path.join(self.location, f)
+        return File(os.path.join(self.location, f))
 
     @property
     def restartable(self):

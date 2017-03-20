@@ -124,24 +124,33 @@ class BashParser(ActionParser):
 
                 if action.target.is_folder == action.source.is_folder:
                     # file to file and folder to folder
-                    tp = action.target.url
-                    td = action.target.drive
-                    if td == 'worker':
-                        tp = tp.split('://')[1]
-
-                    if isinstance(action, Transfer):
-                        if td == 'file':
-                            tp = tp.split('://')[1]
-
-                    if isinstance(action, Link):
-                        # links must not end in `/`
-                        if action.target.is_folder:
-                            tp = tp[:-1]
-                            sp = sp[:-1]
-
                     rules = stage_rules[action.__class__]
                     if rules['bash_cmd']:
-                        return ['%s %s %s' % (rules['bash_cmd'], sp, tp)]
+                        tp = action.target.url
+                        td = action.target.drive
+
+                        if isinstance(action, Move) and action.source.is_folder:
+                            # we cannot just replace an existing folder using `mv`
+                            # easiest way is to just move all source files
+                            # this will create `mv source/* target/ and mv all files in
+                            # source to target and overwrite the targets as we expect
+
+                            return [
+                                'mkdir -p %s' % tp,         # create target dir if not exist
+                                'mv %s* %s' % (sp, tp),     # move all files
+                                'rm -r %s' % sp]            # remove source dir
+                        else:
+                            if isinstance(action, Transfer):
+                                if td == 'file':
+                                    tp = tp.split('://')[1]
+
+                            if isinstance(action, Link):
+                                # links must not end in `/`
+                                if action.target.is_folder:
+                                    tp = tp[:-1]
+                                    sp = sp[:-1]
+
+                            return ['%s %s %s' % (rules['bash_cmd'], sp, tp)]
         else:
             if isinstance(action, AddPathAction):
                 return ['export PATH=%s:$PATH' % action.path]

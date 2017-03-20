@@ -155,6 +155,17 @@ class Location(StorableMixin):
             return '%s://%s' % (self.drive, self.basename)
         elif self.path == '/' + self.basename:
             return '%s:///%s' % (self.drive, self.basename)
+        elif self.is_folder:
+            s = self.dirname.split('/')
+            if len(s) == 1:
+                return '%s://%s/' % (self.drive, s[-1])
+            elif s[0] == '':
+                if len(s) == 2:
+                    return '%s:///%s/' % (self.drive, s[-1])
+                else:
+                    return '%s:///{}/%s/' % (self.drive, s[-1])
+            else:
+                return '%s://{}/%s/' % (self.drive, s[-1])
         else:
             return '%s://{}/%s' % (self.drive, self.basename)
 
@@ -528,10 +539,10 @@ class URLGenerator(object):
         # a little cheat to figure out the last number
         self.count = 0
         left = len(self.shape.split('{')[0].split('/')[-1])
-        right = len(self.shape.split('}')[1])
+        right = len(self.shape.split('}')[-1])
         for f in files:
             try:
-                g = int(f.basename[left:-right]) + 1
+                g = int(f.path[:-right].split('/')[-1][left:]) + 1
                 self.count = max(g, self.count)
             except Exception:
                 pass

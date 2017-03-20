@@ -241,7 +241,7 @@ class WorkerScheduler(Scheduler):
 
                     all_files_present = True
                     # see first if we have all claimed files for worker output staging transfer
-                    for f in task.output_staging:
+                    for f in task.targets:
                         if isinstance(f, Transfer):
                             if not os.path.exists(self.replace_prefix(f.source.url)):
                                 log = LogEntry(
@@ -335,15 +335,14 @@ class WorkerScheduler(Scheduler):
 
         os.chdir(self.path + '/workers/staging_area/')
 
+        reducer = StrFilterParser() >> PrefixParser() >> WorkerParser() >> BashParser()
+
         retries = 10
         while retries > 0:
             try:
                 # todo: add staging that does some file copying as well
                 for g in self.generators:
-                    apply_reducer(
-                        parse_transfer_worker, self,
-                        apply_reducer(
-                            parse_action, self, g.stage_in, bash_only=True))
+                    reducer(self, g.stage_in)
 
                 retries = 0
             except OSError:

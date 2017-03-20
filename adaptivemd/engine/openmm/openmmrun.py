@@ -29,7 +29,7 @@ if __name__ == '__main__':
         description='Run an MD simulation using OpenMM')
 
     parser.add_argument(
-        'output_dir',
+        'output',
         metavar='output/',
         help='the output directory',
         type=str)
@@ -176,8 +176,7 @@ if __name__ == '__main__':
         print(Platform.getDefaultPluginsDirectory())
 
     if args.restart:
-        os.link(args.restart, 'input.restart.npz')
-        arr = np.load('input.restart.npz')
+        arr = np.load(args.restart)
         simulation.context.setPositions(arr['positions'] * u.nanometers)
         simulation.context.setVelocities(arr['velocities'] * u.nanometers/u.picosecond)
         simulation.context.setPeriodicBoxVectors(*arr['box_vectors'] * u.nanometers)
@@ -196,9 +195,9 @@ if __name__ == '__main__':
 
         simulation.context.setVelocitiesToTemperature(temperature)
 
-    output_dir = args.output_dir
+    output = args.output
 
-    output_file = os.path.join(output_dir, 'output.dcd')
+    output_file = os.path.join(output, 'output.dcd')
     simulation.reporters.append(
         DCDReporter(output_file, args.interval_store))
 
@@ -211,13 +210,13 @@ if __name__ == '__main__':
                 potentialEnergy=True,
                 temperature=True))
 
-    restart_file = os.path.join(output_dir, 'restart.npz')
+    restart_file = os.path.join(output, 'restart.npz')
 
-    print 'START SIMULATION'
+    print('START SIMULATION')
 
     simulation.step(args.length * args.interval_store)
 
-    print 'DONE'
+    print('DONE')
 
     state = simulation.context.getState(getPositions=True, getVelocities=True)
     pbv = state.getPeriodicBoxVectors(asNumpy=True)
@@ -226,7 +225,6 @@ if __name__ == '__main__':
 
     np.savez(restart_file, positions=pos, box_vectors=pbv, velocities=vel, index=args.length)
 
-    print('Written to file', args.file)
-    print('Written to file', restart_file)
+    print('Written to directory `%s`' % args.output)
 
     exit(0)

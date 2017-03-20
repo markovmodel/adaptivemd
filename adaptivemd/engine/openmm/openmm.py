@@ -57,7 +57,14 @@ class OpenMMEngine(Engine):
             if f not in project.files:
                 project.files.update(f)
 
-    def _make_single_traj_cmd(self, t, target, initial_pdb, args=''):
+    def task_run_trajectory(self, target):
+        t = TrajectoryGenerationTask(self, target)
+
+        initial_pdb = t.link(self['pdb_file_stage'], Location('initial.pdb'))
+        t.link(self['system_file_stage'])
+        t.link(self['integrator_file_stage'])
+        t.link(self['_executable_file_stage'])
+
         if target.frame in [self['pdb_file'], self['pdb_file_stage']]:
             input_pdb = initial_pdb
 
@@ -84,69 +91,15 @@ class OpenMMEngine(Engine):
         # create the directory
         t.touch(output)
 
-        cmd = 'python openmmrun.py {args1} {args2} -t {pdb} --length {length} {output}'.format(
+        cmd = 'python openmmrun.py {args} -t {pdb} --length {length} {output}'.format(
             pdb=input_pdb,
             length=target.length,
             output=output,
-            args1=args,
-            args2=args
+            args=self.args,
         )
         t.append(cmd)
 
-        return output
-
-    def _extend_single_traj_cmd(self, t, source, target, initial_pdb, args=''):
-        """
-
-        Parameters
-        ----------
-        t : `Task`
-        source : `Trajectory`
-        target : `Trajectory`
-        initial_pdb : `File`
-        args : str
-
-        Returns
-        -------
-
-        """
-
-        if source.restartable:
-            input_pdb = initial_pdb
-            in_restart_file = t.link(source.file('restart.restart'))
-            args = ('--restart %s ' % in_restart_file.basename) + args
-        else:
-            input_traj = t.link(source.file('traj.dcd'))
-            input_pdb = File('input.pdb')
-
-            t.append('mdconvert -o %s -i %d -t %s %s' % (
-                input_pdb, -1, initial_pdb, input_traj))
-
-        output = Trajectory('extension.dcd', source.frame, length=target.length)
-
-        cmd = self.call_format_str.format(
-            input_pdb,
-            target.length - source.length,
-            output,
-            args
-        )
-        t.append(cmd)
-
-        return output
-
-    def task_run_trajectory(self, target):
-        t = TrajectoryGenerationTask(self, target)
-
-        initial_pdb = t.link(self['pdb_file_stage'], Location('initial.pdb'))
-        t.link(self['system_file_stage'])
-        t.link(self['integrator_file_stage'])
-        t.link(self['_executable_file_stage'])
-
-        t.append('hostname')
-
-        output_traj = self._make_single_traj_cmd(t, target, initial_pdb)
-
-        t.put(output_traj, target)
+        t.put(output, target)
 
         return t
 
@@ -165,17 +118,42 @@ class OpenMMEngine(Engine):
         t.link(self['integrator_file_stage'])
         t.link(self['_executable_file_stage'])
 
-        source_traj = t.link(source.file('traj.dcd'))
+        # this represents our output trajectory
+        source_link = t.link(source, 'source/')
 
-        extension_traj = self._extend_single_traj_cmd(t, source, target, initial_pdb)
+        extension = Trajectory(
+            'extension/',
+            target.frame,
+            length=target.length,
+            engine=self)
 
-        output_traj = Trajectory('output.dcd', target.frame, length=target.length)
+        t.touch(extension)
+
+        cmd = ('python openmmrun.py {args} --restart {restart} -t {pdb} '
+               '--length {length} {output}').format(
+            pdb=initial_pdb,
+            restart=source.file('restart.npz'),  # todo: this is engine specific!
+            length=target.length - source.length,
+            output=extension,
+            args=self.args
+        )
+        t.append(cmd)
 
         # join both trajectories
-        t.append('mdconvert -o %s -t %s %s %s' % (
-            output_traj, initial_pdb, source_traj, extension_traj))
+        t.append('mdconvert -o {output} -t {pdb} {source} {extension}'.format(
+            output=extension.file('extension.dcd'),
+            pdb=initial_pdb,
+            source=source_link.file('output.dcd'),
+            extension=extension.file('output.dcd')
+        ))
 
-        t.put(output_traj, target)
+        # rename joined extended.dcd into output.dcd
+        t.append(extension.file('extension.dcd').move(extension.file('output.dcd')))
+
+        # now extension/ should contain all files as expected
+        # move extended trajectory to target place (replace old) files
+        # this will also register the new trajectory folder as existent
+        t.put(extension, target)
 
         return t
 
