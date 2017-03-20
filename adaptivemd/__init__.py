@@ -13,7 +13,7 @@ from generator import TaskGenerator
 from worker import WorkerScheduler, Worker
 from logentry import LogEntry
 
-from engine import Engine, Trajectory, RestartFile, Frame, \
+from engine import Engine, Trajectory, Frame, \
     TrajectoryGenerationTask, TrajectoryExtensionTask
 from analysis import Analysis, DoAnalysis
 

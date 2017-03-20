@@ -1,9 +1,10 @@
 # Create compute units for various simulation tools
 import random
+import os
 
 from adaptivemd.file import File
 from adaptivemd.generator import TaskGenerator
-from adaptivemd.mongodb import StorableMixin
+from adaptivemd.mongodb import StorableMixin, SyncVariable
 from adaptivemd.task import Task
 
 
@@ -73,16 +74,20 @@ class Trajectory(File):
         the initial frame used for the trajectory
     length : int
         the length of the trajectory in frames
-    restart : `RestartFile`
-        the linked restart file to continue at the last frame
+    engine : `Engine`
+        the engine used to create the trajectory
     """
-    def __init__(self, location, frame, length):
+
+    engine = SyncVariable('engine', lambda x: not bool(x))
+
+    def __init__(self, location, frame, length, engine=None):
         super(Trajectory, self).__init__(location)
         self.frame = frame
         self.length = length
+        self.engine = engine
 
     def clone(self):
-        return Trajectory(self.location, self.frame, self.length)
+        return Trajectory(self.location, self.frame, self.length, self.engine)
 
     def __len__(self):
         return self.length
@@ -99,85 +104,97 @@ class Trajectory(File):
 
     def pick(self):
         return self[random.randint(0, len(self) - 1)]
-
-
-class SelectiveTrajectory(Trajectory):
-    """
-    Represents a trajectory `File` on the cluster
-
-    This trajectory has additional intermittend frames with a selective
-
-    Attributes
-    ----------
-    location : str or `File`
-        the `File` location
-    frame : `Frame` or `File`
-        the initial frame used for the trajectory
-    length : int
-        the length of the trajectory in frames
-    restart : `RestartFile`
-        the linked restart file to continue at the last frame
-    selection : str
-        a string representing the selection
-    """
-    def __init__(self, location, frame, length, selection=None, magnification=1):
-        super(SelectiveTrajectory, self).__init__(location)
-        self.frame = frame
-        self.length = length
-        self.selection = selection
-        self.magnification = magnification
-
-    def clone(self):
-        return SelectiveTrajectory(self.location, self.frame, self.length, self.selection, self.magnification)
-
-    def __len__(self):
-        return self.length
-
-    def __getitem__(self, item):
-        if 0 <= item < len(self):
-            return Frame(self, item)
-        else:
-            return None
-
-    def __repr__(self):
-        return "Trajectory(%r >> %s[0..%d])" % (
-            self.frame, self.basename, self.length)
-
-    def pick(self):
-        return self[random.randint(0, len(self) - 1)]
-
-
-class RestartableTrajectory(Group):
-    def __init__(self, trajectory, restart_file=None):
-        super(Group, self).__init__()
-        self.trajectory = trajectory
-        self.restart_file = restart_file
-
-    def __len__(self):
-        return self.trajectory.length
-
-    def __getitem__(self, item):
-        if 0 <= item < len(self):
-            return Frame(self.trajectory, item)
-        else:
-            return None
-
-    def __repr__(self):
-        return "Trajectory(%r >> %s[0..%d])" % (
-            self.trajectory.frame, self.trajectory.basename, len(self))
-
-    def pick(self):
-        return self[random.randint(0, len(self) - 1)]
-
-
-class ReducedTrajectory(RestartableTrajectory):
-    def __init__(self, trajectory, restart_file=None, selection=None):
-        super(ReducedTrajectory, self).__init__(trajectory, restart_file)
-        self.selection = selection
 
     @property
-    def magnification(self):
-        return self.selection.magnification
+    def is_folder(self):
+        # we treat trajectories from now on as Directories
+        return True
+
+    def to_path(self, f):
+        return os.path.join(self.location, f)
+
+    @property
+    def restartable(self):
+        return True
+
+
+# class SelectiveTrajectory(Trajectory):
+#     """
+#     Represents a trajectory `File` on the cluster
+#
+#     This trajectory has additional intermittend frames with a selective
+#
+#     Attributes
+#     ----------
+#     location : str or `File`
+#         the `File` location
+#     frame : `Frame` or `File`
+#         the initial frame used for the trajectory
+#     length : int
+#         the length of the trajectory in frames
+#     restart : `RestartFile`
+#         the linked restart file to continue at the last frame
+#     selection : str
+#         a string representing the selection
+#     """
+#     def __init__(self, location, frame, length, selection=None, magnification=1):
+#         super(SelectiveTrajectory, self).__init__(location)
+#         self.frame = frame
+#         self.length = length
+#         self.selection = selection
+#         self.magnification = magnification
+#
+#     def clone(self):
+#         return SelectiveTrajectory(self.location, self.frame, self.length, self.selection, self.magnification)
+#
+#     def __len__(self):
+#         return self.length
+#
+#     def __getitem__(self, item):
+#         if 0 <= item < len(self):
+#             return Frame(self, item)
+#         else:
+#             return None
+#
+#     def __repr__(self):
+#         return "Trajectory(%r >> %s[0..%d])" % (
+#             self.frame, self.basename, self.length)
+#
+#     def pick(self):
+#         return self[random.randint(0, len(self) - 1)]
+
+
+# class RestartableTrajectory(Group):
+#     def __init__(self, trajectory, restart_file=None):
+#         super(Group, self).__init__()
+#         self.trajectory = trajectory
+#         self.restart_file = restart_file
+#
+#     def __len__(self):
+#         return self.trajectory.length
+#
+#     def __getitem__(self, item):
+#         if 0 <= item < len(self):
+#             return Frame(self.trajectory, item)
+#         else:
+#             return None
+#
+#     def __repr__(self):
+#         return "Trajectory(%r >> %s[0..%d])" % (
+#             self.trajectory.frame, self.trajectory.basename, len(self))
+#
+#     def pick(self):
+#         return self[random.randint(0, len(self) - 1)]
+#
+#
+# class ReducedTrajectory(RestartableTrajectory):
+#     def __init__(self, trajectory, restart_file=None, selection=None):
+#         super(ReducedTrajectory, self).__init__(trajectory, restart_file)
+#         self.selection = selection
+#
+#     @property
+#     def magnification(self):
+#         return self.selection.magnification
 
 
 class Frame(StorableMixin):
@@ -205,15 +222,15 @@ class Frame(StorableMixin):
         return 'Frame(%s[%d])' % (self.trajectory.basename, self.index)
 
 
-class RestartFile(File):
-    """
-    Represents a restart (velocities) `File` on the cluster
-
-    """
-
-    def __repr__(self):
-        return "RestartFile(%s)" % (
-            self.basename)
+# class RestartFile(File):
+#     """
+#     Represents a restart (velocities) `File` on the cluster
+#
+#     """
+#
+#     def __repr__(self):
+#         return "RestartFile(%s)" % (
+#             self.basename)
 
 
 class TrajectoryGenerationTask(Task):

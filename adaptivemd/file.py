@@ -221,10 +221,11 @@ class Location(StorableMixin):
 
 
 class File(Location):
-    _find_by = ['created', 'state', '_file']
+    _find_by = ['created', 'state', '_file', 'task']
 
     created = SyncVariable('created', lambda x: x is not None and x < 0)
     _file = SyncVariable('_file', lambda x: not bool(x))
+    task = SyncVariable('task', lambda x: not bool(x))
 
     def __init__(self, location):
         super(File, self).__init__(location)
@@ -232,6 +233,7 @@ class File(Location):
         self.resource = None
         self.created = None
         self._file = None
+        self.task = None
 
         if self.drive == 'file':
             if os.path.exists(self.path):
@@ -240,6 +242,13 @@ class File(Location):
     @property
     def _ignore(self):
         return self.drive == 'worker' or self.drive == 'staging'
+
+    @property
+    def generator(self):
+        if self.task:
+            return self.task.generator
+
+        return None
 
     def clone(self):
         f = self.__class__(self.location)
@@ -437,50 +446,50 @@ class JSONFile(File):
         return False
 
 
-class MultiFile(File):
-
-    _file_attributes = []
-
-    def __init__(self, location):
-        super(MultiFile, self).__init__(location)
-
-    def _multi_action(self, cls, target=None):
-        if self._file_attributes:
-            target = self._complete_target(target)
-            ret = [cls(self, target)]
-            for attr in self._file_attributes:
-                f = getattr(self, attr)
-                target = f._complete_target(target, True)
-                ret += [cls(f, target)]
-
-        else:
-            target = self._complete_target(target)
-            ret = cls(self, target)
-
-        return ret
-
-    def copy(self, target=None):
-        return self._multi_action(Copy, target)
-
-    def move(self, target=None):
-        return self._multi_action(Move, target)
-
-    def link(self, target=None):
-        return self._multi_action(Link, target)
-
-    def transfer(self, target=None):
-        return self._multi_action(Transfer, target)
-
-    def remove(self):
-        if self._file_attributes:
-            ret = [Remove(self)]
-            for ext, attr in self._file_attributes.items():
-                f = getattr(self, attr)
-                ret += [Remove(f)]
-        else:
-            ret = Remove(self)
-
-        return ret
+# class MultiFile(File):
+#
+#     _file_attributes = []
+#
+#     def __init__(self, location):
+#         super(MultiFile, self).__init__(location)
+#
+#     def _multi_action(self, cls, target=None):
+#         if self._file_attributes:
+#             target = self._complete_target(target)
+#             ret = [cls(self, target)]
+#             for attr in self._file_attributes:
+#                 f = getattr(self, attr)
+#                 target = f._complete_target(target, True)
+#                 ret += [cls(f, target)]
+#
+#         else:
+#             target = self._complete_target(target)
+#             ret = cls(self, target)
+#
+#         return ret
+#
+#     def copy(self, target=None):
+#         return self._multi_action(Copy, target)
+#
+#     def move(self, target=None):
+#         return self._multi_action(Move, target)
+#
+#     def link(self, target=None):
+#         return self._multi_action(Link, target)
+#
+#     def transfer(self, target=None):
+#         return self._multi_action(Transfer, target)
+#
+#     def remove(self):
+#         if self._file_attributes:
+#             ret = [Remove(self)]
+#             for ext, attr in self._file_attributes.items():
+#                 f = getattr(self, attr)
+#                 ret += [Remove(f)]
+#         else:
+#             ret = Remove(self)
+#
+#         return ret
 
 
 class Directory(File):

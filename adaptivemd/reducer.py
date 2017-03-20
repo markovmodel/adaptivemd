@@ -58,13 +58,9 @@ def parse_action(scheduler, action, bash_only=False):
                 sp = sp.split('://')[1]
 
         if isinstance(action, Remove):
-            sp = scheduler.replace_prefix(sp)
-
             return ['rm %s %s' % (
                 '-r' if action.source.is_folder else '', sp)]
         elif isinstance(action, Touch):
-            sp = scheduler.replace_prefix(sp)
-
             return ['touch %s' % sp]
         elif isinstance(action, FileTransaction):
 
@@ -97,9 +93,6 @@ def parse_action(scheduler, action, bash_only=False):
                 }
                 return ret
             elif action_mode == 'bash':
-                sp = scheduler.replace_prefix(sp)
-                tp = scheduler.replace_prefix(tp)
-
                 s = ['%s %s %s' % (rules['bash_cmd'], sp, tp)]
                 return s
 
@@ -130,10 +123,11 @@ def parse_transfer_worker(scheduler, action):
         target = action.target
         if source.drive == 'file' and target.drive != 'file':
             # create file from
-            sp = scheduler.replace_prefix(source.url)
-            tp = scheduler.replace_prefix(target.url)
+            sp = source.url
+            tp = target.url
 
             if source.has_file:
+                tp = scheduler.replace_prefix(target.url)
                 with open(tp, 'w') as f:
                     f.write(source.get_file())
 
@@ -145,8 +139,8 @@ def parse_transfer_worker(scheduler, action):
 
         elif target.drive == 'file' and source.drive != 'file':
             # move back to virtual location
-            sp = scheduler.replace_prefix(source.url)
-            tp = scheduler.replace_prefix(target.url)
+            sp = source.url
+            tp = target.url
 
             return ['ln -s %s %s' % (sp, tp)]
 
@@ -166,6 +160,7 @@ def filter_str(actions):
         sum([x if isinstance(x, list) else [x] for x in
             filter(bool, filter(
                 lambda y: isinstance(y, (list, str)), actions))], [])
+
 
 
 stage_rules = {

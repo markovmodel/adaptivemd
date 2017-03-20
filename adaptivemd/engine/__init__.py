@@ -1,2 +1,2 @@
-from engine import Engine, Trajectory, Frame, RestartFile, TrajectoryGenerationTask, \
+from engine import Engine, Trajectory, Frame, TrajectoryGenerationTask, \
     TrajectoryExtensionTask
