@@ -220,8 +220,6 @@ class WorkerParser(ActionParser):
             sp = scheduler.replace_prefix(source.url)
             tp = scheduler.replace_prefix(target.url)
 
-            print 'Transfer', sp, tp
-
             if source.drive == 'file' and target.drive != 'file':
                 if source.has_file:
                     with open(tp, 'w') as f:

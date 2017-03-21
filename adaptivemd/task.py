@@ -748,19 +748,12 @@ class PythonTask(PrePostTask):
     def _cb_success(self, scheduler):
         # here is the logic to retrieve the result object
         # the output file is a JSON and these know how to load itself
-        print 'cb_success'
         self._rpc_output_file.load(scheduler)
 
         filename = scheduler.get_path(self._rpc_output_file)
         data = self._rpc_output_file.data
 
-        print '----------------------'
-        print self.generator
-        print self.then_func_name
-        print self.__dict__
-
         if self.generator is not None and hasattr(self.generator, self.then_func_name):
-            print 'run then_func'
             getattr(self.generator, self.then_func_name)(
                 scheduler.project,
                 data, {
@@ -777,7 +770,6 @@ class PythonTask(PrePostTask):
 
     def _cb_submit(self, scheduler):
         filename = scheduler.replace_prefix(self._rpc_input_file.url)
-        print 'SUBMIT', filename
         with open(filename, 'w') as f:
             f.write(scheduler.simplifier.to_json(self._get_json(scheduler)))
 
@@ -829,6 +821,9 @@ class PythonTask(PrePostTask):
 
         for f in self._python_source_files:
             self.pre.append(File('file://' + f).load().transfer())
+
+        # call the helper script to execute the function call
+        self.append('python _run_.py')
 
     def _get_json(self, scheduler):
         dct = {
