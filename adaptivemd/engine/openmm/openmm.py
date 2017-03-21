@@ -163,9 +163,8 @@ class OpenMMEngine(Engine):
         for ty, desc in self.types.iteritems():
             # stride = desc['stride']
 
-            t.append('mdconvert -o {output} -t {pdb} {source} {extension}'.format(
+            t.append('mdconvert -o {output} {source} {extension}'.format(
                 output=extension.file('extension.dcd'),
-                pdb=initial_pdb,
                 source=source_link.outputs(ty),
                 extension=extension.outputs(ty)
             ))
