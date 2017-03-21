@@ -1,6 +1,7 @@
 import os
 import ujson
 
+from adaptivemd.task import PythonTask
 from adaptivemd.file import Location, File
 from adaptivemd.engine import Engine, Frame, Trajectory, \
     TrajectoryGenerationTask, TrajectoryExtensionTask
@@ -147,26 +148,30 @@ class OpenMMEngine(Engine):
 
         t.touch(extension)
 
-        cmd = ('python openmmrun.py {args} --restart {restart} -t {pdb} '
+        cmd = ('python openmmrun.py {args} {types} --restart {restart} -t {pdb} '
                '--length {length} {output}').format(
             pdb=initial_pdb,
             restart=source.file('restart.npz'),  # todo: this is engine specific!
             length=target.length - source.length,
             output=extension,
-            args=self.args
+            args=self.args,
+            types=self._create_output_str()
         )
         t.append(cmd)
 
-        # join both trajectories
-        t.append('mdconvert -o {output} -t {pdb} {source} {extension}'.format(
-            output=extension.file('extension.dcd'),
-            pdb=initial_pdb,
-            source=source_link.file('output.dcd'),
-            extension=extension.file('output.dcd')
-        ))
+        # join both trajectories for all outputs
+        for ty, desc in self.types.iteritems():
+            # stride = desc['stride']
 
-        # rename joined extended.dcd into output.dcd
-        t.append(extension.file('extension.dcd').move(extension.file('output.dcd')))
+            t.append('mdconvert -o {output} -t {pdb} {source} {extension}'.format(
+                output=extension.file('extension.dcd'),
+                pdb=initial_pdb,
+                source=source_link.outputs(ty),
+                extension=extension.outputs(ty)
+            ))
+
+            # rename joined extended.dcd into output.dcd
+            t.append(extension.file('extension.dcd').move(extension.outputs(ty)))
 
         # now extension/ should contain all files as expected
         # move extended trajectory to target place (replace old) files
@@ -175,44 +180,44 @@ class OpenMMEngine(Engine):
 
         return t
 
-    # def task_import_trajectory_folder(self, source):
-    #     t = PythonTask(self)
-    #
-    #     t.link(self['pdb_file_stage'], Location('initial.pdb'))
-    #     t.call(scan_trajectories, source=source)
-    #
-    #     # call `then_func_import` after success
-    #     t.then('then_func_import')
-    #
-    #     return t
-
-
-def scan_trajectories(source):
-    import glob
-    import mdtraj as md
-
-    files = glob.glob(source)
-
-    here = os.getcwd()
-
-    reference_list = []
-    for f in files:
-
-        rel = os.path.relpath(f, here)
-
-        if rel.startswith('../../../../'):
-            p = 'worker://' + os.path.abspath(f)
-        elif rel.startswith('../../../'):
-            p = 'shared://' + rel[8:]
-        elif rel.startswith('../../'):
-            p = 'sandbox://' + rel[5:]
-        else:
-            p = 'worker://' + os.path.abspath(f)
-
-        # print f, rel, p
-
-        traj = md.load(f, top='initial.pdb')
-        reference = Trajectory(p, None, len(traj))
-        reference_list.append(reference)
-
-    return reference_list
+#     def task_import_trajectory_folder(self, source):
+#         t = PythonTask(self)
+#
+#         t.link(self['pdb_file_stage'], Location('initial.pdb'))
+#         t.call(scan_trajectories, source=source)
+#
+#         # call `then_func_import` after success
+#         t.then('then_func_import')
+#
+#         return t
+#
+#
+# def scan_trajectories(source):
+#     import glob
+#     import mdtraj as md
+#
+#     files = glob.glob(source)
+#
+#     here = os.getcwd()
+#
+#     reference_list = []
+#     for f in files:
+#
+#         rel = os.path.relpath(f, here)
+#
+#         if rel.startswith('../../../../'):
+#             p = 'worker://' + os.path.abspath(f)
+#         elif rel.startswith('../../../'):
+#             p = 'shared://' + rel[8:]
+#         elif rel.startswith('../../'):
+#             p = 'sandbox://' + rel[5:]
+#         else:
+#             p = 'worker://' + os.path.abspath(f)
+#
+#         # print f, rel, p
+#
+#         traj = md.load(f, top='initial.pdb')
+#         reference = Trajectory(p, None, len(traj))
+#         reference_list.append(reference)
+#
+#     return reference_list
