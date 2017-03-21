@@ -32,7 +32,7 @@ class PyEMMAAnalysis(Analysis):
     def task_run_msm_files(
             self,
             trajectories,
-            traj_name='output.dcd',
+            outtype='master',
             tica_lag=2,
             tica_dim=2,
             msm_states=5,
@@ -45,8 +45,8 @@ class PyEMMAAnalysis(Analysis):
         ----------
         trajectories : list of `Trajectory`
             the list of trajectory references to be used in the computation
-        traj_name : str
-            name of the trajectory file with the trajectory directory given
+        outtype : str
+            name of the output description to pick the frames from
         tica_lag : int
             the lag-time used for tCIA
         tica_dim : int
@@ -70,10 +70,24 @@ class PyEMMAAnalysis(Analysis):
         t = PythonTask(self)
 
         input_pdb = t.link(self['pdb_file_stage'], 'input.pdb')
+
+        trajs = list(trajectories)
+
+        if len(trajs) == 0:
+            # nothing to analyze
+            return
+
+        for t in trajs:
+            if outtype not in t.types:
+                # ups, one of the trajectories does not have the required type!
+                return
+
+        ty = trajs[0].types[outtype]
+
         t.call(
             remote_analysis,
-            trajectories=list(trajectories),
-            traj_name=traj_name,
+            trajectories=trajs,
+            traj_name=ty.filename,  # we need the filename in the traj folder
             topfile=input_pdb,
             tica_lag=tica_lag,
             tica_dim=tica_dim,
