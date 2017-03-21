@@ -37,9 +37,9 @@ class AllegroCluster(Resource):
 
         """
         w = self.wrapper
-        w.pre_bash(
+        w.pre.append(
             'export MODULEPATH=/import/ag_cmb/software/modules:$MODULEPATH')
-        w.pre_bash('module load cuda/7.5')
+        w.pre.append('module load cuda/7.5')
 
 
 class LocalCluster(Resource):

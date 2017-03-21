@@ -85,6 +85,22 @@ class Scheduler(object):
     def folder_name(self):
         return self._folder_name
 
+    def get_path(self, f):
+        """
+        Convert the location in a `Location` object to a real path used by the scheduler
+
+        Parameters
+        ----------
+        file : `Location`
+            the location object
+
+        Returns
+        -------
+        str
+            a real file path
+        """
+        return self.replace_prefix(f.url)
+
     def in_staging_area(self, url):
         pass
 

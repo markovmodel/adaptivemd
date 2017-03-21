@@ -1,9 +1,9 @@
 import os
-import uuid
 
-from file import File
+from file import File, JSONFile, FileTransaction
 from util import get_function_source
-from mongodb import StorableMixin, SyncVariable, ObjectSyncVariable
+from mongodb import StorableMixin
+from mongodb import SyncVariable, ObjectSyncVariable
 
 
 class BaseTask(StorableMixin):
@@ -16,27 +16,13 @@ class BaseTask(StorableMixin):
     """
 
     _copy_attributes = [
-        '_task_pre_stage', '_task_post_stage',
-        '_pre_stage', '_pre_stage', '_post_stage',
-        '_task_post_exec', '_task_pre_exec',
-        '_user_pre_exec', '_user_post_exec',
-        '_add_paths', '_environment'
+        '_main', '_add_paths', '_environment'
         ]
 
     def __init__(self):
         super(BaseTask, self).__init__()
 
-        self._task_pre_stage = []
-        self._task_post_stage = []
-
-        self._pre_stage = []
-        self._post_stage = []
-
-        self._task_post_exec = []
-        self._task_pre_exec = []
-
-        self._user_pre_exec = []
-        self._user_post_exec = []
+        self._main = []
 
         self._add_paths = []
         self._environment = {}
@@ -62,34 +48,47 @@ class BaseTask(StorableMixin):
     def environment(self):
         return self._environment
 
-    @property
-    def pre_exec_tail(self):
-        return (
-            self._task_pre_stage +
-            self._task_pre_exec +
-            self._pre_stage +
-            self._user_pre_exec)
+    # @property
+    # def pre_add_paths(self):
+    #     if self._wrapper:
+    #         return self._wrapper.pre_add_paths + self._add_paths
+    #
+    #     return self._add_paths
+    #
+    # @property
+    # def environment(self):
+    #     if self._wrapper:
+    #         env = {}
+    #         env.update(self._wrapper.environment)
+    #         env.update(self._environment)
+    #         return env
+    #
+    #     return self._environment
+    #
+    # @property
+    # def pre_exec_tail(self):
+    #     if self._wrapper:
+    #         return self._wrapper.pre_exec + self.pre
+    #
+    #     return (
+    #         self.pre
+    #     )
 
     @property
     def pre_exec(self):
         return (
             self._format_export_paths(self.pre_add_paths) +
-            self._format_environment(self.environment) +
-            self.pre_exec_tail)
+            self._format_environment(self.environment))
 
     @property
-    def post_exec(self):
+    def main(self):
         return (
-            self._user_post_exec + self._post_stage +
-            self._task_pre_exec + self._task_post_stage)
+            self._main
+        )
 
     @property
-    def input_staging(self):
-        return self._task_pre_stage + self._pre_stage
-
-    @property
-    def output_staging(self):
-        return self._post_stage + self._task_post_stage
+    def script(self):
+        return self.pre_exec + self.main
 
     def add_path(self, path):
         if isinstance(path, str):
@@ -102,6 +101,20 @@ class BaseTask(StorableMixin):
             return self
         elif isinstance(other, Task):
             return EnclosedTask(self, other)
+
+    def to_dict(self):
+        dct = {c: getattr(self, c) for c in self._copy_attributes}
+
+        return dct
+
+    @classmethod
+    def from_dict(cls, dct):
+        task = cls()
+
+        for c in cls._copy_attributes:
+            setattr(task, c, dct.get(c))
+
+        return task
 
 
 class Task(BaseTask):
@@ -116,9 +129,7 @@ class Task(BaseTask):
     _events = ['submit', 'fail', 'success', 'change']
 
     _copy_attributes = BaseTask._copy_attributes + [
-        'executable', 'arguments',
-        'cores', 'mpi', 'stdout',
-        'stderr', 'kernel', 'name', 'restartable', 'cleanup',
+        'stdout', 'stderr', 'restartable', 'cleanup',
         'generator', 'dependencies', 'state', 'worker'
         ]
 
@@ -141,17 +152,8 @@ class Task(BaseTask):
         self._on = {}
         self._add_files = []
 
-        self.executable = None
-        self.arguments = None
-
-        self.cores = 1
-        self.mpi = False
-
         self.stdout = None
         self.stderr = None
-
-        self.kernel = None
-        self.name = None
 
         self.restartable = None
         self.cleanup = None
@@ -209,19 +211,6 @@ class Task(BaseTask):
 
         return True
 
-    def add_conda_env(self, name):
-        """
-        Add loading a conda env to all tasks of this resource
-
-        This calls `resource.wrapper.pre_bash('source activate {name}')`
-        Parameters
-        ----------
-        name : str
-            name of the conda environment
-
-        """
-        self.pre_bash('source activate %s' % name)
-
     def _default_fail(self, scheduler):
         # todo: improve error handling
         print 'task did not complete'
@@ -241,7 +230,7 @@ class Task(BaseTask):
             scheduler.submit(self)
 
     def _default_success(self, scheduler):
-            print 'task succeeded. State:', self.state
+            # print 'task succeeded. State:', self.state
 
             for f in self.modified_files:
                 f.modified()
@@ -254,21 +243,24 @@ class Task(BaseTask):
     @property
     def description(self):
         task = self
-        s = ['Task: %s [%s]' % (
-                task.generator.__class__.__name__ or task.__class__.__name__, task.state)]
+        s = ['Task: %s(%s) [%s]' % (
+                task.__class__.__name__, task.generator.__class__.__name__, task.state)]
 
         if task.worker:
             s += ['Worker: %s:%s' % (task.worker.hostname, task.worker.cwd)]
             s += ['        cd worker.%s' % hex(task.__uuid__)]
 
         s += ['']
-        s += ['Required : %s' % [x.short for x in task.unstaged_input_files]]
-        s += ['Output : %s' % [x.short for x in task.targets]]
-        s += ['Modified : %s' % [x.short for x in task.modified_files]]
+        s += ['Sources']
+        s += ['- %s %s' % (x.short, '[exists]' if x.exists else '') for x in task.unstaged_input_files]
+        s += ['Targets']
+        s += ['- %s' % x.short for x in task.targets]
+        s += ['Modified']
+        s += ['- %s' % x.short for x in task.modified_files]
 
         s += ['']
         s += ['<pretask>']
-        s += map(str, task.pre_exec + [task.command] + task.post_exec)
+        s += map(str, task.script)
         s += ['<posttask>']
 
         return '\n'.join(s)
@@ -300,20 +292,20 @@ class Task(BaseTask):
     def additional_files(self):
         return self._add_files
 
-    @property
-    def command(self):
-        cmd = self.executable or ''
-
-        if isinstance(self.arguments, basestring):
-            cmd += ' ' + self.arguments
-        elif self.arguments is not None:
-            cmd += ' '
-            args = [
-                a if (a[0] in ['"', "'"] and a[0] == a[-1]) else '"' + a + '"'
-                for a in self.arguments]
-            cmd += ' '.join(args)
-
-        return cmd
+    # @property
+    # def command(self):
+    #     cmd = self.executable or ''
+    #
+    #     if isinstance(self.arguments, basestring):
+    #         cmd += ' ' + self.arguments
+    #     elif self.arguments is not None:
+    #         cmd += ' '
+    #         args = [
+    #             a if (a[0] in ['"', "'"] and a[0] == a[-1]) else '"' + a + '"'
+    #             for a in self.arguments]
+    #         cmd += ' '.join(args)
+    #
+    #     return cmd
 
     def add_files(self, files):
         if isinstance(files, File):
@@ -331,9 +323,12 @@ class Task(BaseTask):
         set of `File`
             the list of files that are created or overwritten by this task
         """
-        return set(
-            sum(filter(bool, [t.added for t in self._post_stage]), [])
-            + self._add_files)
+
+        transactions = [t for t in self.script if isinstance(t, FileTransaction)]
+
+        return filter(
+            lambda x: not x.is_temp,
+            set(sum(filter(bool, [f.added for f in transactions]), []) + self._add_files))
 
     @property
     def target_locations(self):
@@ -357,7 +352,11 @@ class Task(BaseTask):
         set of `File`
             the list of files that are required by this task
         """
-        return set(sum(filter(bool, [t.required for t in self._pre_stage]), []))
+        transactions = [t for t in self.script if isinstance(t, FileTransaction)]
+
+        return filter(
+            lambda x: not x.is_temp,
+            set(sum(filter(bool, [t.required for t in transactions]), []) + self._add_files))
 
     @property
     def source_locations(self):
@@ -461,41 +460,25 @@ class Task(BaseTask):
             raise ValueError(
                 'Cannot set same env variable `%s` more than once.' % key)
 
-    def pre_bash(self, script):
+    def append(self, cmd):
         """
-        Fills pre_exec
+        Append a command to this task
 
         Returns
         -------
 
         """
-        if isinstance(script, (list, tuple)):
-            script = sum(map(lambda x: x.split('\n'), script), [])
-        elif isinstance(script, str):
-            script = script.split('\n')
+        self._main.append(cmd)
 
-        self._user_pre_exec.extend(script)
-
-    def post_bash(self, script):
+    def prepend(self, cmd):
         """
-        Fill post_exec
+        Append a command to this task
 
         Returns
         -------
 
         """
-        if isinstance(script, (list, tuple)):
-            script = sum(map(lambda x: x.split('\n'), script), [])
-        elif isinstance(script, str):
-            script = script.split('\n')
-
-        self._user_pre_exec.extend(script)
-
-    def pre_stage(self, transaction):
-        self._pre_stage.append(transaction)
-
-    def post_stage(self, transaction):
-        self._post_stage.append(transaction)
+        self._main.insert(0, cmd)
 
     def get(self, f, name=None):
         """
@@ -526,12 +509,15 @@ class Task(BaseTask):
                 'Weird file location `%s` not sure how to get it.' %
                 f.location)
 
-        self.pre_stage(transaction)
+        self.append(transaction)
         return transaction.target
+
+    def touch(self, f):
+        self.append(f.touch())
 
     def link(self, f, name=None):
         transaction = f.link(name)
-        self.pre_stage(transaction)
+        self.append(transaction)
         return transaction.target
 
     def put(self, f, target):
@@ -550,7 +536,7 @@ class Task(BaseTask):
 
         """
         transaction = f.move(target)
-        self.post_stage(transaction)
+        self.append(transaction)
         return transaction.target
 
     def remove(self, f):
@@ -563,31 +549,103 @@ class Task(BaseTask):
 
         """
         transaction = f.remove()
-        self.post_stage(transaction)
+        self.append(transaction)
         return transaction.source
+
+
+class PrePostTask(Task):
+
+    _copy_attributes = Task._copy_attributes + [
+        'pre', 'post'
+    ]
+
+    def __init__(self, generator=None):
+        super(PrePostTask, self).__init__(generator)
+        self.pre = []
+        self.post = []
+
+    @property
+    def pre_exec(self):
+        return (
+            self._format_export_paths(self.pre_add_paths) +
+            self._format_environment(self.environment))
+
+    @property
+    def main(self):
+        return self.pre + self._main + self.post
+
+    def add_conda_env(self, name):
+        """
+        Add loading a conda env to all tasks of this resource
+
+        This calls `resource.wrapper.append('source activate {name}')`
+        Parameters
+        ----------
+        name : str
+            name of the conda environment
+
+        """
+        self.append('source activate %s' % name)
+
+
+class MPITask(PrePostTask):
+    """
+    A description for a task running on an HPC
+
+    """
+
+    _copy_attributes = PrePostTask._copy_attributes + [
+        'executable', 'arguments',
+        'cores', 'mpi', 'kernel', 'name'
+    ]
+
+    def __init__(self, generator=None):
+        super(MPITask, self).__init__(generator)
+
+        self.executable = None
+        self.arguments = None
+
+        self.cores = 1
+        self.mpi = False
+
+        self.kernel = None
+        self.name = None
+
+    @property
+    def command(self):
+        cmd = self.executable or ''
+
+        if isinstance(self.arguments, basestring):
+            cmd += ' ' + self.arguments
+        elif self.arguments is not None:
+            cmd += ' '
+            args = [
+                a if (a[0] in ['"', "'"] and a[0] == a[-1]) else '"' + a + '"'
+                for a in self.arguments]
+            cmd += ' '.join(args)
+
+        return cmd
 
     def call(self, command, *args, **kwargs):
         parts = command.split(' ')
         parts = [part.format(*args, **kwargs) for part in parts]
         self.executable = parts[0]
         self.arguments = parts[1:]
+        
+    @property
+    def main(self):
+        return self.pre + [self.command] + self.post
+    
+    def append(self, cmd):
+        raise RuntimeWarning(
+            'append does nothing for MPITasks. Use .pre.append or .post.append')
 
-    def to_dict(self):
-        dct = {c: getattr(self, c) for c in self._copy_attributes}
-
-        return dct
-
-    @classmethod
-    def from_dict(cls, dct):
-        task = cls()
-
-        for c in cls._copy_attributes:
-            setattr(task, c, dct.get(c))
-
-        return task
+    def prepend(self, cmd):
+        raise RuntimeWarning(
+            'prepend does nothing for MPITasks. Use .pre.prepend or .post.prepend')
 
 
-class DummyTask(Task):
+class DummyTask(PrePostTask):
     """
     A Task not to be executed
     """
@@ -597,14 +655,28 @@ class DummyTask(Task):
         self.state = 'dummy'
 
 
+    @property
+    def description(self):
+        task = self
+        s = ['Task: %s' % task.__class__.__name__]
+
+        s += ['<pre>']
+        s += map(str, task.pre_exec + task.pre)
+        s += ['</pre>']
+        s += ['<main />']
+        s += ['<post>']
+        s += map(str, task.post)
+        s += ['</post>']
+
+        return '\n'.join(s)
+
+
 class EnclosedTask(Task):
     """
-    Wrap a task with additional staging, etc
+    Wrap any task with a PrePostTask
     """
     _copies = [
-        'executable', 'arguments',
-        'environment', 'cores', 'mpi', 'stdout',
-        'stderr', 'kernel', 'name', 'restartable', 'cleanup']
+        'environment', 'stdout', 'stderr', 'restartable', 'cleanup']
 
     def __init__(self, task, wrapper):
         super(Task, self).__init__()
@@ -626,45 +698,36 @@ class EnclosedTask(Task):
     @property
     def environment(self):
         env = {}
+
         if self._wrapper.environment:
             env.update(self._wrapper.environment)
+
         if self._task.environment:
             env.update(self._task.environment)
+
         return env
+
+    @property
+    def pre_add_paths(self):
+        return self._wrapper.pre_add_paths + self._task.pre_add_paths
 
     @classmethod
     def from_dict(cls, dct):
         return cls(dct['task'], dct['wrapper'])
 
     @property
-    def input_staging(self):
-        return self._wrapper.input_staging + self._task.input_staging
-
-    @property
-    def output_staging(self):
-        return self._task.output_staging + self._wrapper.output_staging
-
-    @property
-    def pre_add_paths(self):
-        return self._wrapper.pre_add_paths + self._task.pre_add_paths
-
-    @property
-    def pre_exec_tail(self):
-        return self._wrapper.pre_exec_tail + self._task.pre_exec_tail
-
-    @property
-    def post_exec(self):
-        return self._wrapper.post_exec + self._task.post_exec
+    def main(self):
+        return self._wrapper.pre + self._task.main + self._wrapper.post
 
 
-class PythonTask(Task):
+class PythonTask(PrePostTask):
     """
     A special task that does a RPC python call
     """
 
-    _copy_attributes = Task._copy_attributes + [
+    _copy_attributes = PrePostTask._copy_attributes + [
         '_python_import', '_python_source_files', '_python_function_name',
-        '_python_args', '_python_kwargs', '_param_uid',
+        '_python_args', '_python_kwargs',
         '_rpc_input_file', '_rpc_output_file',
         'then_func_name']
 
@@ -682,49 +745,60 @@ class PythonTask(Task):
         self.executable = 'python'
         self.arguments = '_run_.py'
 
-        self._json = None
-        self._param_uid = str(uuid.uuid4())
-
         self.then_func_name = 'then_func'
 
         self._rpc_input_file = \
-            File('file://_rpc_input_%s.json' % self._param_uid)
+            JSONFile('file://_rpc_input_%s.json' % hex(self.__uuid__))
         self._rpc_output_file = \
-            File('file://_rpc_output_%s.json' % self._param_uid)
+            JSONFile('file://_rpc_output_%s.json' % hex(self.__uuid__))
 
-        self._task_pre_stage.append(
-            self._rpc_input_file.transfer('input.json'))
-        self._task_post_stage.append(
-            File('output.json').transfer(self._rpc_output_file))
+        # input args -> input.json
+        self.pre.append(self._rpc_input_file.transfer('input.json'))
+
+        # output args -> output.json
+        self.post.append(File('output.json').transfer(self._rpc_output_file))
 
         f = File('staging:///_run_.py')
-        self._task_pre_stage.append(f.link())
+        self.pre.append(f.link())
 
         self.add_cb('success', self.__class__._cb_success)
         self.add_cb('submit', self.__class__._cb_submit)
 
     def _cb_success(self, scheduler):
         # here is the logic to retrieve the result object
-        filename = scheduler.replace_prefix(self._rpc_output_file.url)
+        # the output file is a JSON and these know how to load itself
+        self._rpc_output_file.load(scheduler)
 
-        with open(filename, 'r') as f:
-            data = scheduler.simplifier.from_json(f.read())
+        filename = scheduler.get_path(self._rpc_output_file)
+        data = self._rpc_output_file.data
 
         if self.generator is not None and hasattr(self.generator, self.then_func_name):
             getattr(self.generator, self.then_func_name)(
-                scheduler.project,
-                data, {
-                    'args': self._python_args,
-                    'kwargs': self._python_kwargs})
+                scheduler.project, self, data, self._python_kwargs)
 
-        # remove the RPC file.
+        # cleanup
+        # mark as changed / deleted
         os.remove(filename)
-        os.remove(scheduler.replace_prefix(self._rpc_input_file.url))
+        self._rpc_output_file.modified()
+        os.remove(scheduler.get_path(self._rpc_input_file))
+        self._rpc_input_file.modified()
 
     def _cb_submit(self, scheduler):
         filename = scheduler.replace_prefix(self._rpc_input_file.url)
         with open(filename, 'w') as f:
             f.write(scheduler.simplifier.to_json(self._get_json(scheduler)))
+
+    @property
+    def output(self):
+        """
+        Return the data contained in the output file
+
+        Returns
+        -------
+        object
+
+        """
+        return self._rpc_output_file.data
 
     def then(self, func_name):
         """
@@ -738,7 +812,7 @@ class PythonTask(Task):
         """
         self.then_func_name = func_name
 
-    def call(self, command, *args, **kwargs):
+    def call(self, command, **kwargs):
         """
         Set the python function to be called with its arguments
 
@@ -753,22 +827,22 @@ class PythonTask(Task):
         kwargs : named arguments to the function
 
         """
-        self._python_function_name = '.'.join(
-            [command.__module__, command.func_name])
-        self._python_args = args
+        self._python_function_name = '.'.join([command.__module__, command.func_name])
         self._python_kwargs = kwargs
 
         self._python_import, self._python_source_files = \
             get_function_source(command)
 
         for f in self._python_source_files:
-            self._task_pre_stage.append(File('file://' + f).transfer())
+            self.pre.append(File('file://' + f).load().transfer())
+
+        # call the helper script to execute the function call
+        self.append('python _run_.py')
 
     def _get_json(self, scheduler):
         dct = {
             'import': self._python_import,
             'function': self._python_function_name,
-            'args': self._python_args,
             'kwargs': self._python_kwargs
         }
         return scheduler.flatten_location(dct)

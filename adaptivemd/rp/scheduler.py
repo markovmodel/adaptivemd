@@ -1,8 +1,8 @@
 import time
 
 from adaptivemd.scheduler import Scheduler
-from adaptivemd.reducer import filter_dict, apply_reducer, parse_action, filter_str, \
-    parse_action_stage_in
+from adaptivemd.reducer import DictFilterParser, StrFilterParser, BashParser, StageParser, \
+    StageInParser, PrefixParser
 
 from radical import pilot as rp
 
@@ -107,10 +107,9 @@ class RPScheduler(Scheduler):
         self.shut_down(False)
 
     def stage_generators(self):
+        reducer = DictFilterParser() >> StageInParser()
         for g in self.generators:
-            self.stage_in(
-                filter_dict(
-                    apply_reducer(parse_action_stage_in, self, g.stage_in)))
+            self.stage_in(reducer(self, g.stage_in))
 
     def stage_in(self, staging):
         self.pilot.stage_in(staging)
@@ -131,11 +130,16 @@ class RPScheduler(Scheduler):
 
         # create staging
 
-        cud.input_staging = filter_dict(apply_reducer(parse_action, self, task.input_staging))
-        cud.output_staging = filter_dict(apply_reducer(parse_action, self, task.output_staging))
+        main_parser = PrefixParser() >> BashParser() >> StageParser()
+        reducer = DictFilterParser() >> main_parser
 
-        cud.pre_exec = filter_str(apply_reducer(parse_action, self, task.pre_exec))
-        cud.post_exec = filter_str(apply_reducer(parse_action, self, task.post_exec))
+        cud.input_staging = reducer(self, task.input_staging)
+        cud.output_staging = reducer(self, task.output_staging)
+
+        reducer = StrFilterParser() >> main_parser
+
+        cud.pre_exec = reducer(self, task.pre_exec)
+        cud.post_exec = reducer(self, task.post_exec)
 
         return cud
 

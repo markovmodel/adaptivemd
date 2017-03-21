@@ -116,9 +116,9 @@ class RPAllegroCluster(RPCluster):
         """
         sc = self.scheduler('gpu', runtime, 8, rp_resource='fub.allegro')
         w = sc.wrapper
-        w.pre_bash(
+        w.append(
             'export MODULEPATH=/import/ag_cmb/software/modules:$MODULEPATH')
-        w.pre_bash('module load cuda/7.5')
+        w.append('module load cuda/7.5')
         return sc
 
     def default(self):

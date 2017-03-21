@@ -1,9 +1,10 @@
 # Create compute units for various simulation tools
 import random
+import os
 
-from adaptivemd.file import File
+from adaptivemd.file import File, Location
 from adaptivemd.generator import TaskGenerator
-from adaptivemd.mongodb import StorableMixin
+from adaptivemd.mongodb import StorableMixin, SyncVariable
 from adaptivemd.task import Task
 
 
@@ -11,14 +12,7 @@ class Engine(TaskGenerator):
     """
     An generator for trajectory simulation tasks
 
-    Attributes
-    ----------
-    trajectory_ext : str
-        the extension of the output trajectories generated
-
     """
-
-    trajectory_ext = 'dcd'
 
     def task_run_trajectory(self, target):
         """
@@ -73,17 +67,20 @@ class Trajectory(File):
         the initial frame used for the trajectory
     length : int
         the length of the trajectory in frames
-    restart : `RestartFile`
-        the linked restart file to continue at the last frame
+    engine : `Engine`
+        the engine used to create the trajectory
     """
-    def __init__(self, location, frame, length, restart=None):
+
+    engine = SyncVariable('engine', lambda x: not bool(x))
+
+    def __init__(self, location, frame, length, engine=None):
         super(Trajectory, self).__init__(location)
         self.frame = frame
         self.length = length
-        self.restart = restart
+        self.engine = engine
 
     def clone(self):
-        return Trajectory(self.location, self.frame, self.length, self.restart)
+        return Trajectory(self.location, self.frame, self.length, self.engine)
 
     def __len__(self):
         return self.length
@@ -101,6 +98,18 @@ class Trajectory(File):
     def pick(self):
         return self[random.randint(0, len(self) - 1)]
 
+    @property
+    def is_folder(self):
+        # we treat trajectories from now on as Directories
+        return True
+
+    def file(self, f):
+        return File(os.path.join(self.location, f))
+
+    @property
+    def restartable(self):
+        return True
+
 
 class Frame(StorableMixin):
     """
@@ -109,7 +118,7 @@ class Frame(StorableMixin):
     Attributes
     ----------
     trajectory : `Trajectory`
-        the origin trajctory
+        the origin trajectory
     index : int
         the frame index staring from zero
 
@@ -127,15 +136,15 @@ class Frame(StorableMixin):
         return 'Frame(%s[%d])' % (self.trajectory.basename, self.index)
 
 
-class RestartFile(File):
-    """
-    Represents a restart (velocities) `File` on the cluster
-
-    """
-
-    def __repr__(self):
-        return "RestartFile(%s)" % (
-            self.basename)
+# class RestartFile(File):
+#     """
+#     Represents a restart (velocities) `File` on the cluster
+#
+#     """
+#
+#     def __repr__(self):
+#         return "RestartFile(%s)" % (
+#             self.basename)
 
 
 class TrajectoryGenerationTask(Task):

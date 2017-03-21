@@ -2,7 +2,8 @@ import os
 import time
 import base64
 
-from mongodb import StorableMixin, SyncVariable
+from mongodb import StorableMixin, ObjectJSON, \
+    JSONDataSyncVariable, SyncVariable
 
 
 class Action(StorableMixin):
@@ -53,7 +54,7 @@ class FileTransaction(FileAction):
         elif isinstance(target, Location) and not isinstance(target, File):
             self.target = source.clone()
             self.target.location = target.location
-        else:
+        else:  # e.g. when it is already a `File` object
             self.target = target
 
     def __str__(self):
@@ -69,6 +70,10 @@ class FileTransaction(FileAction):
 
 
 class Touch(FileAction):
+    pass
+
+
+class MakeDir(FileAction):
     pass
 
 
@@ -88,6 +93,7 @@ class Move(FileTransaction):
     @property
     def removed(self):
         return [self.source]
+
 
 
 class Remove(FileAction):
@@ -126,17 +132,6 @@ class Location(StorableMixin):
                 p = os.path.abspath(self.path)
                 self.location = 'file://' + p
 
-    # def __hash__(self):
-    #     return hash(self.resource_location)
-    #
-    # def __eq__(self, other):
-    #     if other is None:
-    #         return False
-    #     elif isinstance(other, Location):
-    #         return self.resource_location == other.resource_location
-    #
-    #     return NotImplemented
-
     def clone(self):
         return self.__class__(self.location)
 
@@ -151,11 +146,26 @@ class Location(StorableMixin):
             return other + str(self)
 
     @property
+    def is_temp(self):
+        return self.drive == 'worker'
+
+    @property
     def short(self):
         if self.path == self.basename:
             return '%s://%s' % (self.drive, self.basename)
         elif self.path == '/' + self.basename:
             return '%s:///%s' % (self.drive, self.basename)
+        elif self.is_folder:
+            s = self.dirname.split('/')
+            if len(s) == 1:
+                return '%s://%s/' % (self.drive, s[-1])
+            elif s[0] == '':
+                if len(s) == 2:
+                    return '%s:///%s/' % (self.drive, s[-1])
+                else:
+                    return '%s:///{}/%s/' % (self.drive, s[-1])
+            else:
+                return '%s://{}/%s/' % (self.drive, s[-1])
         else:
             return '%s://{}/%s' % (self.drive, self.basename)
 
@@ -173,7 +183,7 @@ class Location(StorableMixin):
 
     @property
     def is_folder(self):
-        return self.path.endswith('/')
+        return not self.basename
 
     @property
     def path(self):
@@ -219,20 +229,19 @@ class Location(StorableMixin):
             return self.default_drive, parts[0]
 
     def __repr__(self):
-        return "'%s'" % self.basename
+        return "'%s'" % self.location
 
     def __str__(self):
-        # todo: should be unit location by default
-        if self.drive == 'worker':
-            return self.path
-        else:
-            return self.location
+        # return the full location so we can later parse it accordingly
+        return self.url
 
 
 class File(Location):
-    _find_by = ['created', 'state']
+    _find_by = ['created', 'state', '_file', 'task']
 
     created = SyncVariable('created', lambda x: x is not None and x < 0)
+    _file = SyncVariable('_file', lambda x: not bool(x))
+    task = SyncVariable('task', lambda x: not bool(x))
 
     def __init__(self, location):
         super(File, self).__init__(location)
@@ -240,6 +249,7 @@ class File(Location):
         self.resource = None
         self.created = None
         self._file = None
+        self.task = None
 
         if self.drive == 'file':
             if os.path.exists(self.path):
@@ -249,13 +259,12 @@ class File(Location):
     def _ignore(self):
         return self.drive == 'worker' or self.drive == 'staging'
 
-    def on(self, resource):
-        if resource == self.resource:
-            return self
-        else:
-            obj = self.clone()
-            obj.resource = resource
-            return obj
+    @property
+    def generator(self):
+        if self.task:
+            return self.task.generator
+
+        return None
 
     def clone(self):
         f = self.__class__(self.location)
@@ -304,7 +313,7 @@ class File(Location):
         created = self.created
         return created is not None and created > 0
 
-    def _complete_target(self, target):
+    def _complete_target(self, target, extension=False):
         if target is None:
             target = Location('')
 
@@ -314,6 +323,9 @@ class File(Location):
         if isinstance(target, Location):
             if target.basename == '':
                 target.location = target.location + self.basename
+
+            if extension:
+                target.location = target.location + '.' + self.extension
 
         return target
 
@@ -336,12 +348,20 @@ class File(Location):
     def remove(self):
         return Remove(self)
 
+    def touch(self):
+        return Touch(self)
+
     def __repr__(self):
         return "'%s'" % self.basename
 
-    def load(self):
+    def load(self, scheduler=None):
         if self.drive == 'file':
-            with open(self.path, 'r') as f:
+            if scheduler is not None:
+                path = scheduler.replace_prefix(self.url)
+            else:
+                path = self.path
+
+            with open(path, 'r') as f:
                 self._file = f.read()
 
         return self
@@ -368,11 +388,134 @@ class File(Location):
     def has_file(self):
         return bool(self._file)
 
+    def set_file(self, content):
+        self._file = content
+
+
+_json_file_simplifier = ObjectJSON()
+
+
+class JSONFile(File):
+    _find_by = ['created', 'state', '_data']
+
+    _data = JSONDataSyncVariable('_data', lambda x: not None)
+    # _file = SyncVariable('_data', lambda x: not None)
+    _file = None
+    # _data = ObjectSyncVariable('_data', 'data', lambda x: not None)
+
+    def __init__(self, location):
+        super(JSONFile, self).__init__(location)
+        self._data = None
+
+    def to_dict(self):
+        ret = super(File, self).to_dict()
+        ret['_data'] = self._data
+
+        return ret
+
+    @classmethod
+    def from_dict(cls, dct):
+        obj = super(File, cls).from_dict(dct)
+        obj._data = dct['_data']
+        return obj
+
+    @property
+    def data(self):
+        return self._data
+
+    @data.setter
+    def data(self, value):
+        self._data = value
+
+    @property
+    def has_file(self):
+        return self._data is not None
+
+    def get_file(self):
+        if self._data is not None:
+            return _json_file_simplifier.to_json(self._data)
+
+        return None
+
+    def load(self, scheduler=None):
+        path = None
+
+        if self.drive == 'file':
+            path = self.path
+
+        if scheduler is not None:
+            path = scheduler.get_path(self)
+
+        if path:
+            with open(path, 'r') as f:
+                self._data = _json_file_simplifier.from_json(f.read())
+
+        return self
+
+    @property
+    def exists(self):
+        if self.data is not None:
+            return True
+
+        created = self.created
+
+        if created is not None and created > 0:
+            return True
+
+        return False
+
+
+# class MultiFile(File):
+#
+#     _file_attributes = []
+#
+#     def __init__(self, location):
+#         super(MultiFile, self).__init__(location)
+#
+#     def _multi_action(self, cls, target=None):
+#         if self._file_attributes:
+#             target = self._complete_target(target)
+#             ret = [cls(self, target)]
+#             for attr in self._file_attributes:
+#                 f = getattr(self, attr)
+#                 target = f._complete_target(target, True)
+#                 ret += [cls(f, target)]
+#
+#         else:
+#             target = self._complete_target(target)
+#             ret = cls(self, target)
+#
+#         return ret
+#
+#     def copy(self, target=None):
+#         return self._multi_action(Copy, target)
+#
+#     def move(self, target=None):
+#         return self._multi_action(Move, target)
+#
+#     def link(self, target=None):
+#         return self._multi_action(Link, target)
+#
+#     def transfer(self, target=None):
+#         return self._multi_action(Transfer, target)
+#
+#     def remove(self):
+#         if self._file_attributes:
+#             ret = [Remove(self)]
+#             for ext, attr in self._file_attributes.items():
+#                 f = getattr(self, attr)
+#                 ret += [Remove(f)]
+#         else:
+#             ret = Remove(self)
+#
+#         return ret
+
 
 class Directory(File):
-    @property
-    def is_folder(self):
-        return True
+    def __init__(self, location):
+        super(Directory, self).__init__(location)
+        if not self.is_folder:
+            self.location = os.path.join(self.location, '')
 
 
 class URLGenerator(object):
@@ -396,10 +539,10 @@ class URLGenerator(object):
         # a little cheat to figure out the last number
         self.count = 0
         left = len(self.shape.split('{')[0].split('/')[-1])
-        right = len(self.shape.split('}')[1])
+        right = len(self.shape.split('}')[-1])
         for f in files:
             try:
-                g = int(f.basename[left:-right]) + 1
+                g = int(f.path[:-right].split('/')[-1][left:]) + 1
                 self.count = max(g, self.count)
             except Exception:
                 pass

@@ -144,7 +144,6 @@ if __name__ == '__main__':
                     ar.append(q)
 
             if hasattr(wrapper, ex):
-                print ex, ar
                 fn = getattr(wrapper, ex)
                 fn(*ar)
 
@@ -159,13 +158,15 @@ if __name__ == '__main__':
     print
 
     def signal_term_handler(signal, frame):
-        print 'got SIGTERM'
+        print 'got SIGTERM ...'
         worker.shutdown()
 
     signal.signal(signal.SIGTERM, signal_term_handler)
 
-    print 'RUN NOW'
+    print 'start listening ...'
 
     worker.run()
+
+    print 'good-bye'
 
     exit()

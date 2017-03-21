@@ -29,9 +29,9 @@ if __name__ == '__main__':
         description='Run an MD simulation using OpenMM')
 
     parser.add_argument(
-        'file',
-        metavar='outout.dcd',
-        help='the output .dcd file',
+        'output',
+        metavar='output/',
+        help='the output directory',
         type=str)
 
     parser.add_argument(
@@ -176,8 +176,7 @@ if __name__ == '__main__':
         print(Platform.getDefaultPluginsDirectory())
 
     if args.restart:
-        os.link(args.restart, 'input.restart.npz')
-        arr = np.load('input.restart.npz')
+        arr = np.load(args.restart)
         simulation.context.setPositions(arr['positions'] * u.nanometers)
         simulation.context.setVelocities(arr['velocities'] * u.nanometers/u.picosecond)
         simulation.context.setPeriodicBoxVectors(*arr['box_vectors'] * u.nanometers)
@@ -196,7 +195,11 @@ if __name__ == '__main__':
 
         simulation.context.setVelocitiesToTemperature(temperature)
 
-    simulation.reporters.append(DCDReporter(args.file, args.interval_store))
+    output = args.output
+
+    output_file = os.path.join(output, 'output.dcd')
+    simulation.reporters.append(
+        DCDReporter(output_file, args.interval_store))
 
     if args.report and args.verbose:
         simulation.reporters.append(
@@ -207,24 +210,21 @@ if __name__ == '__main__':
                 potentialEnergy=True,
                 temperature=True))
 
-    restart_file_name = args.file + '.restart'
+    restart_file = os.path.join(output, 'restart.npz')
 
-    print 'START SIMULATION'
+    print('START SIMULATION')
 
     simulation.step(args.length * args.interval_store)
 
-    print 'DONE'
+    print('DONE')
 
     state = simulation.context.getState(getPositions=True, getVelocities=True)
     pbv = state.getPeriodicBoxVectors(asNumpy=True)
     vel = state.getVelocities(asNumpy=True)
     pos = state.getPositions(asNumpy=True)
 
-    # dirty hack, but numpy cannot save without an additional extension
-    np.savez('output.restart.npz', positions=pos, box_vectors=pbv, velocities=vel, index=args.length)
-    os.rename('output.restart.npz', restart_file_name)
+    np.savez(restart_file, positions=pos, box_vectors=pbv, velocities=vel, index=args.length)
 
-    print('Written to file', args.file)
-    print('Written to file', restart_file_name)
+    print('Written to directory `%s`' % args.output)
 
     exit(0)

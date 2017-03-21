@@ -2,9 +2,10 @@ import threading
 import time
 import numpy as np
 import os
+import types
 
 from file import URLGenerator, File
-from engine import Trajectory, RestartFile
+from engine import Trajectory
 from bundle import StoredBundle
 from condition import Condition
 from resource import Resource
@@ -13,6 +14,7 @@ from model import Model
 from task import Task
 from worker import Worker
 from logentry import LogEntry
+from event import FunctionalEvent
 
 from mongodb import MongoDBStorage, ObjectStore
 
@@ -98,7 +100,8 @@ class Project(object):
                 'sandbox:///projects/',
                 self.name,
                 'trajs',
-                '{count:08d}.dcd'))
+                '{count:08d}',
+                ''))
 
         self.storage = None
 
@@ -338,7 +341,7 @@ class Project(object):
 
         return d
 
-    def new_trajectory(self, frame, length, number=1, restart=True):
+    def new_trajectory(self, frame, length, engine=None, number=1):
         """
         Convenience function to create a new `Trajectory` object
 
@@ -354,11 +357,13 @@ class Project(object):
             `Frame` is the initial structure / frame zero in this trajectory
         length : int
             the length of the trajectory
+        engine : `Engine` or None
+            the engine used to generate the trajectory. The engine contains all
+            the specifics about the trajectory internal structure since it is the
+            responsibility of the engine to really create the trajectory.
         number : int
             the number of trajectory objects to be returned. If `1` it will be
             a single object. Otherwise a list of `Trajectory` objects.
-        restart : bool
-            if `True` (default) the trajectory is created with a restart file.
 
         Returns
         -------
@@ -366,13 +371,11 @@ class Project(object):
 
         """
         if number == 1:
-            traj = Trajectory(next(self.traj_name), frame, length)
-            if restart:
-                traj.restart = RestartFile(traj.url + '.restart')
+            traj = Trajectory(next(self.traj_name), frame, length, engine)
             return traj
 
         elif number > 1:
-            return [self.new_trajectory(frame, length, restart=restart) for _ in range(number)]
+            return [self.new_trajectory(frame, length, engine) for _ in range(number)]
 
     def on_ntraj(self, numbers):
         """
@@ -492,11 +495,17 @@ class Project(object):
         return [self.new_trajectory(frame, length) for frame in
                 self.find_ml_next_frame(number)]
 
+    def events_done(self):
+        return len(self._events) == 0
+
     def add_event(self, event):
         if isinstance(event, (tuple, list)):
-            map(self._events.append, event)
-        else:
-            self._events.append(event)
+            return map(self._events.append, event)
+
+        if isinstance(event, types.GeneratorType):
+            event = FunctionalEvent(event)
+
+        self._events.append(event)
 
         logger.info('Events added. Remaining %d' % len(self._events))
 

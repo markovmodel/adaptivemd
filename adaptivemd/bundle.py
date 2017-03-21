@@ -131,7 +131,7 @@ class BaseBundle(object):
             return None
 
     def __str__(self):
-        return '<%s with %d file(s) @ %s>' % (
+        return '<%s for with %d file(s) @ %s>' % (
             self.__class__.__name__, len(self), hex(id(self)))
 
     def __contains__(self, item):
