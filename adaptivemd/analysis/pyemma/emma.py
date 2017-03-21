@@ -28,6 +28,7 @@ class PyEMMAAnalysis(Analysis):
 
     @staticmethod
     def then_func(project, model, inputs):
+        print 'We got a model'
         # add the input arguments for later reference
         model.data['input']['trajectories'] = inputs['kwargs']['files']
         model.data['input']['pdb'] = inputs['kwargs']['topfile']

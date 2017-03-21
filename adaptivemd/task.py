@@ -748,12 +748,19 @@ class PythonTask(PrePostTask):
     def _cb_success(self, scheduler):
         # here is the logic to retrieve the result object
         # the output file is a JSON and these know how to load itself
+        print 'cb_success'
         self._rpc_output_file.load(scheduler)
 
         filename = scheduler.get_path(self._rpc_output_file)
         data = self._rpc_output_file.data
 
+        print '----------------------'
+        print self.generator
+        print self.then_func_name
+        print self.__dict__
+
         if self.generator is not None and hasattr(self.generator, self.then_func_name):
+            print 'run then_func'
             getattr(self.generator, self.then_func_name)(
                 scheduler.project,
                 data, {

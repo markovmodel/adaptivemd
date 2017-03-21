@@ -215,13 +215,15 @@ class WorkerParser(ActionParser):
         if isinstance(action, FileTransaction):
             source = action.source
             target = action.target
-            if source.drive == 'file' and target.drive != 'file':
-                # create file from
-                sp = source.url
-                tp = target.url
 
+            # create file from
+            sp = scheduler.replace_prefix(source.url)
+            tp = scheduler.replace_prefix(target.url)
+
+            print 'Transfer', sp, tp
+
+            if source.drive == 'file' and target.drive != 'file':
                 if source.has_file:
-                    tp = scheduler.replace_prefix(target.url)
                     with open(tp, 'w') as f:
                         f.write(source.get_file())
 
@@ -230,12 +232,10 @@ class WorkerParser(ActionParser):
                     # in case someone already created the file we need, rename it
                     if sp != tp:
                         return ['ln %s %s' % (sp, tp)]
+                else:
+                    return ['# Could not write or rename file', action]
 
             elif target.drive == 'file' and source.drive != 'file':
-                # move back to virtual location
-                sp = source.url
-                tp = target.url
-
                 return ['ln -s %s %s' % (sp, tp)]
 
         return action
