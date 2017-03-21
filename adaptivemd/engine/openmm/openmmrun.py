@@ -222,6 +222,12 @@ if __name__ == '__main__':
         simulation.reporters.append(
             DCDReporter(output_file, args.interval_store))
 
+    if not args.restart:
+        # if not a restart write first frame
+        state = simulation.context.getState(getPositions=True)
+        for r in simulation.reporters:
+            r.report(simulation, state)
+
     if args.report and args.verbose:
         simulation.reporters.append(
             StateDataReporter(

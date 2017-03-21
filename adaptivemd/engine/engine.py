@@ -92,6 +92,27 @@ class Engine(TaskGenerator):
     def add_output_type(self, name, filename=None, stride=1):
         self.types[name] = OutputTypeDescription(filename, stride)
 
+    @property
+    def native_stride(self):
+        return lcmm(*[x.stride for x in self.types.values()])
+
+
+def gcd(a, b):
+    """Return greatest common divisor using Euclid's Algorithm."""
+    while b:
+        a, b = b, a % b
+    return a
+
+
+def lcm(a, b):
+    """Return lowest common multiple."""
+    return a * b // gcd(a, b)
+
+
+def lcmm(*args):
+    """Return lcm of args."""
+    return reduce(lcm, args)
+
 
 # ------------------------------------------------------------------------------
 # FILE TYPES
