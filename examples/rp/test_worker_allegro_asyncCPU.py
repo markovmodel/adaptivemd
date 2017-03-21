@@ -76,14 +76,14 @@ if __name__ == '__main__':
 
     # create 4 trajectories
     trajectories = project.new_trajectory(pdb_file, 100, 4)
-    tasks = map(engine.task_run_trajectory, trajectories)
+    tasks = map(engine.run, trajectories)
     map(project.tasks.add, tasks)
 
     # now start adaptive loop
     def strategy_trajectory(loops, num):
         for loop in range(loops):
             trajectories = project.new_ml_trajectory(20, number=num)
-            tasks = map(engine.task_run_trajectory, trajectories)
+            tasks = map(engine.run, trajectories)
             map(project.tasks.add, tasks)
             yield [t.is_done for t in tasks]
 

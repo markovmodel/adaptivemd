@@ -86,7 +86,7 @@ if __name__ == '__main__':
     def strategy_trajectory(scheduler, loops, num):
         for loop in range(loops):
             trajectories = [project.new_ml_trajectory(length=20, number=4) for _ in range(num)]
-            tasks = map(engine.task_run_trajectory, trajectories)
+            tasks = map(engine.run, trajectories)
             tasklist = scheduler(tasks)
             yield tasklist.is_done()
 

@@ -1,12 +1,12 @@
 import argparse
+import ujson
+from sys import stdout, exit
+import socket
+import numpy as np
 
 from simtk.openmm.app import *
 from simtk.openmm import *
 import simtk.unit as u
-from sys import stdout, exit
-import os
-import socket
-import numpy as np
 
 
 if __name__ == '__main__':
@@ -41,12 +41,12 @@ if __name__ == '__main__':
 
     parser.add_argument(
         '--store-interval', dest='interval_store',
-        type=int, default=100, nargs='?',
+        type=int, default=1, nargs='?',
         help='store every nth interval')
 
     parser.add_argument(
         '--report-interval', dest='interval_report',
-        type=int, default=100, nargs='?',
+        type=int, default=1, nargs='?',
         help='report every nth interval')
 
     parser.add_argument(
@@ -76,6 +76,11 @@ if __name__ == '__main__':
         default=False,
         help='if set then text output is send to the ' +
              'console.')
+
+    parser.add_argument(
+        '--types', dest='types',
+        type=str, default='', nargs='?',
+        help='alternative definition for output files and strides')
 
     for p in platform_properties:
         for v in platform_properties[p]:
@@ -197,9 +202,25 @@ if __name__ == '__main__':
 
     output = args.output
 
-    output_file = os.path.join(output, 'output.dcd')
-    simulation.reporters.append(
-        DCDReporter(output_file, args.interval_store))
+    if args.types:
+        # seems like we have JSON
+        types_str = args.types.replace("'", '"')
+        print types_str
+        types = ujson.loads(types_str)
+        if isinstance(types, dict):
+            for name, opts in types.iteritems():
+                if 'filename' in opts and 'stride' in opts:
+                    output_file = os.path.join(output, opts['filename'])
+                    simulation.reporters.append(
+                        DCDReporter(output_file, opts['stride']))
+
+                    print 'Writing stride %d to file `%s`' % (opts['stride'], opts['filename'])
+
+    else:
+        # use defaults from arguments
+        output_file = os.path.join(output, 'output.dcd')
+        simulation.reporters.append(
+            DCDReporter(output_file, args.interval_store))
 
     if args.report and args.verbose:
         simulation.reporters.append(

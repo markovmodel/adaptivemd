@@ -16,6 +16,9 @@ class SyncVariable(object):
     def _idx(self, instance):
         return str(uuid.UUID(int=instance.__uuid__))
 
+    def _hex(self, instance):
+        return hex(instance.__uuid__)
+
     def _update(self, store, idx):
         if store is not None:
             return store._document.find_one(
@@ -129,7 +132,7 @@ class ObjectSyncVariable(SyncVariable):
             if data is None:
                 return None
             else:
-                obj_idx = int(uuid.UUID(data['_hex_uuid']))
+                obj_idx = long(data['_hex_uuid'], 16)
                 return getattr(store.storage, self.store).load(obj_idx)
 
     def __set__(self, instance, value):
@@ -144,7 +147,7 @@ class ObjectSyncVariable(SyncVariable):
                 instance.__store__._document.find_and_modify(
                     query={'_id': idx},
                     update={"$set": {self.name: {
-                        '_hex_uuid': self._idx(value),
+                        '_hex_uuid': self._hex(value),
                         '_store': self.store}}},
                     upsert=False
                     )

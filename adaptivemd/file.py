@@ -237,7 +237,7 @@ class Location(StorableMixin):
 
 
 class File(Location):
-    _find_by = ['created', 'state', '_file', 'task']
+    _find_by = ['created', '_file', 'task']
 
     created = SyncVariable('created', lambda x: x is not None and x < 0)
     _file = SyncVariable('_file', lambda x: not bool(x))
@@ -396,7 +396,7 @@ _json_file_simplifier = ObjectJSON()
 
 
 class JSONFile(File):
-    _find_by = ['created', 'state', '_data']
+    _find_by = ['created', '_data', 'task']
 
     _data = JSONDataSyncVariable('_data', lambda x: not None)
     # _file = SyncVariable('_data', lambda x: not None)

@@ -1,6 +1,6 @@
 import os
+import ujson
 
-from adaptivemd.task import PythonTask
 from adaptivemd.file import Location, File
 from adaptivemd.engine import Engine, Frame, Trajectory, \
     TrajectoryGenerationTask, TrajectoryExtensionTask
@@ -25,7 +25,7 @@ class OpenMMEngine(Engine):
         a list of arguments passed to the `openmmrun.py` script
     """
 
-    def __init__(self, system_file, integrator_file, pdb_file, args=None, restartable=True):
+    def __init__(self, system_file, integrator_file, pdb_file, args=None, restartable=False):
         super(OpenMMEngine, self).__init__()
 
         self._items = dict()
@@ -41,14 +41,24 @@ class OpenMMEngine(Engine):
             self.initial_staging.append(stage)
 
         if args is None:
-            args = '-p CPU --store-interval 1'
+            args = '-p CPU'
 
         self.args = args
         self.restartable = restartable
 
-    @property
-    def call_format_str(self):
-        return 'python openmmrun.py %s {3} -t {0} --length {1} {2}' % self.args
+    @classmethod
+    def from_dict(cls, dct):
+        obj = super(OpenMMEngine, cls).from_dict(dct)
+        obj.args = dct['args']
+        obj.restartable = dct['restartable']
+        return obj
+
+    def to_dict(self):
+        dct = super(OpenMMEngine, self).to_dict()
+        dct.update({
+            'restartable': self.restartable,
+            'args': self.args})
+        return dct
 
     @staticmethod
     def then_func_import(project, task, data, inputs):
@@ -57,7 +67,14 @@ class OpenMMEngine(Engine):
             if f not in project.files:
                 project.files.update(f)
 
-    def task_run_trajectory(self, target):
+    def _create_output_str(self):
+        d = dict()
+        for name, opt in self.types.iteritems():
+            d[name] = opt.to_dict()
+
+        return '--types="%s"' % ujson.dumps(d).replace('"', "'")
+
+    def run(self, target):
         t = TrajectoryGenerationTask(self, target)
 
         initial_pdb = t.link(self['pdb_file_stage'], Location('initial.pdb'))
@@ -91,8 +108,9 @@ class OpenMMEngine(Engine):
         # create the directory
         t.touch(output)
 
-        cmd = 'python openmmrun.py {args} -t {pdb} --length {length} {output}'.format(
+        cmd = 'python openmmrun.py {args} {types} -t {pdb} --length {length} {output}'.format(
             pdb=input_pdb,
+            types=self._create_output_str(),
             length=target.length,
             output=output,
             args=self.args,
@@ -103,7 +121,7 @@ class OpenMMEngine(Engine):
 
         return t
 
-    def task_extend_trajectory(self, source, length):
+    def extend(self, source, length):
         if length < 0:
             return []
 
@@ -157,16 +175,16 @@ class OpenMMEngine(Engine):
 
         return t
 
-    def task_import_trajectory_folder(self, source):
-        t = PythonTask(self)
-
-        t.link(self['pdb_file_stage'], Location('initial.pdb'))
-        t.call(scan_trajectories, source)
-
-        # call `then_func_import` after success
-        t.then('then_func_import')
-
-        return t
+    # def task_import_trajectory_folder(self, source):
+    #     t = PythonTask(self)
+    #
+    #     t.link(self['pdb_file_stage'], Location('initial.pdb'))
+    #     t.call(scan_trajectories, source=source)
+    #
+    #     # call `then_func_import` after success
+    #     t.then('then_func_import')
+    #
+    #     return t
 
 
 def scan_trajectories(source):

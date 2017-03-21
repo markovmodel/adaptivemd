@@ -40,7 +40,7 @@ class ACEMDEngine(Engine):
     def call_format_str(self):
         return 'acemd %s {0}' % self.args
 
-    def task_run_trajectory(self, target):
+    def run(self, target):
         t = Task()
 
         initial_pdb = t.link(self['pdb_file_stage'], Location('initial.pdb'))

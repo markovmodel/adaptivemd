@@ -2,9 +2,9 @@
 import random
 import os
 
-from adaptivemd.file import File, Location
+from adaptivemd.file import File
 from adaptivemd.generator import TaskGenerator
-from adaptivemd.mongodb import StorableMixin, SyncVariable
+from adaptivemd.mongodb import StorableMixin, ObjectSyncVariable
 from adaptivemd.task import Task
 
 
@@ -14,7 +14,27 @@ class Engine(TaskGenerator):
 
     """
 
-    def task_run_trajectory(self, target):
+    def __init__(self):
+        super(Engine, self).__init__()
+
+        self.types = {}
+
+        # set default output type if nothing is specified
+        self.add_output_type('master', 'output.dcd', 1)
+
+    @classmethod
+    def from_dict(cls, dct):
+        obj = super(Engine, cls).from_dict(dct)
+        obj.types = dct['types']
+        return obj
+
+    def to_dict(self):
+        dct = super(Engine, self).to_dict()
+        dct.update({
+            'types': self.types})
+        return dct
+
+    def run(self, target):
         """
         Create a task that returns a trajectory given in the input
 
@@ -22,6 +42,25 @@ class Engine(TaskGenerator):
         ----------
         target : `Trajectory`
             location of the created target trajectory
+
+        Returns
+        -------
+        `Task`
+            the task object containing the job description
+
+        """
+        return None
+
+    def extend(self, target, length):
+        """
+        Create a task that extends a trajectory given in the input
+
+        Parameters
+        ----------
+        target : `Trajectory`
+            location of the target trajectory to be extended
+        length : int
+            number of additional frames to be computed
 
         Returns
         -------
@@ -47,8 +86,11 @@ class Engine(TaskGenerator):
 
         """
         return {
-            Trajectory: self.task_run_trajectory
+            Trajectory: self.run
         }
+
+    def add_output_type(self, name, filename=None, stride=1):
+        self.types[name] = OutputTypeDescription(filename, stride)
 
 
 # ------------------------------------------------------------------------------
@@ -71,7 +113,9 @@ class Trajectory(File):
         the engine used to create the trajectory
     """
 
-    engine = SyncVariable('engine', lambda x: not bool(x))
+    _find_by = ['created', 'state', 'task', 'engine']
+
+    engine = ObjectSyncVariable('engine', 'generators', lambda x: not bool(x))
 
     def __init__(self, location, frame, length, engine=None):
         super(Trajectory, self).__init__(location)
@@ -104,11 +148,78 @@ class Trajectory(File):
         return True
 
     def file(self, f):
-        return File(os.path.join(self.location, f))
+        if isinstance(f, basestring):
+            return File(os.path.join(self.location, f))
+        elif isinstance(f, OutputTypeDescription):
+            return self.file(f.filename)
 
     @property
     def restartable(self):
         return True
+
+    def run(self):
+        if self.engine:
+            return self.engine.run(self)
+        else:
+            return None
+
+    def extend(self, length):
+        """
+        Get a task to extend this trajectory if the engine is set
+
+        Parameters
+        ----------
+        length : int
+            the length to extend by
+
+        Returns
+        -------
+        `Task`
+            the task object
+        """
+        if self.engine:
+            return self.engine.extend(self, length)
+        else:
+            return None
+
+    def outputs(self, outtype):
+        """
+        Get a location to the file containing the output by given name
+
+        Parameters
+        ----------
+        outtype : str ot `OutputTypeDescription`
+
+        Returns
+        -------
+        `File`
+            a file location that points to the concrete file that contains
+            the data for a particular output type
+
+        """
+        if self.engine:
+            if isinstance(outtype, basestring):
+                if outtype in self.engine.types:
+                    return self.file(self.engine.types[outtype])
+            elif isinstance(outtype, OutputTypeDescription):
+                return self.file(outtype)
+
+        return None
+
+    @property
+    def types(self):
+        """
+        Return the OutputTypeDescriptions for this trajectory
+        Returns
+        -------
+        dict str: `OutputTypeDescription`
+            the output description dict of the engine
+
+        """
+        if self.engine:
+            return self.engine.types
+
+        return None
 
 
 class Frame(StorableMixin):
@@ -156,12 +267,24 @@ class TrajectoryGenerationTask(Task):
             'trajectory'
         ]
 
+    def _default_success(self, scheduler):
+        super(TrajectoryGenerationTask, self)._default_success(scheduler)
+
+        # # give the used engine the credit for making the trajectory
+        # for t in self.targets:
+        #     if isinstance(t, Trajectory):
+        #         t.engine = self.generator
+
     def __init__(self, generator=None, trajectory=None):
         super(TrajectoryGenerationTask, self).__init__(generator)
+
+        # set this engine to be run by this
         self.trajectory = trajectory
+        if trajectory:
+            trajectory.engine = self.generator
 
     def extend(self, length):
-        t = self.generator.task_extend_trajectory(self.trajectory, length)
+        t = self.generator.extend(self.trajectory, length)
 
         # this is not really necessary since we require internally that the source exists
         # but this will cause all dependencies to be submitted, too
@@ -193,3 +316,14 @@ class TrajectoryExtensionTask(TrajectoryGenerationTask):
             return False
 
         return True
+
+
+class OutputTypeDescription(StorableMixin):
+    def __init__(self, filename=None, stride=1):
+        super(OutputTypeDescription, self).__init__()
+
+        if filename is None:
+            filename = 'stride-%d.dcd' % stride
+
+        self.filename = filename
+        self.stride = stride

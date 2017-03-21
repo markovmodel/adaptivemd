@@ -7,9 +7,8 @@ class TaskGenerator(StorableMixin):
     """
     A generator for `Task` objects
     """
-    def __init__(self, args=None):
+    def __init__(self):
         super(TaskGenerator, self).__init__()
-        self.args = args
         self._items = dict()
         self.initial_staging = []
 
@@ -28,14 +27,12 @@ class TaskGenerator(StorableMixin):
         StorableMixin.__init__(obj)
         obj._items = dct['_items']
         obj.initial_staging = dct['initial_staging']
-        obj.args = dct['args']
         return obj
 
     def to_dict(self):
         return {
             '_items': self._items,
-            'initial_staging': self.initial_staging,
-            'args': self.args
+            'initial_staging': self.initial_staging
         }
 
     @property

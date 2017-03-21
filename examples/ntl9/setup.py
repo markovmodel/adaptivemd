@@ -77,7 +77,7 @@ if __name__ == '__main__':
 
         def task_generator():
             return [
-                engine.task_run_trajectory(traj) for traj in
+                engine.run(traj) for traj in
                 scheduler.new_ml_trajectory(100, 2)]
 
         scheduler.add_event(
