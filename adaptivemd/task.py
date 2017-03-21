@@ -211,19 +211,6 @@ class Task(BaseTask):
 
         return True
 
-    def add_conda_env(self, name):
-        """
-        Add loading a conda env to all tasks of this resource
-
-        This calls `resource.wrapper.append('source activate {name}')`
-        Parameters
-        ----------
-        name : str
-            name of the conda environment
-
-        """
-        self.append('source activate %s' % name)
-
     def _default_fail(self, scheduler):
         # todo: improve error handling
         print 'task did not complete'
@@ -256,8 +243,8 @@ class Task(BaseTask):
     @property
     def description(self):
         task = self
-        s = ['Task: %s [%s]' % (
-                task.generator.__class__.__name__ or task.__class__.__name__, task.state)]
+        s = ['Task: %s(%s) [%s]' % (
+                task.__class__.__name__, task.generator.__class__.__name__, task.state)]
 
         if task.worker:
             s += ['Worker: %s:%s' % (task.worker.hostname, task.worker.cwd)]
@@ -265,7 +252,7 @@ class Task(BaseTask):
 
         s += ['']
         s += ['Sources']
-        s += ['- %s' % x.short for x in task.unstaged_input_files]
+        s += ['- %s %s' % (x.short, '[exists]' if x.exists else '') for x in task.unstaged_input_files]
         s += ['Targets']
         s += ['- %s' % x.short for x in task.targets]
         s += ['Modified']
@@ -587,6 +574,19 @@ class PrePostTask(Task):
     def main(self):
         return self.pre + self._main + self.post
 
+    def add_conda_env(self, name):
+        """
+        Add loading a conda env to all tasks of this resource
+
+        This calls `resource.wrapper.append('source activate {name}')`
+        Parameters
+        ----------
+        name : str
+            name of the conda environment
+
+        """
+        self.append('source activate %s' % name)
+
 
 class MPITask(PrePostTask):
     """
@@ -653,6 +653,22 @@ class DummyTask(PrePostTask):
     def __init__(self):
         super(DummyTask, self).__init__()
         self.state = 'dummy'
+
+
+    @property
+    def description(self):
+        task = self
+        s = ['Task: %s' % task.__class__.__name__]
+
+        s += ['<pre>']
+        s += map(str, task.pre_exec + task.pre)
+        s += ['</pre>']
+        s += ['<main />']
+        s += ['<post>']
+        s += map(str, task.post)
+        s += ['</post>']
+
+        return '\n'.join(s)
 
 
 class EnclosedTask(Task):
@@ -758,14 +774,9 @@ class PythonTask(PrePostTask):
 
         if self.generator is not None and hasattr(self.generator, self.then_func_name):
             getattr(self.generator, self.then_func_name)(
-                scheduler.project,
-                self,
-                data, {
-                    'args': self._python_args,
-                    'kwargs': self._python_kwargs})
+                scheduler.project, self, data, self._python_kwargs)
 
-        # remove the RPC file.
-
+        # cleanup
         # mark as changed / deleted
         os.remove(filename)
         self._rpc_output_file.modified()
@@ -801,7 +812,7 @@ class PythonTask(PrePostTask):
         """
         self.then_func_name = func_name
 
-    def call(self, command, *args, **kwargs):
+    def call(self, command, **kwargs):
         """
         Set the python function to be called with its arguments
 
@@ -817,7 +828,6 @@ class PythonTask(PrePostTask):
 
         """
         self._python_function_name = '.'.join([command.__module__, command.func_name])
-        self._python_args = args
         self._python_kwargs = kwargs
 
         self._python_import, self._python_source_files = \
@@ -833,7 +843,6 @@ class PythonTask(PrePostTask):
         dct = {
             'import': self._python_import,
             'function': self._python_function_name,
-            'args': self._python_args,
             'kwargs': self._python_kwargs
         }
         return scheduler.flatten_location(dct)

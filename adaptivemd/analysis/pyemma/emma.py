@@ -16,21 +16,17 @@ class PyEMMAAnalysis(Analysis):
     def __init__(self, pdb_file):
         super(PyEMMAAnalysis, self).__init__()
 
-        self._items = dict()
-
         self['pdb_file'] = pdb_file
-
         stage = pdb_file.transfer('staging:///')
+
         self['pdb_file_stage'] = stage.target
         self.initial_staging.append(stage)
-
-        self.args = ['']
 
     @staticmethod
     def then_func(project, task, model, inputs):
         # add the input arguments for later reference
-        model.data['input']['trajectories'] = inputs['kwargs']['files']
-        model.data['input']['pdb'] = inputs['kwargs']['topfile']
+        model.data['input']['trajectories'] = inputs['trajectories']
+        model.data['input']['pdb'] = inputs['topfile']
         project.models.add(model)
 
     def task_run_msm_files(
@@ -76,7 +72,7 @@ class PyEMMAAnalysis(Analysis):
         input_pdb = t.link(self['pdb_file_stage'], 'input.pdb')
         t.call(
             remote_analysis,
-            files=list(trajectories),
+            trajectories=list(trajectories),
             traj_name=traj_name,
             topfile=input_pdb,
             tica_lag=tica_lag,

@@ -22,7 +22,7 @@ parts = data['function'].split('.')
 fnc = importlib.import_module('.'.join(parts[:-1]))
 fnc = getattr(fnc, parts[-1])
 
-result = fnc(*data['args'], **data['kwargs'])
+result = fnc(**data['kwargs'])
 
 with open('output.json', 'w') as f:
     f.write(simplifier.to_json(result))
