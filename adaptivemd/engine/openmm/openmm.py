@@ -98,8 +98,29 @@ class OpenMMEngine(Engine):
             # we need to figure out which frame in the traj this actually is
             # also, we need a traj with full coordinates / selection = None
 
-            t.append('mdconvert -o %s -i %d -t %s %s' % (
-                input_pdb, target.frame.index, initial_pdb, input_traj))
+            absolute_idx = target.frame.index
+            ty = None
+            idx = None
+
+            for t, desc in self.types.iteritems():
+                stride = desc.stride
+                if desc.selection is None:
+                    # full atoms
+                    if absolute_idx % stride == 0:
+                        # picked a frame that exists in this stride
+                        ty = t
+                        idx = absolute_idx / stride
+                        break
+
+            if ty is None:
+                # cannot use a trajectory where we do not have full coordinates
+                return
+
+            t.append('mdconvert -o {target} -i {index} -t {pdb} {source}'.format(
+                target=input_pdb,  # input.pdb is used as starting structure
+                index=idx,         # the index from the source trajectory
+                pdb=initial_pdb,   # use the main pdb
+                source=input_traj.outputs[ty]))  # we pick output ty
         else:
             # for now we assume that if the initial frame is None or
             # not specific use the engines internal. That should be changed
