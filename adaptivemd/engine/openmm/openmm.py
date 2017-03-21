@@ -51,7 +51,7 @@ class OpenMMEngine(Engine):
         return 'python openmmrun.py %s {3} -t {0} --length {1} {2}' % self.args
 
     @staticmethod
-    def then_func_import(project, data, inputs):
+    def then_func_import(project, task, data, inputs):
         for f in data:
             # check if file with same location exists
             if f not in project.files:

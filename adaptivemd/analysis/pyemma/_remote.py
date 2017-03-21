@@ -1,8 +1,6 @@
-from adaptivemd import Model
-
-
 def remote_analysis(
-        files,
+        trajectories,
+        traj_name='output.dcd',
         topfile='input.pdb',
         tica_lag=2,
         tica_dim=2,
@@ -14,8 +12,10 @@ def remote_analysis(
 
     Parameters
     ----------
-    files : list of `Trajectory`
+    trajectories : list of `Trajectory`
         a list of `Trajectory` objects
+    traj_name : str
+        name of the trajectory file with the trajectory directory given
     topfile : `File`
         a reference to the `.pdb` file using in pyemma
     tica_lag : int
@@ -35,20 +35,19 @@ def remote_analysis(
         a model object with a data attribute which is a dict and contains all relevant
         information about the computed MSM
     """
+    import os
+
     import pyemma
+    from adaptivemd import Model
 
     feat = pyemma.coordinates.featurizer(topfile)
     feat.add_backbone_torsions()
 
     pyemma.config.show_progress_bars = False
 
-    # todo: allow specification of several folders and wildcats, used for session handling
-    # if isinstance(trajfiles, basestring):
-    #     if '*' in trajfiles or trajfiles.endswith('/'):
-    #         files = glob.glob(trajfiles)
+    print '#trajectories :', len(trajectories)
 
-    print '#files :', len(files)
-
+    files = [os.path.join(t, traj_name) for t in trajectories]
     inp = pyemma.coordinates.source(files, feat)
 
     tica_obj = pyemma.coordinates.tica(
@@ -57,7 +56,6 @@ def remote_analysis(
     y = tica_obj.get_output()
 
     cl = pyemma.coordinates.cluster_kmeans(data=y, k=msm_states, stride=stride)
-
     m = pyemma.msm.estimate_markov_model(cl.dtrajs, msm_lag)
 
     data = {

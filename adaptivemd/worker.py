@@ -258,7 +258,9 @@ class WorkerScheduler(Scheduler):
                         try:
                             task.fire('success', self)
                             task.state = 'success'
+                            print 'task succeeded'
                         except IOError:
+
                             task.state = 'fail'
                     else:
                         task.state = 'fail'

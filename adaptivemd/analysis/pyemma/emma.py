@@ -27,7 +27,7 @@ class PyEMMAAnalysis(Analysis):
         self.args = ['']
 
     @staticmethod
-    def then_func(project, model, inputs):
+    def then_func(project, task, model, inputs):
         # add the input arguments for later reference
         model.data['input']['trajectories'] = inputs['kwargs']['files']
         model.data['input']['pdb'] = inputs['kwargs']['topfile']
@@ -35,7 +35,8 @@ class PyEMMAAnalysis(Analysis):
 
     def task_run_msm_files(
             self,
-            files,
+            trajectories,
+            traj_name='output.dcd',
             tica_lag=2,
             tica_dim=2,
             msm_states=5,
@@ -46,8 +47,10 @@ class PyEMMAAnalysis(Analysis):
 
         Parameters
         ----------
-        files : list of `Trajectory`
+        trajectories : list of `Trajectory`
             the list of trajectory references to be used in the computation
+        traj_name : str
+            name of the trajectory file with the trajectory directory given
         tica_lag : int
             the lag-time used for tCIA
         tica_dim : int
@@ -73,7 +76,8 @@ class PyEMMAAnalysis(Analysis):
         input_pdb = t.link(self['pdb_file_stage'], 'input.pdb')
         t.call(
             remote_analysis,
-            files=list(files),
+            files=list(trajectories),
+            traj_name=traj_name,
             topfile=input_pdb,
             tica_lag=tica_lag,
             tica_dim=tica_dim,

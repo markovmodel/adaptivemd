@@ -243,7 +243,7 @@ class Task(BaseTask):
             scheduler.submit(self)
 
     def _default_success(self, scheduler):
-            print 'task succeeded. State:', self.state
+            # print 'task succeeded. State:', self.state
 
             for f in self.modified_files:
                 f.modified()
@@ -264,9 +264,12 @@ class Task(BaseTask):
             s += ['        cd worker.%s' % hex(task.__uuid__)]
 
         s += ['']
-        s += ['Required : %s' % [x.short for x in task.unstaged_input_files]]
-        s += ['Output : %s' % [x.short for x in task.targets]]
-        s += ['Modified : %s' % [x.short for x in task.modified_files]]
+        s += ['Sources']
+        s += ['- %s' % x.short for x in task.unstaged_input_files]
+        s += ['Targets']
+        s += ['- %s' % x.short for x in task.targets]
+        s += ['Modified']
+        s += ['- %s' % x.short for x in task.modified_files]
 
         s += ['']
         s += ['<pretask>']
@@ -756,6 +759,7 @@ class PythonTask(PrePostTask):
         if self.generator is not None and hasattr(self.generator, self.then_func_name):
             getattr(self.generator, self.then_func_name)(
                 scheduler.project,
+                self,
                 data, {
                     'args': self._python_args,
                     'kwargs': self._python_kwargs})
