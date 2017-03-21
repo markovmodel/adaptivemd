@@ -94,6 +94,10 @@ class OpenMMEngine(Engine):
             input_traj = t.link(target.frame.trajectory.file('output.dcd'))
             input_pdb = File('input.pdb')
 
+            # frame index is in canonical stride = 1
+            # we need to figure out which frame in the traj this actually is
+            # also, we need a traj with full coordinates / selection = None
+
             t.append('mdconvert -o %s -i %d -t %s %s' % (
                 input_pdb, target.frame.index, initial_pdb, input_traj))
         else:

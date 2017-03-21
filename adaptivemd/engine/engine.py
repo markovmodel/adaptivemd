@@ -89,8 +89,8 @@ class Engine(TaskGenerator):
             Trajectory: self.run
         }
 
-    def add_output_type(self, name, filename=None, stride=1):
-        self.types[name] = OutputTypeDescription(filename, stride)
+    def add_output_type(self, name, filename=None, stride=1, selection=None):
+        self.types[name] = OutputTypeDescription(filename, stride, selection)
 
     @property
     def native_stride(self):
@@ -340,7 +340,7 @@ class TrajectoryExtensionTask(TrajectoryGenerationTask):
 
 
 class OutputTypeDescription(StorableMixin):
-    def __init__(self, filename=None, stride=1):
+    def __init__(self, filename=None, stride=1, selection=None):
         super(OutputTypeDescription, self).__init__()
 
         if filename is None:
@@ -348,3 +348,4 @@ class OutputTypeDescription(StorableMixin):
 
         self.filename = filename
         self.stride = stride
+        self.selection = selection

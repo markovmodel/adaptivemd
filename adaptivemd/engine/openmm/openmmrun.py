@@ -3,11 +3,11 @@ import ujson
 from sys import stdout, exit
 import socket
 import numpy as np
+import mdtraj as md
 
 from simtk.openmm.app import *
 from simtk.openmm import *
 import simtk.unit as u
-
 
 if __name__ == '__main__':
 
@@ -211,10 +211,20 @@ if __name__ == '__main__':
             for name, opts in types.iteritems():
                 if 'filename' in opts and 'stride' in opts:
                     output_file = os.path.join(output, opts['filename'])
-                    simulation.reporters.append(
-                        DCDReporter(output_file, opts['stride']))
 
-                    print 'Writing stride %d to file `%s`' % (opts['stride'], opts['filename'])
+                    selection = opts['selection']
+                    if selection is not None:
+                        mdtraj_topology = md.Topology.from_openmm(pdb.topology)
+                        atom_subset = mdtraj_topology.select(selection)
+                    else:
+                        atom_subset = None
+
+                    simulation.reporters.append(
+                        md.reporters.DCDReporter(
+                            output_file, opts['stride'], atomSubset=atom_subset))
+
+                    print 'Writing stride %d to file `%s` with selection `%s`' % (
+                        opts['stride'], opts['filename'], opts['selection'])
 
     else:
         # use defaults from arguments
@@ -241,7 +251,7 @@ if __name__ == '__main__':
 
     print('START SIMULATION')
 
-    simulation.step(args.length * args.interval_store)
+    simulation.step(args.length)
 
     print('DONE')
 
