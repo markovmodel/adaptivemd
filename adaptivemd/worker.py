@@ -358,17 +358,16 @@ class WorkerScheduler(Scheduler):
         # file side and then transfers it. The trick we use is to just create the file
         # directly on the remote side and do the link as usual. The requires to alter
         # a file:// path to be on the remote side.
-        print path
-        # path.replace('file://', 'worker://_file_' + os.path.basename(path))
 
+        # replace any occurance of `file://a/b/c/d/something` with `worker://_file_something
         path = re.sub(r"(file:\/\/[^ ]*\/)([^ \/]*)", r"worker://_file_\2", path)
 
+        # call the default replacements
         path = super(WorkerScheduler, self).replace_prefix(path)
-        print path
         return path
 
     def change_state(self, new_state):
-        print 'Changed to', new_state
+        print 'changed state to', new_state
         self.state = new_state
         if self._state_cb is not None:
             self._state_cb(self)
@@ -481,7 +480,7 @@ class Worker(StorableMixin):
                     # success, so mark the task as cancelled
                     task.state = mode
                     task.worker = None
-                    print 'Stopped a task [%s] from generator `%s` and set to `%s`' % (
+                    print 'stopped a task [%s] from generator `%s` and set to `%s`' % (
                         task.__class__.__name__,
                         task.generator.name if task.generator else '---',
                         task.state)
@@ -555,7 +554,7 @@ class Worker(StorableMixin):
 
                                     for task in tasklist:
                                         task.worker = self
-                                        print 'Queued a task [%s] from generator `%s`' % (
+                                        print 'queued a task [%s] from generator `%s`' % (
                                             task.__class__.__name__,
                                             task.generator.name if task.generator else '---')
 
@@ -614,7 +613,7 @@ class Worker(StorableMixin):
                             last_n_tasks = n_tasks
 
                 except (pymongo.errors.ConnectionFailure, pymongo.errors.AutoReconnect) as e:
-                    print 'PyMongo connection error', e
+                    print 'pymongo connection error', e
                     print 'try reconnection after %d seconds' % self.reconnect_time
                     # lost connection to DB, try to reconnect after some time
                     time.sleep(self.reconnect_time)
