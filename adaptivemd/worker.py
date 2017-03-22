@@ -102,7 +102,17 @@ class WorkerScheduler(Scheduler):
     def _start_job(self, task):
         self._current_unit_dir = 'worker.%s' % hex(task.__uuid__)
 
+<<<<<<< HEAD
         script_location = self.path + '/workers/' + self._current_unit_dir
+=======
+        script_location = self.current_task_dir
+
+        if os.path.exists(script_location):
+            print 'removing existing folder', script_location
+            # the folder already exists, probably a failed previous attempt
+            # a restart needs a clean folder so remove it now
+            shutil.rmtree(script_location)
+>>>>>>> workercleanup
 
         if not os.path.exists(script_location):
             os.makedirs(script_location)
