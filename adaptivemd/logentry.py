@@ -3,6 +3,9 @@ from util import DT
 
 
 class LogEntry(StorableMixin):
+    """
+    A storable representation of a log entry
+    """
 
     SEVERE = 1
     ERROR = 2
