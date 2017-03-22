@@ -7,6 +7,7 @@ import random
 import signal
 import ctypes
 import re
+import shutil
 from fcntl import fcntl, F_GETFL, F_SETFL
 
 from mongodb import StorableMixin, SyncVariable, create_to_dict, ObjectSyncVariable
@@ -39,6 +40,7 @@ class WorkerScheduler(Scheduler):
         self._save_log_to_db = True
         self.verbose = verbose
         self._fail_after_each_command = True
+        self._cleanup_successful = True
 
         self._std = {}
 
@@ -99,12 +101,16 @@ class WorkerScheduler(Scheduler):
 
         return tasks
 
+    @property
+    def current_task_dir(self):
+        if self._current_unit_dir is not None:
+            return self.path + '/workers/' + self._current_unit_dir
+        else:
+            return None
+
     def _start_job(self, task):
         self._current_unit_dir = 'worker.%s' % hex(task.__uuid__)
 
-<<<<<<< HEAD
-        script_location = self.path + '/workers/' + self._current_unit_dir
-=======
         script_location = self.current_task_dir
 
         if os.path.exists(script_location):
@@ -112,11 +118,11 @@ class WorkerScheduler(Scheduler):
             # the folder already exists, probably a failed previous attempt
             # a restart needs a clean folder so remove it now
             shutil.rmtree(script_location)
->>>>>>> workercleanup
 
-        if not os.path.exists(script_location):
-            os.makedirs(script_location)
+        # create a fresh folder
+        os.makedirs(script_location)
 
+        # and set the current directory
         os.chdir(script_location)
 
         task.fire('submit', self)
@@ -269,6 +275,13 @@ class WorkerScheduler(Scheduler):
                             task.fire('success', self)
                             task.state = 'success'
                             print 'task succeeded'
+                            if self._cleanup_successful:
+                                print 'removing worker dir'
+                                # go to an existing folder before we delete
+                                os.chdir(self.path)
+                                script_location = self.current_task_dir
+                                if script_location is not None:
+                                    shutil.rmtree(script_location)
                         except IOError:
 
                             task.state = 'fail'
