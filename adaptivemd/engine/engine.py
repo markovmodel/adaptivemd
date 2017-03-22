@@ -165,7 +165,10 @@ class Trajectory(File):
             self.frame, self.basename, self.length)
 
     def pick(self):
-        return self[random.randint(0, len(self) - 1)]
+        # only use existing frames (strides!)
+        frames = self.existing_frames
+        idx = random.randint(0, len(frames) - 1)
+        return self[frames[idx]]
 
     @property
     def is_folder(self):
@@ -246,6 +249,16 @@ class Trajectory(File):
 
         return None
 
+    @property
+    def existing_frames(self):
+        full_strides = self.engine.full_strides
+        frames = set()
+        l = len(self) + 1
+        for stride in full_strides:
+            frames.update(range(0, l, stride))
+
+        return sorted(frames)
+
 
 class Frame(StorableMixin):
     """
@@ -286,6 +299,9 @@ class Frame(StorableMixin):
 
         """
         absolute_idx = self.index
+
+        if absolute_idx > self.trajectory.length:
+            return None, None
 
         if self.trajectory.types:
             for key, desc in self.trajectory.types.iteritems():

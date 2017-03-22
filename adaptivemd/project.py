@@ -469,6 +469,13 @@ class Project(object):
 
             c = data['msm']['C']
             q = 1.0 / np.sum(c, axis=1)
+
+            # remove states that do not have at least one frame
+            for k in range(n_states):
+                if len(frame_state_list[k]) == 0:
+                    q[k] = 0.0
+
+            # and normalize the remaining ones
             q /= np.sum(q)
 
             state_picks = np.random.choice(np.arange(len(q)), size=n_pick, p=q)
