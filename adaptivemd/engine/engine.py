@@ -267,6 +267,37 @@ class Frame(StorableMixin):
     def __repr__(self):
         return 'Frame(%s[%d])' % (self.trajectory.basename, self.index)
 
+    @property
+    def index_in_outputs(self):
+        """
+        Return output type and effective frame index for this frame
+
+        Returns
+        -------
+        str
+            the name of the output type
+        int
+            the effective index within this trajectory obeying the trajectories
+            own stride
+
+        """
+        absolute_idx = self.index
+
+        if self.trajectory.types:
+            for key, desc in self.trajectory.types.iteritems():
+                stride = desc.stride
+                if desc.selection is None:
+                    # full atoms
+                    if absolute_idx % stride == 0:
+                        # picked a frame that exists in this stride
+                        return key, absolute_idx / stride
+
+        return None, None
+
+    @property
+    def exists(self):
+        ty, idx = self.index_in_outputs
+        return ty is not None
 
 # class RestartFile(File):
 #     """

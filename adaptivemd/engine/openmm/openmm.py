@@ -91,26 +91,14 @@ class OpenMMEngine(Engine):
             input_pdb = t.get(target.frame, loc)
 
         elif isinstance(target.frame, Frame):
-            input_traj = t.link(target.frame.trajectory.file('output.dcd'))
+            input_traj = t.link(target.frame.trajectory, 'source/')
             input_pdb = File('input.pdb')
 
             # frame index is in canonical stride = 1
             # we need to figure out which frame in the traj this actually is
             # also, we need a traj with full coordinates / selection = None
 
-            absolute_idx = target.frame.index
-            ty = None
-            idx = None
-
-            for t, desc in self.types.iteritems():
-                stride = desc.stride
-                if desc.selection is None:
-                    # full atoms
-                    if absolute_idx % stride == 0:
-                        # picked a frame that exists in this stride
-                        ty = t
-                        idx = absolute_idx / stride
-                        break
+            ty, idx = target.frame.index_in_outputs
 
             if ty is None:
                 # cannot use a trajectory where we do not have full coordinates
@@ -120,7 +108,7 @@ class OpenMMEngine(Engine):
                 target=input_pdb,  # input.pdb is used as starting structure
                 index=idx,         # the index from the source trajectory
                 pdb=initial_pdb,   # use the main pdb
-                source=input_traj.outputs[ty]))  # we pick output ty
+                source=input_traj.outputs(ty)))  # we pick output ty
         else:
             # for now we assume that if the initial frame is None or
             # not specific use the engines internal. That should be changed

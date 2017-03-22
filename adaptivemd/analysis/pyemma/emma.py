@@ -77,8 +77,8 @@ class PyEMMAAnalysis(Analysis):
             # nothing to analyze
             return
 
-        for t in trajs:
-            if outtype not in t.types:
+        for traj in trajs:
+            if outtype not in traj.types:
                 # ups, one of the trajectories does not have the required type!
                 return
 
