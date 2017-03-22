@@ -93,6 +93,7 @@ def remote_analysis(
     print '#trajectories :', len(trajectories)
 
     files = [os.path.join(t, traj_name) for t in trajectories]
+
     inp = pyemma.coordinates.source(files, feat)
 
     tica_obj = pyemma.coordinates.tica(

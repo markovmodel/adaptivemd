@@ -487,6 +487,8 @@ class Project(object):
                 for state in state_picks
                 ]
 
+            print picks
+
             return [filelist[pick[0]][pick[1]] for pick in picks]
 
         elif len(self.trajectories) > 0:
