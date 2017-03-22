@@ -276,6 +276,7 @@ class WorkerScheduler(Scheduler):
                             print 'task succeeded'
                             if self._cleanup_successful:
                                 print 'removing worker dir'
+                                os.chdir(self.path)
                                 script_location = self.current_task_dir
                                 if script_location is not None:
                                     shutil.rmtree(script_location)
