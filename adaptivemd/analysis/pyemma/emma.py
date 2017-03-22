@@ -9,11 +9,28 @@ class PyEMMAAnalysis(Analysis):
 
     Attributes
     ----------
-    pdb_file : `File`
-        file reference to the pdb_file for reference topology
+    engine : `Engine`
+        reference to an engine that knows about the topology
+    outtype : str
+        name of the output description to pick the frames from
+    features : dict or list or None
+        a feature descriptor in the format. A dict has exactly one entry:
+        functionname: [attr1, attr2, ...]. attributes can be results of
+        function calls. All function calls are to the featurizer object!
+        If a list is given each element is considered to be a feature
+        descriptor. If None (default) all coordinates will be added as
+        features (.add_all())
+
+        Examples
+
+            {'add_backbone_torsions': None}          -> feat.add_backbone_torsions()
+            {'add_distances': [ [[0,10], [2,20]] ]}  -> feat.add_distances([[0,10], [2,20]])
+            {'add_inverse_distances': [
+                { 'select_backbone': None } ]}       -> feat.add_inverse_distances(select_backbone())
     """
 
-    def __init__(self, engine, outtype, features):
+    def __init__(self, engine, outtype='master', features=None):
+
         super(PyEMMAAnalysis, self).__init__()
 
         pdb_file = engine['pdb_file']
@@ -27,9 +44,22 @@ class PyEMMAAnalysis(Analysis):
         self.initial_staging.append(stage)
 
         self.outtype = outtype
-        self.
+        self.engine = engine
+        self.features = features
 
+    @classmethod
+    def from_dict(cls, dct):
+        obj = super(Analysis, cls).from_dict(dct)
+        for k in ['outtype', 'engine', 'features']:
+            setattr(obj, k, dct[k])
 
+        return obj
+
+    def to_dict(self):
+        dct = super(Analysis, self).to_dict()
+        for k in ['outtype', 'engine', 'features']:
+            dct[k] = getattr(self, k)
+        return dct
 
     @staticmethod
     def then_func(project, task, model, inputs):
@@ -41,8 +71,6 @@ class PyEMMAAnalysis(Analysis):
     def task_run_msm_files(
             self,
             trajectories,
-            outtype='master',
-            features=None,
             tica_lag=2,
             tica_dim=2,
             msm_states=5,
@@ -55,23 +83,6 @@ class PyEMMAAnalysis(Analysis):
         ----------
         trajectories : list of `Trajectory`
             the list of trajectory references to be used in the computation
-        outtype : str
-            name of the output description to pick the frames from
-        features : dict or list or None
-            a feature descriptor in the format. A dict has exactly one entry:
-            functionname: [attr1, attr2, ...]. attributes can be results of
-            function calls. All function calls are to the featurizer object!
-            If a list is given each element is considered to be a feature
-            descriptor. If None (default) all coordinates will be added as
-            features (.add_all())
-
-            Examples
-
-                {'add_backbone_torsions': None}          -> feat.add_backbone_torsions()
-                {'add_distances': [ [[0,10], [2,20]] ]}  -> feat.add_distances([[0,10], [2,20]])
-                {'add_inverse_distances': [
-                    { 'select_backbone': None } ]}       -> feat.add_inverse_distances(select_backbone())
-
         tica_lag : int
             the lag-time used for tCIA
         tica_dim : int
@@ -101,6 +112,9 @@ class PyEMMAAnalysis(Analysis):
         if len(trajs) == 0:
             # nothing to analyze
             return
+
+        outtype = self.outtype
+        features = self.features
 
         for traj in trajs:
             if outtype not in traj.types:

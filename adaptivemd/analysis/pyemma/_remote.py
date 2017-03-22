@@ -73,10 +73,12 @@ def remote_analysis(
             if isinstance(parts, dict):
                 func, attributes = parts.items()[0]
                 f = getattr(featurizer, func)
-                if attributes is not None:
+                if attributes is None:
+                    return f()
+                if isinstance(attributes, (list, tuple)):
                     return f(*apply_feat_part(featurizer, attributes))
                 else:
-                    return f()
+                    return f(apply_feat_part(featurizer, attributes))
             elif isinstance(parts, (list, tuple)):
                 return [apply_feat_part(featurizer, q) for q in parts]
             else:
@@ -103,10 +105,15 @@ def remote_analysis(
 
     data = {
         'input': {
+            'n_atoms': topology.n_atoms,
             'frames': inp.n_frames_total(),
-            'dimension': inp.dimension(),
             'n_trajectories': inp.number_of_trajectories(),
             'lengths': inp.trajectory_lengths(),
+            'selection': selection
+        },
+        'features': {
+            'features': features,
+            'n_features': inp.dimension(),
         },
         'tica': {
             'dimension': tica_obj.dimension(),
