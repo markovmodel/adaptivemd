@@ -127,8 +127,7 @@ class Location(StorableMixin):
         # fix relative paths for file://
 
         if File.use_absolute_local_paths:
-            if self.drive == 'file':
-
+            if self.drive == 'file' and not self.path.startswith('/'):
                 p = os.path.abspath(self.path)
                 self.location = 'file://' + p
 
