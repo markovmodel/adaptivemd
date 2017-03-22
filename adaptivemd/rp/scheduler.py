@@ -192,7 +192,7 @@ class RPScheduler(Scheduler):
 
     def submit(self, submission):
         """
-        Submit a task in form of an event, a task or an taskable object
+        Submit a task in form of an event or a task
 
         Parameters
         ----------
@@ -257,7 +257,7 @@ class RPScheduler(Scheduler):
                     del self._events[idx]
 
             if found_new_events:
-                # if new events or tasks we should retrigger
+                # if new events or tasks we should fire the trigger
                 found_iteration -= 1
             else:
                 found_iteration = 0

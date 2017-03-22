@@ -252,7 +252,8 @@ class Task(BaseTask):
 
         s += ['']
         s += ['Sources']
-        s += ['- %s %s' % (x.short, '[exists]' if x.exists else '') for x in task.unstaged_input_files]
+        s += ['- %s %s' % (x.short, '[exists]' if x.exists else '')
+              for x in task.unstaged_input_files]
         s += ['Targets']
         s += ['- %s' % x.short for x in task.targets]
         s += ['Modified']
@@ -654,7 +655,6 @@ class DummyTask(PrePostTask):
         super(DummyTask, self).__init__()
         self.state = 'dummy'
 
-
     @property
     def description(self):
         task = self
@@ -823,8 +823,8 @@ class PythonTask(PrePostTask):
             package then the package needs to be installed on the cluster to be
             called. A function defined in a local file can be called as long
             as dependencies are installed.
-        args : arguments to the function
-        kwargs : named arguments to the function
+        kwargs : **kwargs
+            named arguments to the function
 
         """
         self._python_function_name = '.'.join([command.__module__, command.func_name])

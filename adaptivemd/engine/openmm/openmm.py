@@ -1,7 +1,7 @@
 import os
 import ujson
 
-from adaptivemd.task import PythonTask
+# from adaptivemd.task import PythonTask
 from adaptivemd.file import Location, File
 from adaptivemd.engine import Engine, Frame, Trajectory, \
     TrajectoryGenerationTask, TrajectoryExtensionTask

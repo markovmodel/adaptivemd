@@ -38,14 +38,6 @@ class LoaderProxy(object):
         self._subject = weakref.ref(ref)
         return ref
 
-    @property
-    def reversed(self):
-        return LoaderProxy(self._store, StorableMixin.ruuid(self._idx))
-
-    @property
-    def _reversed(self):
-        return LoaderProxy(self._store, StorableMixin.ruuid(self._idx))
-
     def __eq__(self, other):
         if self is other:
             return True
@@ -84,7 +76,7 @@ class LoaderProxy(object):
         """
         try:
             return self._store[self._idx]
-        except KeyError as e:
+        except KeyError:
             if type(self._idx) is int:
                 raise RuntimeWarning(
                     'Index %s is not in store. This should never happen!' %

@@ -222,12 +222,12 @@ class StorableMixin(object):
     @classmethod
     def from_dict(cls, dct):
         """
-        Reconstruct an object from a dictionary representaiton
+        Reconstruct an object from a dictionary representation
 
         Parameters
         ----------
         dct : dict
-            the dictionary containing a state representaion of the class.
+            the dictionary containing a state representation of the class.
 
         Returns
         -------

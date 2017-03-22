@@ -13,10 +13,12 @@ class SyncVariable(object):
         self.fix_fnc = fix_fnc
         self.values = weakref.WeakKeyDictionary()
 
-    def _idx(self, instance):
+    @staticmethod
+    def _idx(instance):
         return str(uuid.UUID(int=instance.__uuid__))
 
-    def _hex(self, instance):
+    @staticmethod
+    def _hex(instance):
         return hex(instance.__uuid__)
 
     def _update(self, store, idx):

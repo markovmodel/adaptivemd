@@ -1,3 +1,6 @@
+# The remote function to be called py PyEMMAAnalysis
+
+
 def remote_analysis(
         trajectories,
         traj_name='output.dcd',
@@ -30,22 +33,27 @@ def remote_analysis(
 
         Examples
 
-            {'add_backbone_torsions': None}          -> feat.add_backbone_torsions()
-            {'add_distances': [ [[0,10], [2,20]] ]}  -> feat.add_distances([[0,10], [2,20]])
+            {'add_backbone_torsions': None}
+            -> feat.add_backbone_torsions()
+
+            {'add_distances': [ [[0,10], [2,20]] ]}
+            -> feat.add_distances([[0,10], [2,20]])
+
             {'add_inverse_distances': [
-                { 'select_backbone': None } ]}       -> feat.add_inverse_distances(select_backbone())
+                { 'select_backbone': None } ]}
+            -> feat.add_inverse_distances(select_backbone())
 
     topfile : `File`
         a reference to the full topology `.pdb` file using in pyemma
-    tica_lag : int
+    tica_lag : `int`
         the lagtime used for tCIA
-    tica_dim : int
+    tica_dim : `int`
         number of dimensions using in tICA. This refers to the number of tIC used
-    msm_states : int
+    msm_states : `int`
         number of microstates used for the MSM
-    msm_lag : int
+    msm_lag : `int`
         lagtime used for the MSM construction
-    stride : int
+    stride : `int`
         a stride to be used on the data. Can speed up computation at reduced accuracy
 
     Returns

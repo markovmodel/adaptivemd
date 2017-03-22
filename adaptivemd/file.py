@@ -95,7 +95,6 @@ class Move(FileTransaction):
         return [self.source]
 
 
-
 class Remove(FileAction):
     @property
     def removed(self):

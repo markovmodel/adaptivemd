@@ -23,10 +23,15 @@ class PyEMMAAnalysis(Analysis):
 
         Examples
 
-            {'add_backbone_torsions': None}          -> feat.add_backbone_torsions()
-            {'add_distances': [ [[0,10], [2,20]] ]}  -> feat.add_distances([[0,10], [2,20]])
-            {'add_inverse_distances': [
-                { 'select_backbone': None } ]}       -> feat.add_inverse_distances(select_backbone())
+            {'add_backbone_torsions': None}
+            -> feat.add_backbone_torsions()
+
+            {'add_distances': [ [[0,10], [2,20]] ]}
+            -> feat.add_distances([[0,10], [2,20]])
+
+            {'add_inverse_distances':
+                { 'select_backbone': None } }
+            -> feat.add_inverse_distances(select_backbone())
     """
 
     def __init__(self, engine, outtype='master', features=None):

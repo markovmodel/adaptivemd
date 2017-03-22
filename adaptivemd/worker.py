@@ -385,7 +385,7 @@ class WorkerScheduler(Scheduler):
         # a file:// path to be on the remote side.
 
         # replace any occurance of `file://a/b/c/d/something` with `worker://_file_something
-        path = re.sub(r"(file:\/\/[^ ]*\/)([^ \/]*)", r"worker://_file_\2", path)
+        path = re.sub(r"(file://[^ ]*/)([^ /]*)", r"worker://_file_\2", path)
 
         # call the default replacements
         path = super(WorkerScheduler, self).replace_prefix(path)

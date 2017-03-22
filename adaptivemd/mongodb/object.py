@@ -438,7 +438,8 @@ class ObjectStore(StorableMixin):
         while modified is None and len(self) > 0:
             try:
                 found_ones = self._document.find({key: value})
-                one = next(t for t in (self.load(int(UUID(f['_id']))) for f in found_ones) if test_fnc(t))
+                one = next(t for t in (
+                    self.load(int(UUID(f['_id']))) for f in found_ones) if test_fnc(t))
 
             except StopIteration:
                 break
@@ -603,7 +604,6 @@ class ObjectStore(StorableMixin):
         :py:class:`mongodb.base.StorableMixin`
             the loaded object
         """
-
 
         if type(idx) is str:
             idx = int(UUID(self._document.find_one({'name': idx})['_id']))

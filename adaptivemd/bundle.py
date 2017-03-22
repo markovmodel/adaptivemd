@@ -344,7 +344,7 @@ class StoredBundle(Bundle):
         Returns
         -------
         object
-            the earlist object
+            the earliest object
 
         """
         if self._set is not None:

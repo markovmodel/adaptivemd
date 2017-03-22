@@ -68,7 +68,7 @@ class MongoDBStorage(object):
 
     def __init__(self, filename, mode=None):
         """
-        Create a mongosb storage for complex objects
+        Create a mongodb storage for complex objects
 
         Parameters
         ----------
@@ -81,7 +81,7 @@ class MongoDBStorage(object):
 
         Notes
         -----
-        You can savely open a storage from multiple instances. These will cross update.
+        You can safely open a storage from multiple instances. These will cross update.
 
         """
 
@@ -256,7 +256,7 @@ class MongoDBStorage(object):
         """
         Run initializations for all added stores.
 
-        This will make sure that all previously added stores are now useable.
+        This will make sure that all previously added stores are now usable.
         If you add more stores you need to call this again. The reason this is
         done at all is that stores might reference each other and so no
         unique order of creation can be found. Thus you first create stores

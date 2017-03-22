@@ -7,7 +7,6 @@ from adaptivemd import Project, Worker
 from adaptivemd.mongodb import MongoDBStorage
 
 import signal
-import sys
 
 
 if __name__ == '__main__':
@@ -103,7 +102,7 @@ if __name__ == '__main__':
     project = Project(args.project)
 
     RE_wrapper = re.compile(
-        r'''([a-zA-Z][a-zA-Z_0-9]*)\((\"[^\"]*?\"|'[^']*?'|[\s0-9\.]+)?(?:,\s*(\"[^\"]*?\"|'[^']*?'|[0-9\.]+)\s*)?\)''')
+        r'''([a-zA-Z][a-zA-Z_0-9]*)\((\"[^\"]*?\"|'[^']*?'|[\s0-9.]+)?(?:,\s*(\"[^\"]*?\"|'[^']*?'|[0-9.]+)\s*)?\)''')
 
     # --------------------------------------------------------------------------
     # CREATE THE WORKER
@@ -157,7 +156,7 @@ if __name__ == '__main__':
 
     print
 
-    def signal_term_handler(signal, frame):
+    def signal_term_handler(sig, frame):
         print 'got SIGTERM ...'
         worker.shutdown()
 
