@@ -114,6 +114,7 @@ class WorkerScheduler(Scheduler):
         script_location = self.current_task_dir
 
         if os.path.exists(script_location):
+            print 'removing existing folder', script_location
             # the folder already exists, probably a failed previous attempt
             # a restart needs a clean folder so remove it now
             shutil.rmtree(script_location)
