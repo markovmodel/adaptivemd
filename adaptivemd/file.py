@@ -127,11 +127,9 @@ class Location(StorableMixin):
         # fix relative paths for file://
 
         if File.use_absolute_local_paths:
-            if self.drive == 'file':
-                # only if we do not have an absolute path yet
-                if not self.path.startswith('/'):
-                    p = os.path.abspath(self.path)
-                    self.location = 'file://' + p
+            if self.drive == 'file' and not self.path.startswith('/'):
+                p = os.path.abspath(self.path)
+                self.location = 'file://' + p
 
     def clone(self):
         return self.__class__(self.location)
