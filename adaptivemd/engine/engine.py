@@ -70,24 +70,24 @@ class Engine(TaskGenerator):
         """
         return None
 
-    def file_generators(self):
-        """
-        Return a list of function to be run with certain classes
-
-        `Trajectory` is a natural object of engine and giving a trajectory including its
-        initial frame and length is enough to tell the `Engine` on what to generate. Since
-        this is enough we can define that using a `Trajectory` object in `Scheduler.submit`
-        will result in a simulation task.
-
-        Returns
-        -------
-        dict of `type`: function
-            the dict describing with function to run with which object type
-
-        """
-        return {
-            Trajectory: self.run
-        }
+    # def file_generators(self):
+    #     """
+    #     Return a list of function to be run with certain classes
+    #
+    #     `Trajectory` is a natural object of engine and giving a trajectory including its
+    #     initial frame and length is enough to tell the `Engine` on what to generate. Since
+    #     this is enough we can define that using a `Trajectory` object in `Scheduler.submit`
+    #     will result in a simulation task.
+    #
+    #     Returns
+    #     -------
+    #     dict of `type`: function
+    #         the dict describing with function to run with which object type
+    #
+    #     """
+    #     return {
+    #         Trajectory: self.run
+    #     }
 
     def add_output_type(self, name, filename=None, stride=1, selection=None):
         self.types[name] = OutputTypeDescription(filename, stride, selection)
@@ -95,6 +95,10 @@ class Engine(TaskGenerator):
     @property
     def native_stride(self):
         return lcmm(*[x.stride for x in self.types.values()])
+
+    @property
+    def full_strides(self):
+        return [x.stride for x in self.types.values() if x.selection is None]
 
 
 def gcd(a, b):

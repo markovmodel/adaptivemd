@@ -316,30 +316,36 @@ class Project(object):
                 self.tasks.add(task)
             elif isinstance(task, (list, tuple)):
                 map(self.queue, task)
-            else:
-                # if the engines can handle some object we parse these into tasks
-                for cls, gen in self.file_generators.items():
-                    if isinstance(task, cls):
-                        return self.queue(gen(task))
+            elif isinstance(task, Trajectory):
+                if task.engine is not None:
+                    t = task.run()
+                    if t is not None:
+                        self.tasks.add(t)
+
+            # else:
+            #     # if the engines can handle some object we parse these into tasks
+            #     for cls, gen in self.file_generators.items():
+            #         if isinstance(task, cls):
+            #             return self.queue(gen(task))
 
             # we do not allow iterators, too dangerous
             # elif hasattr(task, '__iter__'):
             #     map(self.tasks.add, task)
 
-    @property
-    def file_generators(self):
-        """
-        Return a list of file generators the convert certain objects into task
-
-        Returns
-        -------
-        dict object : function -> (list of) `Task`
-        """
-        d = {}
-        for gen in self.generators:
-            d.update(gen.file_generators())
-
-        return d
+    # @property
+    # def file_generators(self):
+    #     """
+    #     Return a list of file generators the convert certain objects into task
+    #
+    #     Returns
+    #     -------
+    #     dict object : function -> (list of) `Task`
+    #     """
+    #     d = {}
+    #     for gen in self.generators:
+    #         d.update(gen.file_generators())
+    #
+    #     return d
 
     def new_trajectory(self, frame, length, engine=None, number=1):
         """
@@ -443,10 +449,23 @@ class Project(object):
             assert(isinstance(model, Model))
             data = model.data
 
-            frame_state_list = {n: [] for n in range(data['clustering']['k'])}
+            n_states = data['clustering']['k']
+            modeller = data['input']['modeller']
+
+            outtype = modeller.outtype
+
+            # the stride of the analyzed trajectories
+            used_stride = modeller.engine.types[outtype].stride
+
+            # all stride for full trajectories
+            full_strides = modeller.engine.full_strides
+
+            frame_state_list = {n: [] for n in range(n_states)}
             for nn, dt in enumerate(data['clustering']['dtrajs']):
                 for mm, state in enumerate(dt):
-                    frame_state_list[state].append((nn, mm))
+                    # if there is a full traj with existing frame, use it
+                    if any([(mm * used_stride) % stride == 0 for stride in full_strides]):
+                        frame_state_list[state].append((nn, mm))
 
             c = data['msm']['C']
             q = 1.0 / np.sum(c, axis=1)
@@ -470,12 +489,14 @@ class Project(object):
         else:
             return []
 
-    def new_ml_trajectory(self, length, number):
+    def new_ml_trajectory(self, engine, length, number):
         """
         Find trajectories that have initial points picked by inverse eq dist
 
         Parameters
         ----------
+        engine : `Engine`
+            the engine to be used
         length : int
             length of the trajectories returned
         number : int
@@ -492,7 +513,7 @@ class Project(object):
         `find_ml_next_frame`
 
         """
-        return [self.new_trajectory(frame, length) for frame in
+        return [self.new_trajectory(frame, length, engine) for frame in
                 self.find_ml_next_frame(number)]
 
     def events_done(self):

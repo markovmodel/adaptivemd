@@ -66,9 +66,12 @@ class PyEMMAAnalysis(Analysis):
         # add the input arguments for later reference
         model.data['input']['trajectories'] = inputs['trajectories']
         model.data['input']['pdb'] = inputs['topfile']
+
+        # from the task we get the used generator and then its outtype
+        model.data['input']['modeller'] = task.generator
         project.models.add(model)
 
-    def task_run_msm_files(
+    def execute(
             self,
             trajectories,
             tica_lag=2,

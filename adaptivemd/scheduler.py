@@ -74,12 +74,12 @@ class Scheduler(object):
         else:
             return []
 
-    @property
-    def file_generators(self):
-        if self.project:
-            return self.project.file_generators
-        else:
-            return {}
+    # @property
+    # def file_generators(self):
+    #     if self.project:
+    #         return self.project.file_generators
+    #     else:
+    #         return {}
 
     @property
     def folder_name(self):
@@ -189,12 +189,14 @@ class Scheduler(object):
                     return self._to_tasks(submission.dependencies)
                 else:
                     return []
-        else:
-            for cls, gen in self.file_generators.items():
-                if isinstance(submission, cls):
-                    return self._to_tasks(gen(submission))
+        # else:
+        #     for cls, gen in self.file_generators.items():
+        #         if isinstance(submission, cls):
+        #             return self._to_tasks(gen(submission))
+        #
+        #     return []
 
-            return []
+        return []
 
     def _to_events(self, submission):
         if isinstance(submission, (tuple, list)):

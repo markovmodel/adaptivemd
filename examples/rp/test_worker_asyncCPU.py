@@ -94,7 +94,7 @@ if __name__ == '__main__':
     def strategy_model(steps):
         while ev1:
             num = len(project.trajectories)
-            task = modeller.task_run_msm_files(list(project.trajectories))
+            task = modeller.execute(list(project.trajectories))
             project.tasks.add(task)
             yield task.is_done
             cond = project.on_ntraj(num + steps)

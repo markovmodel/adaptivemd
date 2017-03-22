@@ -98,7 +98,7 @@ if __name__ == '__main__':
     def strategy_model(scheduler, steps):
         while any(events):
             num = len(project.trajectories)
-            task = scheduler(modeller.task_run_msm_files(list(project.trajectories)))
+            task = scheduler(modeller.execute(list(project.trajectories)))
             yield task.is_done
             cond = project.on_ntraj(num + steps)
             yield lambda: cond() or not any(events)

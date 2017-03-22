@@ -100,7 +100,7 @@ if __name__ == '__main__':
         for f in project.trajectories:
             print f.url
 
-        task = scheduler(modeller.task_run_msm_files(list(project.trajectories)))
+        task = scheduler(modeller.execute(list(project.trajectories)))
         scheduler.wait()
 
     # print

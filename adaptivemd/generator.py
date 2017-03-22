@@ -54,8 +54,8 @@ class TaskGenerator(StorableMixin):
         """
         return self.initial_staging
 
-    def file_generators(self):
-        return {}
+    # def file_generators(self):
+    #     return {}
 
     def stage(self, obj, target=None):
         self.initial_staging.append(
