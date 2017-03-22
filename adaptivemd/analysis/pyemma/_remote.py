@@ -1,6 +1,8 @@
 def remote_analysis(
         trajectories,
         traj_name='output.dcd',
+        selection=None,
+        features=None,
         topfile='input.pdb',
         tica_lag=2,
         tica_dim=2,
@@ -12,12 +14,29 @@ def remote_analysis(
 
     Parameters
     ----------
-    trajectories : list of `Trajectory`
+    trajectories : Sized of `Trajectory`
         a list of `Trajectory` objects
     traj_name : str
         name of the trajectory file with the trajectory directory given
+    selection : str
+        an atom subset selection string as used in mdtraj .select
+    features : dict or list or None
+        a feature descriptor in the format. A dict has exactly one entry:
+        functionname: [attr1, attr2, ...]. attributes can be results of
+        function calls. All function calls are to the featurizer object!
+        If a list is given each element is considered to be a feature
+        descriptor. If None (default) all coordinates will be added as
+        features (.add_all())
+
+        Examples
+
+            {'add_backbone_torsions': None}          -> feat.add_backbone_torsions()
+            {'add_distances': [ [[0,10], [2,20]] ]}  -> feat.add_distances([[0,10], [2,20]])
+            {'add_inverse_distances': [
+                { 'select_backbone': None } ]}       -> feat.add_inverse_distances(select_backbone())
+
     topfile : `File`
-        a reference to the `.pdb` file using in pyemma
+        a reference to the full topology `.pdb` file using in pyemma
     tica_lag : int
         the lagtime used for tCIA
     tica_dim : int
@@ -38,10 +57,34 @@ def remote_analysis(
     import os
 
     import pyemma
+    import mdtraj as md
     from adaptivemd import Model
 
-    feat = pyemma.coordinates.featurizer(topfile)
-    feat.add_backbone_torsions()
+    pdb = md.load(topfile)
+    topology = pdb.topology
+
+    if selection:
+        topology = topology.subset(topology.select(selection_string=selection))
+
+    feat = pyemma.coordinates.featurizer(topology)
+
+    if features:
+        def apply_feat_part(featurizer, parts):
+            if isinstance(parts, dict):
+                func, attributes = parts.items()[0]
+                f = getattr(featurizer, func)
+                if attributes is not None:
+                    return f(*apply_feat_part(featurizer, attributes))
+                else:
+                    return f()
+            elif isinstance(parts, (list, tuple)):
+                return [apply_feat_part(featurizer, q) for q in parts]
+            else:
+                return parts
+
+        apply_feat_part(feat, features)
+    else:
+        feat.add_all()
 
     pyemma.config.show_progress_bars = False
 

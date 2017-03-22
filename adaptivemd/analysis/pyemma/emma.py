@@ -13,14 +13,23 @@ class PyEMMAAnalysis(Analysis):
         file reference to the pdb_file for reference topology
     """
 
-    def __init__(self, pdb_file):
+    def __init__(self, engine, outtype, features):
         super(PyEMMAAnalysis, self).__init__()
+
+        pdb_file = engine['pdb_file']
+
+        # todo: reuse the engines staged pdb_file if possible
 
         self['pdb_file'] = pdb_file
         stage = pdb_file.transfer('staging:///')
 
         self['pdb_file_stage'] = stage.target
         self.initial_staging.append(stage)
+
+        self.outtype = outtype
+        self.
+
+
 
     @staticmethod
     def then_func(project, task, model, inputs):
@@ -33,6 +42,7 @@ class PyEMMAAnalysis(Analysis):
             self,
             trajectories,
             outtype='master',
+            features=None,
             tica_lag=2,
             tica_dim=2,
             msm_states=5,
@@ -47,6 +57,21 @@ class PyEMMAAnalysis(Analysis):
             the list of trajectory references to be used in the computation
         outtype : str
             name of the output description to pick the frames from
+        features : dict or list or None
+            a feature descriptor in the format. A dict has exactly one entry:
+            functionname: [attr1, attr2, ...]. attributes can be results of
+            function calls. All function calls are to the featurizer object!
+            If a list is given each element is considered to be a feature
+            descriptor. If None (default) all coordinates will be added as
+            features (.add_all())
+
+            Examples
+
+                {'add_backbone_torsions': None}          -> feat.add_backbone_torsions()
+                {'add_distances': [ [[0,10], [2,20]] ]}  -> feat.add_distances([[0,10], [2,20]])
+                {'add_inverse_distances': [
+                    { 'select_backbone': None } ]}       -> feat.add_inverse_distances(select_backbone())
+
         tica_lag : int
             the lag-time used for tCIA
         tica_dim : int
@@ -88,6 +113,8 @@ class PyEMMAAnalysis(Analysis):
             remote_analysis,
             trajectories=trajs,
             traj_name=ty.filename,  # we need the filename in the traj folder
+            selection=ty.selection,  # tell pyemma the subsets of atoms
+            features=features,
             topfile=input_pdb,
             tica_lag=tica_lag,
             tica_dim=tica_dim,
