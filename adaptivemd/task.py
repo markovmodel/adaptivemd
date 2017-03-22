@@ -42,69 +42,91 @@ class BaseTask(StorableMixin):
 
     @property
     def pre_add_paths(self):
+        """
+        list of str
+            the list of added paths to the $PATH variable by this task
+
+        """
         return self._add_paths
 
     @property
     def environment(self):
-        return self._environment
+        """
+        dict str : str
+            the dict of environment variables and their assigned value
 
-    # @property
-    # def pre_add_paths(self):
-    #     if self._wrapper:
-    #         return self._wrapper.pre_add_paths + self._add_paths
-    #
-    #     return self._add_paths
-    #
-    # @property
-    # def environment(self):
-    #     if self._wrapper:
-    #         env = {}
-    #         env.update(self._wrapper.environment)
-    #         env.update(self._environment)
-    #         return env
-    #
-    #     return self._environment
-    #
-    # @property
-    # def pre_exec_tail(self):
-    #     if self._wrapper:
-    #         return self._wrapper.pre_exec + self.pre
-    #
-    #     return (
-    #         self.pre
-    #     )
+        """
+        return self._environment
 
     @property
     def pre_exec(self):
+        """
+        list of str or `Action`
+            the list of actions to be run before the main script. Contains environment variables
+
+        """
         return (
             self._format_export_paths(self.pre_add_paths) +
             self._format_environment(self.environment))
 
     @property
     def main(self):
+        """
+        list of str or `Action`
+            the main part of the script
+
+        """
         return (
             self._main
         )
 
     @property
     def script(self):
+        """
+        list of str or `Action`
+            the full script of this task. This is what is send to a worker and parsed by it
+
+        """
         return self.pre_exec + self.main
 
     def add_path(self, path):
+        """
+
+        Parameters
+        ----------
+        path : (list of) str
+            a (list of) path(s) to be added to the $PATH variable before task execution
+
+        """
         if isinstance(path, str):
             self._add_paths.append(path)
         elif isinstance(path, (list, tuple)):
             self._add_paths.extend(path)
 
     def __rshift__(self, other):
+        """
+        The `>>` can be used to wrap a task in one another.
+
+        The outer task must have pre and post and the inner will use the full script
+
+        Parameters
+        ----------
+        other : `PrePostTask`
+            the task that wraps the current task
+
+        Returns
+        -------
+        `EnclosedTask`
+            the representation of a wrapped task
+
+        """
         if other is None:
             return self
-        elif isinstance(other, Task):
+        elif isinstance(other, PrePostTask):
             return EnclosedTask(self, other)
 
     def to_dict(self):
         dct = {c: getattr(self, c) for c in self._copy_attributes}
-
         return dct
 
     @classmethod
@@ -198,6 +220,14 @@ class Task(BaseTask):
 
     @property
     def dependency_okay(self):
+        """
+        Check if all dependency tasks are successful
+
+        Returns
+        -------
+        bool
+            `True` if all dependencies are fulfilled
+        """
         dependencies = self.dependencies
         if dependencies is not None:
             return all(d.state == 'success' for d in self.dependencies)
@@ -206,12 +236,35 @@ class Task(BaseTask):
 
     @property
     def ready(self):
+        """
+        Check if this task is ready to be executed
+
+        Usually this only checks dependencies but might involve more elaborate checks
+        for specific Task classes
+
+        Returns
+        -------
+        bool
+            if `True` the task can now be executed
+
+        """
         if self.dependencies:
             return self.dependency_okay
 
         return True
 
     def _default_fail(self, scheduler):
+        """
+        the default function executed when a task fails
+
+        You can add your own callbacks. This is just the default
+
+        Parameters
+        ----------
+        scheduler : `Scheduler`
+            the calling scheduler to know where the task has failed
+
+        """
         # todo: improve error handling
         print 'task did not complete'
 
@@ -226,22 +279,37 @@ class Task(BaseTask):
                          unit.stdout,
                          unit.stderr)
 
-        if self.restartable and self.restart_failed:
-            scheduler.submit(self)
-
     def _default_success(self, scheduler):
-            # print 'task succeeded. State:', self.state
+        """
+        the default function executed when a task succeeds
 
-            for f in self.modified_files:
-                f.modified()
-                scheduler.project.files.add(f)
+        You can add your own callbacks. This is just the default
 
-            for f in self.targets:
-                f.create(scheduler)
-                scheduler.project.files.add(f)
+        Parameters
+        ----------
+        scheduler : `Scheduler`
+            the calling scheduler to know where the task has succeeded
+
+        """
+
+        for f in self.modified_files:
+            f.modified()
+            scheduler.project.files.add(f)
+
+        for f in self.targets:
+            f.create(scheduler)
+            scheduler.project.files.add(f)
 
     @property
     def description(self):
+        """
+        Return a lengthy description of the task for debugging and information
+
+        Returns
+        -------
+        str
+            the information text
+        """
         task = self
         s = ['Task: %s(%s) [%s]' % (
                 task.__class__.__name__, task.generator.__class__.__name__, task.state)]
@@ -266,49 +334,106 @@ class Task(BaseTask):
 
         return '\n'.join(s)
 
-    def fire(self, event, cluster):
+    def fire(self, event, scheduler):
+        """
+        Fire an event like success or failed.
+
+        Notes
+        -----
+        You should never have to call this yourself. The scheduler does that.
+
+        Parameters
+        ----------
+        event : str
+            the events name like `fail`, `success`, `submit`
+        scheduler : `Scheduler`
+            the scheduler that issued the events to be fired
+
+        """
         if event in Task._events:
             cbs = self._on.get(event, [])
             for cb in cbs:
-                cb(self, cluster)
+                cb(self, scheduler)
 
         if event in ['submit', 'fail', 'success']:
             self.state = event
 
     def is_done(self):
+        """
+        Check if the task is done executing. Can be failed, successful or cancelled
+
+        Returns
+        -------
+        bool
+            `True` if the task has finished its execution
+
+        """
         return self.state in ['fail', 'success', 'cancelled']
 
     def was_successful(self):
+        """
+        Check if the task is done executing and was successful
+
+        Returns
+        -------
+        bool
+            `True` if the task has finished successfully
+
+        """
         return self.state in ['success']
 
     def has_failed(self):
+        """
+        Check if the task is done executing and has failed
+
+        Returns
+        -------
+        bool
+            `True` if the task has finished but failed
+
+        """
         return self.state in ['fail']
 
     def add_cb(self, event, cb):
+        """
+        Add a custom callback
+
+        Parameters
+        ----------
+        event : str
+            name of the event to be called upon firing
+        cb : function
+            the function to be called. It must be a function that takes a task and a scheduler
+
+        """
         if event in Task._events:
             self._on[event] = self._on.get(event, [])
             self._on[event].append(cb)
 
     @property
     def additional_files(self):
+        """
+        list of `Location`
+            return the list of files created other than taken care of by actions. Should usually not
+            be necessary. If you do some bad hacks with the bash you can add files that
+            you transferred yourself to the project folders.
+
+        """
         return self._add_files
 
-    # @property
-    # def command(self):
-    #     cmd = self.executable or ''
-    #
-    #     if isinstance(self.arguments, basestring):
-    #         cmd += ' ' + self.arguments
-    #     elif self.arguments is not None:
-    #         cmd += ' '
-    #         args = [
-    #             a if (a[0] in ['"', "'"] and a[0] == a[-1]) else '"' + a + '"'
-    #             for a in self.arguments]
-    #         cmd += ' '.join(args)
-    #
-    #     return cmd
-
     def add_files(self, files):
+        """
+        Add additional files to the task execution
+
+        Should usually not be necessary. If you do some bad hacks with the bash you
+        can add files that you transferred yourself to the project folders.
+
+        Parameters
+        ----------
+        files : list of `File`
+            the list of files to be added to the task
+
+        """
         if isinstance(files, File):
             self._add_files.append(files)
         elif isinstance(files, (list, tuple)):
@@ -514,9 +639,37 @@ class Task(BaseTask):
         return transaction.target
 
     def touch(self, f):
-        self.append(f.touch())
+        """
+        Add an action to create an empty file or folder at a given location
+
+        Parameters
+        ----------
+        f : `Location`
+            the location (file or folder) to be used
+
+        """
+        transaction = f.touch()
+        self.append(transaction)
+        return transaction.source
 
     def link(self, f, name=None):
+        """
+        Add an action to create a link to a file (under a new name)
+
+        Parameters
+        ----------
+        f : `Location`
+            the source location (file or folder) to be used
+        name : `Location` or str
+            the target location to be used. For source files and target folders the
+            basename is copied
+
+        Returns
+        -------
+        `Location`
+            the actual target location
+
+        """
         transaction = f.link(name)
         self.append(transaction)
         return transaction.target
@@ -535,6 +688,11 @@ class Task(BaseTask):
             the target location. Need to contain a URL like `staging://` or
             `file://` for application side files
 
+        Returns
+        -------
+        `Location`
+            the actual target location
+
         """
         transaction = f.move(target)
         self.append(transaction)
@@ -542,11 +700,17 @@ class Task(BaseTask):
 
     def remove(self, f):
         """
-        Remove a file at the end of the run
+        Add an action to remove a file or folder
 
         Parameters
         ----------
         f : `File`
+            the location to be removed
+
+        Returns
+        -------
+        `Location`
+            the actual location
 
         """
         transaction = f.remove()

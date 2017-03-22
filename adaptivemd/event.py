@@ -61,7 +61,7 @@ class Event(object):
         except StopIteration:
             self._current_when = None
 
-    def _update_task_list(self):
+    def _update_conditions(self):
         self._active_tasks = filter(lambda x: not x.is_done(),
                                     self._active_tasks)
 
@@ -69,17 +69,17 @@ class Event(object):
 
     @property
     def active_tasks(self):
-        self._update_task_list()
+        self._update_conditions()
         return self._active_tasks
 
     @property
     def has_running_tasks(self):
-        self._update_task_list()
+        self._update_conditions()
         return len(self._finish_conditions) > 0
         # return len(self._active_tasks) > 0
 
     def __nonzero__(self):
-        self._update_task_list()
+        self._update_conditions()
         return self._current_when is not None or self.has_running_tasks
 
     def _generate(self, scheduler):

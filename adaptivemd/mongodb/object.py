@@ -10,49 +10,6 @@ from proxy import LoaderProxy
 logger = logging.getLogger(__name__)
 
 
-# class HashedList(dict):
-#     def __init__(self):
-#         super(HashedList, self).__init__()
-#         dict.__init__(self)
-#         self._list = []
-#
-#     def append(self, key):
-#         dict.__setitem__(self, key, len(self))
-#         self._list.append(key)
-#
-#     # noinspection PyCallByClass
-#     def extend(self, t):
-#         l = len(self)
-#         map(lambda x, y: dict.__setitem__(self, x, y), t, range(l, l + len(t)))
-#         self._list.extend(t)
-#
-#     def __setitem__(self, key, value):
-#         dict.__setitem__(self, key, value)
-#         self._list[value] = key
-#
-#     def __getitem__(self, key):
-#         return dict.__getitem__(self, key)
-#
-#     def index(self, key):
-#         return self._list[key]
-#
-#     def mark(self, key):
-#         if key not in self:
-#             dict.__setitem__(self, key, -2)
-#
-#     def unmark(self, key):
-#         if key in self:
-#             dict.__delitem__(self, key)
-#
-#     def clear(self):
-#         dict.clear(self)
-#         self._list = []
-#
-#     @property
-#     def list(self):
-#         return self._list
-
-
 class ObjectStore(StorableMixin):
     """
     Base Class for storing complex objects in a netCDF4 file. It holds a
@@ -382,15 +339,30 @@ class ObjectStore(StorableMixin):
 
         return None
 
-    def consume_one(self, func=None):
+    def consume_one(self, test_fnc=None):
+        """
+        Remove one object and return it in the process
+
+        Parameters
+        ----------
+        test_fnc : function
+            only objects that match by this function are considered
+
+        Returns
+        -------
+        None or `StorableMixin`
+            if `None` then no object was altered, otherwise the changed object
+            is returned
+
+        """
         consumed = None
         while consumed is None and len(self) > 0:
-            if func is None:
+            if test_fnc is None:
                 one = self.one
             else:
 
                 try:
-                    one = next(t for t in self if func(t))
+                    one = next(t for t in self if test_fnc(t))
                 except StopIteration:
                     break
 
@@ -412,6 +384,25 @@ class ObjectStore(StorableMixin):
         return consumed
 
     def modify_one(self, key, value, update):
+        """
+        Change an attribute of one object
+
+        Parameters
+        ----------
+        key : str
+            the attributes name to be changed
+        value : object
+            the old value to be found and changed
+        update : object
+            the new value to the changed into
+
+        Returns
+        -------
+        None or `StorableMixin`
+            if `None` then no object was altered, otherwise the changed object
+            is returned
+
+        """
         modified = None
         while modified is None and len(self) > 0:
 
@@ -434,6 +425,27 @@ class ObjectStore(StorableMixin):
         return modified
 
     def modify_test_one(self, test_fnc, key, value, update):
+        """
+        Change an attribute of one object that matches a function
+
+        Parameters
+        ----------
+        test_fnc : function
+            only objects that match by this function are considered
+        key : str
+            the attributes name to be changed
+        value : object
+            the old value to be found and changed
+        update : object
+            the new value to the changed into
+
+        Returns
+        -------
+        None or `StorableMixin`
+            if `None` then no object was altered, otherwise the changed object
+            is returned
+
+        """
         modified = None
         while modified is None and len(self) > 0:
             try:

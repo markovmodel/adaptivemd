@@ -265,6 +265,14 @@ class File(Location):
         return None
 
     def clone(self):
+        """
+        create a cloned object with equal attributes
+
+        Returns
+        -------
+        `Location`
+            the same type as this object
+        """
         f = self.__class__(self.location)
         f.resource = self.resource
         f.created = None

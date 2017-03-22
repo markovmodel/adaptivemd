@@ -26,7 +26,7 @@ class OpenMMEngine(Engine):
         a list of arguments passed to the `openmmrun.py` script
     """
 
-    def __init__(self, system_file, integrator_file, pdb_file, args=None, restartable=False):
+    def __init__(self, system_file, integrator_file, pdb_file, args=None):
         super(OpenMMEngine, self).__init__()
 
         self._items = dict()
@@ -45,19 +45,16 @@ class OpenMMEngine(Engine):
             args = '-p CPU'
 
         self.args = args
-        self.restartable = restartable
 
     @classmethod
     def from_dict(cls, dct):
         obj = super(OpenMMEngine, cls).from_dict(dct)
         obj.args = dct['args']
-        obj.restartable = dct['restartable']
         return obj
 
     def to_dict(self):
         dct = super(OpenMMEngine, self).to_dict()
         dct.update({
-            'restartable': self.restartable,
             'args': self.args})
         return dct
 
