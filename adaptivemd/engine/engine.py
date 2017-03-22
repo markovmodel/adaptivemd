@@ -155,7 +155,7 @@ class Trajectory(File):
         return self.length
 
     def __getitem__(self, item):
-        if 0 <= item < len(self):
+        if 0 <= item <= len(self):
             return Frame(self, item)
         else:
             return None
