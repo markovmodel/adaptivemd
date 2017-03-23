@@ -444,6 +444,17 @@ class JSONFile(File):
         return None
 
     def load(self, scheduler=None):
+        if self._data is None:
+            s = self.get(scheduler)
+            if s is not None:
+                self._data = s
+
+        return self
+
+    def get(self, scheduler=None):
+        if self._data is not None:
+            return self._data
+
         path = None
 
         if self.drive == 'file':
@@ -454,9 +465,9 @@ class JSONFile(File):
 
         if path:
             with open(path, 'r') as f:
-                self._data = _json_file_simplifier.from_json(f.read())
+                return _json_file_simplifier.from_json(f.read())
 
-        return self
+        return None
 
     @property
     def exists(self):

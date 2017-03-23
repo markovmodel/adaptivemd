@@ -230,3 +230,9 @@ class DataDict(StorableMixin):
     def __init__(self, data):
         super(DataDict, self).__init__()
         self.data = data
+
+    def __getitem__(self, item):
+        return self.data.get(item)
+
+    def __contains__(self, item):
+        return item in self.data

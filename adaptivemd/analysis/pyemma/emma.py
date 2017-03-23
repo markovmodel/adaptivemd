@@ -1,5 +1,8 @@
 from adaptivemd import PythonTask
 from adaptivemd.analysis import Analysis
+from adaptivemd.mongodb import DataDict
+from adaptivemd.model import Model
+
 from _remote import remote_analysis
 
 
@@ -67,13 +70,16 @@ class PyEMMAAnalysis(Analysis):
         return dct
 
     @staticmethod
-    def then_func(project, task, model, inputs):
+    def then_func(project, task, data, inputs):
         # add the input arguments for later reference
-        model.data['input']['trajectories'] = inputs['trajectories']
-        model.data['input']['pdb'] = inputs['topfile']
+        data['input']['trajectories'] = inputs['trajectories']
+        data['input']['pdb'] = inputs['topfile']
 
         # from the task we get the used generator and then its outtype
-        model.data['input']['modeller'] = task.generator
+        data['input']['modeller'] = task.generator
+
+        # wrapping in a DataDict allows storage of large files!
+        model = Model(DataDict(data))
         project.models.add(model)
 
     def execute(
@@ -112,6 +118,10 @@ class PyEMMAAnalysis(Analysis):
         # we call the PythonTask with self to tell him about the generator used
         # this will fire the then_func from the generator once finished
         t = PythonTask(self)
+
+        # we handle the returned output ourselves -> its stored as a model
+        # so do not store the returned JSON also
+        t.store_output = False
 
         input_pdb = t.link(self['pdb_file_stage'], 'input.pdb')
 
