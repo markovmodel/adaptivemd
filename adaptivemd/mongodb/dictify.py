@@ -495,9 +495,6 @@ class ObjectJSON(object):
 
     def from_simple_dict(self, simplified):
         obj = self.build(simplified)
-        # if hasattr(obj, '_file'):
-        #     print len(obj._file) if obj._file else 0
-        #     print obj.__dict__.keys()
 
         obj.__uuid__ = int(UUID(simplified.get('_id')))
         obj.__time__ = simplified.get('_time', 0)  # use time or 0 if unset
