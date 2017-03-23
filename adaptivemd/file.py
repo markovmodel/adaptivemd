@@ -112,6 +112,8 @@ class Location(StorableMixin):
 
     use_absolute_local_paths = True
 
+    _restore_non_initial_attr = False
+
     _ignore = True
 
     def __init__(self, location):
