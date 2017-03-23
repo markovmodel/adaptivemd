@@ -240,8 +240,8 @@ class File(Location):
     _find_by = ['created', 'task']
 
     created = SyncVariable('created', lambda x: x is not None and x < 0)
-    _file = SyncVariable('_file', lambda x: not bool(x))
-    task = SyncVariable('task', lambda x: not bool(x))
+    _file = SyncVariable('_file', lambda x: x is not None)
+    task = SyncVariable('task', lambda x: x is not None)
 
     def __init__(self, location):
         super(File, self).__init__(location)
@@ -386,6 +386,10 @@ class File(Location):
         obj = super(File, cls).from_dict(dct)
         if '_file_' in dct:
             obj._file = base64.b64decode(dct['_file_'])
+
+            # print 'set', len(obj._file), obj.__uuid__
+
+        # print len(obj._file)
 
         return obj
 

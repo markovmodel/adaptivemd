@@ -216,14 +216,12 @@ class WorkerScheduler(Scheduler):
                 log_err = LogEntry(
                     'worker',
                     'stderr from running task',
-                    stderr,
-                    objs={'task': task}
+                    stderr
                 )
                 log_out = LogEntry(
                     'worker',
                     'stdout from running task',
-                    stdout,
-                    objs={'task': task}
+                    stdout
                 )
                 self.project.logs.add(log_err)
                 self.project.logs.add(log_out)

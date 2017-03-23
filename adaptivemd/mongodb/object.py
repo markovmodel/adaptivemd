@@ -476,6 +476,7 @@ class ObjectStore(StorableMixin):
         return modified
 
     def _load(self, idx):
+        print 'Load', self.name, {'_id': str(UUID(int=idx))}
         obj = self.storage.simplifier.from_simple_dict(
             self._document.find_one({'_id': str(UUID(int=idx))}))
         obj.__store__ = self
