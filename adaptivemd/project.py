@@ -16,7 +16,7 @@ from worker import Worker
 from logentry import LogEntry
 from event import FunctionalEvent
 
-from mongodb import MongoDBStorage, ObjectStore
+from mongodb import MongoDBStorage, ObjectStore, FileStore, DataDict
 
 
 import logging
@@ -83,6 +83,7 @@ class Project(object):
         self.tasks = StoredBundle()
         self.workers = StoredBundle()
         self.logs = StoredBundle()
+        self.data = StoredBundle()
         # self.commands = StoredBundle()
         self.resource = None
 
@@ -149,6 +150,7 @@ class Project(object):
         st.create_store(ObjectStore('tasks', Task))
         st.create_store(ObjectStore('workers', Worker))
         st.create_store(ObjectStore('logs', LogEntry))
+        st.create_store(FileStore('data', DataDict))
         # st.create_store(ObjectStore('commands', Command))
 
         st.save(self.resource)
@@ -168,6 +170,7 @@ class Project(object):
             self.tasks.set_store(self.storage.tasks)
             self.workers.set_store(self.storage.workers)
             self.logs.set_store(self.storage.logs)
+            self.data.set_store(self.storage.data)
             # self.commands.set_store(self.storage.commands)
             self.resource = self.storage.resources.find_one({})
 
@@ -177,7 +180,7 @@ class Project(object):
             self.storage.tasks.set_caching(True)
             self.storage.workers.set_caching(True)
 
-            # todo: Use better caching options for tasks and or logs
+            # todo: Use better caching options for tasks and or logs and or data
 
             # make sure that the file number will be new
             self.traj_name.initialize_from_files(self.trajectories)
@@ -187,22 +190,7 @@ class Project(object):
         Reconnect the DB
 
         """
-        self.storage = MongoDBStorage(self.name)
-
-        if hasattr(self.storage, 'tasks'):
-            self.files.set_store(self.storage.files)
-            self.generators.set_store(self.storage.generators)
-            self.models.set_store(self.storage.models)
-            self.tasks.set_store(self.storage.tasks)
-            self.workers.set_store(self.storage.workers)
-
-            self.storage.files.set_caching(True)
-            self.storage.models.set_caching(True)
-            self.storage.generators.set_caching(True)
-
-            # todo: check if this works correctly
-            # make sure that the file number will be new
-            self.traj_name.initialize_from_files(self.trajectories)
+        self._open_db()
 
     def _close_db(self):
         self.storage.close()
