@@ -24,7 +24,7 @@ class SyncVariable(object):
     def _update(self, store, idx):
         if store is not None:
             return store._document.find_one(
-                {'_id': idx}).get(self.name)
+                {'_id': idx})
 
         return None
 
@@ -39,11 +39,13 @@ class SyncVariable(object):
 
             if instance.__store__ is not None:
                 idx = self._idx(instance)
-                value = self._update(instance.__store__, idx)
-                self.values[instance] = value
-                return value
-            else:
-                return self.values.get(instance)
+                dct = self._update(instance.__store__, idx)
+                if self.name in dct:
+                    value = dct[self.name]
+                    self.values[instance] = value
+                    return value
+
+            return self.values.get(instance)
 
     def __set__(self, instance, value):
         if instance.__store__ is not None:
@@ -62,64 +64,64 @@ class SyncVariable(object):
         self.values[instance] = value
 
 
-class NoneOrValueSyncVariable(SyncVariable):
-    """
-    Variable that can be set once
-    """
-
-    def __get__(self, instance, owner):
-        if instance is None:
-            return self
-        else:
-            if self.values.get(instance) is None:
-                idx = self._idx(instance)
-                value = self._update(instance.__store__, idx)
-                self.values[instance] = value
-                return value
-
-            return self.values.get(instance)
-
-    def __set__(self, instance, value):
-        if self.values.get(instance) is None and value is not None:
-            if instance.__store__ is not None:
-                idx = self._idx(instance)
-                instance.__store__._document.find_and_modify(
-                    query={'_id': idx, self.name: None},
-                    update={"$set": {self.name: value}},
-                    upsert=False
-                    )
-                value = self._update(instance.__store__, idx)
-
-            self.values[instance] = value
-
-
-class IncreasingNumericSyncVariable(SyncVariable):
-    """
-    Variable that can be set once
-    """
-
-    def __set__(self, instance, value):
-        val = self.values.get(instance)
-
-        if self.fix_fnc:
-            if val is not None and self.fix_fnc(val):
-                return val
-
-        if value > val:
-            if instance.__store__ is not None:
-                idx = self._idx(instance)
-                current = self._update(instance.__store__, idx)
-                while value > current:
-                    instance.__store__._document.find_and_modify(
-                        query={'_id': idx, self.name: current},
-                        update={"$set": {self.name: value}},
-                        upsert=False
-                    )
-                    current = self._update(instance.__store__, idx)
-
-                value = current
-
-            self.values[instance] = value
+# class NoneOrValueSyncVariable(SyncVariable):
+#     """
+#     Variable that can be set once
+#     """
+#
+#     def __get__(self, instance, owner):
+#         if instance is None:
+#             return self
+#         else:
+#             if self.values.get(instance) is None:
+#                 idx = self._idx(instance)
+#                 value = self._update(instance.__store__, idx)
+#                 self.values[instance] = value
+#                 return value
+#
+#             return self.values.get(instance)
+#
+#     def __set__(self, instance, value):
+#         if self.values.get(instance) is None and value is not None:
+#             if instance.__store__ is not None:
+#                 idx = self._idx(instance)
+#                 instance.__store__._document.find_and_modify(
+#                     query={'_id': idx, self.name: None},
+#                     update={"$set": {self.name: value}},
+#                     upsert=False
+#                     )
+#                 value = self._update(instance.__store__, idx)
+#
+#             self.values[instance] = value
+#
+#
+# class IncreasingNumericSyncVariable(SyncVariable):
+#     """
+#     Variable that can be set once
+#     """
+#
+#     def __set__(self, instance, value):
+#         val = self.values.get(instance)
+#
+#         if self.fix_fnc:
+#             if val is not None and self.fix_fnc(val):
+#                 return val
+#
+#         if value > val:
+#             if instance.__store__ is not None:
+#                 idx = self._idx(instance)
+#                 current = self._update(instance.__store__, idx)
+#                 while value > current:
+#                     instance.__store__._document.find_and_modify(
+#                         query={'_id': idx, self.name: current},
+#                         update={"$set": {self.name: value}},
+#                         upsert=False
+#                     )
+#                     current = self._update(instance.__store__, idx)
+#
+#                 value = current
+#
+#             self.values[instance] = value
 
 
 class ObjectSyncVariable(SyncVariable):
