@@ -13,9 +13,6 @@ class FileStore(ObjectStore):
 
     def __init__(self, name, content_class):
         super(FileStore, self).__init__(name, content_class)
-
-        # Something todo ?
-        # claim GridFS
         self.grid = None
 
     def initialize(self):
@@ -39,7 +36,7 @@ class FileStore(ObjectStore):
 
     def __len__(self):
         if self.grid:
-            return len(self.grid)
+            return len(list(self.grid.find()))
 
         return 0
 
@@ -48,6 +45,9 @@ class FileStore(ObjectStore):
         f = self.grid.find_one({'_id': _id})
         obj = self.storage.simplifier.from_json(f.read())
         obj.__store__ = self
+        obj.__uuid__ = idx
+        obj.__time__ = f._time  # use time or 0 if unset
+
         return obj
 
     def cache_all(self):
@@ -56,12 +56,19 @@ class FileStore(ObjectStore):
     def _save(self, obj):
         _id = hex(obj.__uuid__)
 
-        s = self.storage.simplifier.to_json(obj)
+        s = self.storage.simplifier.to_json_object(obj)
         if hasattr(obj, 'name'):
             self.grid.put(
                 s,
                 filename=obj.name,
                 _id=_id,
+                _time=obj.__time__
+                **{x: getattr(obj, x) for x in self._find_by})  # add search indices
+        else:
+            self.grid.put(
+                s,
+                _id=_id,
+                _time=obj.__time__,
                 **{x: getattr(obj, x) for x in self._find_by})  # add search indices
 
         obj.__store__ = self

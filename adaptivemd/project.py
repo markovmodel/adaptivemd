@@ -16,7 +16,7 @@ from worker import Worker
 from logentry import LogEntry
 from event import FunctionalEvent
 
-from mongodb import MongoDBStorage, ObjectStore, FileStore, DataDict
+from mongodb import MongoDBStorage, ObjectStore, FileStore, DataDict, WeakValueCache
 
 
 import logging
@@ -142,7 +142,7 @@ class Project(object):
         self.resource = resource
 
         st = MongoDBStorage(self.name, 'w')
-        st.create_store(ObjectStore('objs', None))
+        # st.create_store(ObjectStore('objs', None))
         st.create_store(ObjectStore('generators', TaskGenerator))
         st.create_store(ObjectStore('files', File))
         st.create_store(ObjectStore('resources', Resource))
@@ -175,12 +175,13 @@ class Project(object):
             self.resource = self.storage.resources.find_one({})
 
             self.storage.files.set_caching(True)
-            self.storage.models.set_caching(True)
+            self.storage.models.set_caching(WeakValueCache())
             self.storage.generators.set_caching(True)
             self.storage.tasks.set_caching(True)
             self.storage.workers.set_caching(True)
-
-            # todo: Use better caching options for tasks and or logs and or data
+            self.storage.resources.set_caching(True)
+            self.storage.data.set_caching(WeakValueCache())
+            self.storage.logs.set_caching(WeakValueCache())
 
             # make sure that the file number will be new
             self.traj_name.initialize_from_files(self.trajectories)

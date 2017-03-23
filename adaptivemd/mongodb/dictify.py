@@ -470,29 +470,14 @@ class ObjectJSON(object):
         simplified = self.simplify(obj, base_type)
         return ujson.dumps(simplified)
 
-    # def to_json_object(self, obj):
-    #     if hasattr(obj, 'base_cls') \
-    #             and type(obj) is not type and type(obj) is not abc.ABCMeta:
-    #         simplified = self.simplify_object(obj)
-    #     else:
-    #         simplified = self.simplify(obj)
-    #     try:
-    #         json_str = ujson.dumps(simplified)
-    #     except TypeError as e:
-    #         err = (
-    #             'Cannot convert object of type `%s` to json. '
-    #             '\n__dict__: %s\n'
-    #             '\nsimplified: %s\n'
-    #             '\nError: %s'
-    #         ) % (
-    #             obj.__class__.__name__,
-    #             obj.__dict__,
-    #             simplified,
-    #             str(e)
-    #         )
-    #         raise ValueError(err)
-    #
-    #     return json_str
+    def to_json_object(self, obj):
+        if hasattr(obj, 'base_cls') \
+                and type(obj) is not type and type(obj) is not abc.ABCMeta:
+            simplified = self.simplify_object(obj)
+        else:
+            simplified = self.simplify(obj)
+
+        return ujson.dumps(simplified)
 
     def from_json(self, json_string):
         simplified = ujson.loads(json_string)
