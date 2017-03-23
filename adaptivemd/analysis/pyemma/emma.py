@@ -1,3 +1,5 @@
+import os
+
 from adaptivemd import PythonTask
 from adaptivemd.analysis import Analysis
 from adaptivemd.mongodb import DataDict
@@ -122,6 +124,10 @@ class PyEMMAAnalysis(Analysis):
         # we handle the returned output ourselves -> its stored as a model
         # so do not store the returned JSON also
         t.store_output = False
+
+        # copy the output.json to a models/model.{uuid}.json file
+        t.backup_output_json(
+            os.path.join('project:///models', 'model.' + hex(t.__uuid__) + '.json'))
 
         input_pdb = t.link(self['pdb_file_stage'], 'input.pdb')
 

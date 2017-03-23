@@ -338,7 +338,9 @@ class WorkerScheduler(Scheduler):
         paths = [
             self.path + '/projects/',
             self.path + '/projects/' + self.project.name,
-            self.path + '/projects/' + self.project.name + '/trajs']
+            self.path + '/projects/' + self.project.name + '/trajs',
+            self.path + '/projects/' + self.project.name + '/models'
+        ]
 
         self._create_dirs(paths)
 

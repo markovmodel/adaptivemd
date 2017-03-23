@@ -928,7 +928,11 @@ class PythonTask(PrePostTask):
         self.add_cb('success', self.__class__._cb_success)
         self.add_cb('submit', self.__class__._cb_submit)
 
+        # if `True` the RPC result will be stored in the DB with the task
         self.store_output = True
+
+    def backup_output_json(self, target):
+        self.post.append(File('output.json').copy(target))
 
     def _cb_success(self, scheduler):
         # here is the logic to retrieve the result object
