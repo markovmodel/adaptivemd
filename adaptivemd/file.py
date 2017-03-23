@@ -236,7 +236,7 @@ class Location(StorableMixin):
 
 
 class File(Location):
-    _find_by = ['created', '_file', 'task']
+    _find_by = ['created', 'task']
 
     created = SyncVariable('created', lambda x: x is not None and x < 0)
     _file = SyncVariable('_file', lambda x: not bool(x))
