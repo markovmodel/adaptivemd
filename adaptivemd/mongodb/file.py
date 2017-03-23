@@ -236,3 +236,6 @@ class DataDict(StorableMixin):
 
     def __contains__(self, item):
         return item in self.data
+
+    def __getattr__(self, item):
+        return getattr(self.data, item)
