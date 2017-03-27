@@ -16,9 +16,9 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
-# import os
-# import sys
-# sys.path.insert(0, os.path.abspath('.'))
+import os
+import sys
+sys.path.insert(0, os.path.abspath('.'))
 
 
 # -- General configuration ------------------------------------------------
@@ -50,6 +50,15 @@ issuetracker_project = 'markovmodel/adaptivemd'
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
+
+
+# add pandoc directives
+pandoc_from = ['markdown', 'mediawiki']
+
+sys.path.insert(0, os.path.abspath('sphinxext'))
+extensions.append('notebook_sphinxext')
+extensions.append('pandoc_sphinxext')
+
 
 # The suffix(es) of source filenames.
 # You can specify multiple suffix as a list of string:
@@ -98,7 +107,13 @@ todo_include_todos = False
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'alabaster'
+
+import sphinx_rtd_theme
+
+html_theme = "sphinx_rtd_theme"
+html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
+
+# html_theme = 'alabaster'
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -176,6 +191,8 @@ texinfo_documents = [
 autosummary_generate = True
 autodoc_default_flags = ['members', 'inherited-members']
 
+numpydoc_class_members_toctree = False
+
 # spell checking
 spelling_lang = 'en_US'
 spelling_word_list_filename = 'spelling_wordlist.txt'
@@ -194,3 +211,66 @@ napoleon_use_admonition_for_references = False
 napoleon_use_ivar = True
 napoleon_use_param = True
 napoleon_use_rtype = True
+
+from adaptivemd.mongodb import StorableMixin
+
+# try to exclude deprecated
+def skip_unwanted(app, what, name, obj, skip, options):
+
+    if isinstance(obj, StorableMixin) and hasattr(StorableMixin, name):
+        return True
+
+    return skip or False
+
+def setup(app):
+    app.connect('autodoc-skip-member', skip_unwanted)
+    try:
+        from sphinx.ext.autosummary import Autosummary
+        from sphinx.ext.autosummary import get_documenter
+        from docutils.parsers.rst import directives
+        from sphinx.util.inspect import safe_getattr
+        import re
+
+        class AutoAutoSummary(Autosummary):
+
+            option_spec = {
+                'methods': directives.unchanged,
+                'attributes': directives.unchanged
+            }
+
+            required_arguments = 1
+
+            @staticmethod
+            def get_members(obj, typ, include_public=None):
+                if not include_public:
+                    include_public = []
+                items = []
+                for name in dir(obj):
+                    try:
+                        documenter = get_documenter(safe_getattr(obj, name), obj)
+                    except AttributeError:
+                        continue
+                    if documenter.objtype == typ:
+                        items.append(name)
+                public = [x for x in items if x in include_public or not x.startswith('_')]
+                return public, items
+
+            def run(self):
+                clazz = self.arguments[0]
+                try:
+                    (module_name, class_name) = clazz.rsplit('.', 1)
+                    m = __import__(module_name, globals(), locals(), [class_name])
+                    c = getattr(m, class_name)
+                    if 'methods' in self.options:
+                        _, methods = self.get_members(c, 'method', ['__init__'])
+
+                        self.content = ["~%s.%s" % (clazz, method) for method in methods if not method.startswith('_')]
+                    if 'attributes' in self.options:
+                        _, attribs = self.get_members(c, 'attribute')
+                        self.content = ["~%s.%s" % (clazz, attrib) for attrib in attribs if not attrib.startswith('_')]
+                finally:
+                    return super(AutoAutoSummary, self).run()
+
+        app.add_directive('autoautosummary', AutoAutoSummary)
+    except BaseException as e:
+        raise e

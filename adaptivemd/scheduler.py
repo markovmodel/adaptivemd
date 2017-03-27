@@ -91,7 +91,7 @@ class Scheduler(object):
 
         Parameters
         ----------
-        file : `Location`
+        f : `Location`
             the location object
 
         Returns

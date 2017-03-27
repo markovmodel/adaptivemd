@@ -27,6 +27,14 @@ class StorableMixin(object):
 
     @staticmethod
     def get_uuid():
+        """
+        Create a new unique ID
+        Returns
+        -------
+        long
+            the unique number for an object in the project
+
+        """
         StorableMixin.ACTIVE_LONG += 2
         return StorableMixin.ACTIVE_LONG
 
@@ -44,6 +52,20 @@ class StorableMixin(object):
         return NotImplemented
 
     def named(self, name):
+        """
+        Attach a .name property to an object
+
+        Parameters
+        ----------
+        name : str
+            the name of the object
+
+        Returns
+        -------
+        self
+            the object itself for chaining
+
+        """
         self.name = name
         return self
 
@@ -222,12 +244,12 @@ class StorableMixin(object):
     @classmethod
     def from_dict(cls, dct):
         """
-        Reconstruct an object from a dictionary representaiton
+        Reconstruct an object from a dictionary representation
 
         Parameters
         ----------
         dct : dict
-            the dictionary containing a state representaion of the class.
+            the dictionary containing a state representation of the class.
 
         Returns
         -------
@@ -277,6 +299,20 @@ class StorableMixin(object):
 
 
 def create_to_dict(keys_to_store):
+    """
+    Create a to_dict function from a list of attributes
+
+    Parameters
+    ----------
+    keys_to_store : list of str
+        the attributes used in { attr: getattr(self, attr) }
+
+    Returns
+    -------
+    function
+        the `to_dict` function
+
+    """
     def to_dict(self):
         return {key: getattr(self, key) for key in keys_to_store}
 

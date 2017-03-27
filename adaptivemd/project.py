@@ -64,9 +64,6 @@ class Project(object):
         a set of attached schedulers with controlled shutdown and reference
     models : list of dict
         a list of returned objects from analysis (might change in the future)
-    generators : dict of str : `TaskGenerator`
-        a dict of a name to a `TaskGenerator` that will allow to access
-        the task generators in schedulers by a name
 
     storage : `MongoDBStorage`
         the mongodb storage wrapper to access the database of the project
@@ -136,6 +133,7 @@ class Project(object):
         Parameters
         ----------
         resource : `Resource`
+            the resource used in this project
 
         """
         self.storage.close()
@@ -185,6 +183,10 @@ class Project(object):
             self.traj_name.initialize_from_files(self.trajectories)
 
     def reconnect(self):
+        """
+        Reconnect the DB
+
+        """
         self.storage = MongoDBStorage(self.name)
 
         if hasattr(self.storage, 'tasks'):
@@ -229,11 +231,34 @@ class Project(object):
 
     @classmethod
     def list(cls):
+        """
+        List all projects in the DB
+
+        Returns
+        -------
+        list of str
+            a list of all project names
+
+        """
         storages = MongoDBStorage.list_storages()
         return storages
 
     @classmethod
     def delete(cls, name):
+        """
+        Delete a complete project
+
+        Notes
+        -----
+        Attention!!!! This cannot be undone!!!!
+
+        Parameters
+        ----------
+        name : str
+            the project name to be deleted
+
+
+        """
         MongoDBStorage.delete_storage(name)
 
     def get_scheduler(self, name=None, **kwargs):
@@ -309,6 +334,11 @@ class Project(object):
     def queue(self, *tasks):
         """
         Submit jobs to the worker queue
+
+        Parameters
+        ----------
+        *tasks : (list of) `Task` or `Trajectory`
+            anything that can be run like a `Task` or a `Trajectory` with engine
 
         """
         for task in tasks:
@@ -465,7 +495,7 @@ class Project(object):
                 for mm, state in enumerate(dt):
                     # if there is a full traj with existing frame, use it
                     if any([(mm * used_stride) % stride == 0 for stride in full_strides]):
-                        frame_state_list[state].append((nn, mm))
+                        frame_state_list[state].append((nn, mm * used_stride))
 
             c = data['msm']['C']
             q = 1.0 / np.sum(c, axis=1)

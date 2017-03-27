@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import sys, os
+import os
 
 from adaptivemd import Project
 from adaptivemd import LocalCluster
@@ -12,7 +12,6 @@ from adaptivemd import File
 from adaptivemd import WorkerScheduler
 
 import mdtraj as md
-import numpy as np
 
 
 if __name__ == '__main__':
@@ -32,7 +31,8 @@ if __name__ == '__main__':
     #   the instance to create trajectories
     # --------------------------------------------------------------------------
 
-    pdb_file = File('file://../../examples/files/alanine/alanine.pdb').named('initial_pdb').load()
+    pdb_file = File(
+        'file://../../examples/files/alanine/alanine.pdb').named('initial_pdb').load()
 
     engine = OpenMMEngine(
         pdb_file=pdb_file,
@@ -47,7 +47,7 @@ if __name__ == '__main__':
     # --------------------------------------------------------------------------
 
     modeller = PyEMMAAnalysis(
-        pdb_file=pdb_file
+        engine=engine
     ).named('pyemma')
 
     project.generators.add(engine)
@@ -58,7 +58,7 @@ if __name__ == '__main__':
     #   the instance that runs the simulations on the resource
     # --------------------------------------------------------------------------
 
-    trajectory = project.new_trajectory(engine['pdb_file'], 100, restart=True)
+    trajectory = project.new_trajectory(engine['pdb_file'], 100, engine)
     task = engine.run(trajectory)
 
     # project.queue(task)

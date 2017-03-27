@@ -161,6 +161,14 @@ class BaseBundle(object):
 
     @property
     def all(self):
+        """
+        Return a Delegator that will apply attribute and function call to all bundle elements
+
+        Returns
+        -------
+        `BundleDelegator`
+            the delegator object to map to all elements in the bundle
+        """
         return BundleDelegator(self)
 
 
@@ -186,6 +194,15 @@ class Bundle(BaseBundle):
             return 0
 
     def update(self, iterable):
+        """
+        Add multiple items to the bundle at once
+
+        Parameters
+        ----------
+        iterable : Iterable
+            the items to be added
+
+        """
         map(self.add, iterable)
 
     def add(self, x):
@@ -217,6 +234,9 @@ class OrBundle(LogicBundle):
 
 
 class ViewBundle(BaseBundle):
+    """
+    A view on a bundle where object are filtered by a bool function
+    """
     def __init__(self, bundle, view):
         super(ViewBundle, self).__init__()
         self.bundle = bundle
@@ -241,19 +261,24 @@ class SortedBundle(BaseBundle):
 
     @property
     def first(self):
+        """
+        object
+            Return the first of the sorted elements
+
+        """
         return next(iter(self))
 
 
-class LongestViewBundle(BaseBundle):
-    def __init__(self, bundle, view):
-        super(LongestViewBundle, self).__init__()
-        self.bundle = bundle
-        self.view = view
-
-    def __iter__(self):
-        for o in self.bundle:
-            if self.view(o):
-                yield o
+# class LongestViewBundle(BaseBundle):
+#     def __init__(self, bundle, view):
+#         super(LongestViewBundle, self).__init__()
+#         self.bundle = bundle
+#         self.view = view
+#
+#     def __iter__(self):
+#         for o in self.bundle:
+#             if self.view(o):
+#                 yield o
 
 
 class BundleDelegator(object):
@@ -318,6 +343,15 @@ class StoredBundle(Bundle):
         self._set = None
 
     def add(self, item):
+        """
+        Add an element to the bundle
+
+        Parameters
+        ----------
+        item : object
+            the item to be added to the bundle
+
+        """
         if self._set is not None and item not in self._set:
             logger.info('Added file of type `%s`' % item.__class__.__name__)
             self._set.save(item)
@@ -344,7 +378,7 @@ class StoredBundle(Bundle):
         Returns
         -------
         object
-            the earlist object
+            the earliest object
 
         """
         if self._set is not None:

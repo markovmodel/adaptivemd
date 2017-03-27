@@ -4,7 +4,6 @@ author
 
 import abc
 import logging
-import os.path
 from collections import OrderedDict
 from dictify import UUIDObjectJSON
 from object import ObjectStore
@@ -22,8 +21,8 @@ class MongoDBStorage(object):
 
     @property
     def version(self):
-        import version as v
-        return v.short_version
+        import version
+        return version.short_version
 
     @property
     def objects(self):
@@ -64,16 +63,24 @@ class MongoDBStorage(object):
             return self._obj_store[obj.__class__]
 
     def update_storable_classes(self):
+        """
+        Update the internal list of all objects that are subclassed from StorableMixin
+
+        If you create your own subclass of a storable object then you need to call
+        this function to update the list so that you can load and save instances of
+        your new class
+
+        """
         self.simplifier.update_class_list()
 
     def __init__(self, filename, mode=None):
         """
-        Create a mongosb storage for complex objects
+        Create a mongodb storage for complex objects
 
         Parameters
         ----------
         filename : string
-            filename of the mongodb database
+            name of the mongodb database
         mode : str
             the mode of file creation, one of 'w' (write), 'a' (append) or
             'r' (read-only) None, which will append any existing files
@@ -81,7 +88,7 @@ class MongoDBStorage(object):
 
         Notes
         -----
-        You can savely open a storage from multiple instances. These will cross update.
+        You can safely open a storage from multiple instances. These will cross update.
 
         """
 
@@ -154,24 +161,14 @@ class MongoDBStorage(object):
                     key_store.attribute_list[attribute] = store
 
     def close(self):
+        """
+        Close the DB connection
+
+        """
         self._client.close()
 
     def _create_simplifier(self):
         self.simplifier = UUIDObjectJSON(self)
-
-    @property
-    def file_size(self):
-        return os.path.getsize(self.filename)
-
-    @property
-    def file_size_str(self):
-        current = float(self.file_size)
-        output_prefix = ''
-        for prefix in ["k", "M", "G"]:
-            if current >= 1024:
-                output_prefix = prefix
-                current /= 1024.0
-        return "{0:.2f}{1}B".format(current, output_prefix)
 
     @classmethod
     def list_storages(cls):
@@ -256,7 +253,7 @@ class MongoDBStorage(object):
         """
         Run initializations for all added stores.
 
-        This will make sure that all previously added stores are now useable.
+        This will make sure that all previously added stores are now usable.
         If you add more stores you need to call this again. The reason this is
         done at all is that stores might reference each other and so no
         unique order of creation can be found. Thus you first create stores
@@ -439,7 +436,7 @@ class MongoDBStorage(object):
         Notes
         -----
         this only works in storages with uuids otherwise load directly from the
-        substores
+        sub-stores
         """
 
         for store in self.objects.values():

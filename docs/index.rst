@@ -11,7 +11,14 @@ Documentation
 .. toctree::
    :maxdepth: 2
 
+   install
+   examples
+   project
+   resource
+   file
+   action
    task
+   engine
    api/index
 
 

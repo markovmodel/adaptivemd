@@ -13,8 +13,9 @@ if __name__ == '__main__':
 
     # add further auto options here
     platform_properties = {
-        'CUDA': ['Cuda_Device_Index', 'Cuda_Precision', 'Cuda_Use_Cpu_Pme', 'Cuda_Cuda_Compiler',
-                 'Cuda_Temp_Directory', 'Cuda_Use_Blocking_Sync', 'Cuda_Deterministic_Forces'],
+        'CUDA': ['Cuda_Device_Index', 'Cuda_Precision', 'Cuda_Use_Cpu_Pme',
+                 'Cuda_Cuda_Compiler', 'Cuda_Temp_Directory', 'Cuda_Use_Blocking_Sync',
+                 'Cuda_Deterministic_Forces'],
         'OpenCL': ['OpenCL_Device_Index', 'OpenCL_Precision', 'OpenCL_Use_Cpu_Pme',
                    'OpenCL_OpenCL_Platform_Index'],
         'CPU': ['CPU_Threads'],
@@ -89,10 +90,12 @@ if __name__ == '__main__':
                 '--' + p_name.lower().replace('_', '-'),
                 dest=v.lower(), type=str,
                 default="",
-                help=('This will set the platform property `%s`. ' % p_name.replace('_', '') +
-                      'If not set the environment variable '
-                      '`%s` will be used instead. ' % p_name.upper()) +
-                      '[NOT INSTALLED!]' if p not in platform_names else '')
+                help=(
+                         'This will set the platform property `%s`. ' % p_name.replace('_', '') +
+                         'If not set the environment variable '
+                         '`%s` will be used instead. ' % p_name.upper()
+                     ) + '[NOT INSTALLED!]' if p not in platform_names else ''
+            )
 
     parser.add_argument(
         '-r', '--report',
@@ -104,7 +107,8 @@ if __name__ == '__main__':
         '-p', '--platform', dest='platform',
         type=str, default='fastest', nargs='?',
         help=('used platform. Currently allowed choices are ' +
-              ', '.join(['`%s`' % p if p in platform_names else '`(%s)`' % p for p in platform_properties.keys()]) +
+              ', '.join(['`%s`' % p if p in platform_names else '`(%s)`' % p
+                         for p in platform_properties.keys()]) +
               ' but are machine and installation dependend'))
 
     parser.add_argument(
@@ -120,8 +124,8 @@ if __name__ == '__main__':
 
     if args.platform in platform_properties:
         properties = {}
-        vars = platform_properties[args.platform]
-        for v in vars:
+        props = platform_properties[args.platform]
+        for v in props:
             p_name = args.platform + '_' + v
             value = os.environ.get(p_name.upper(), None)
             if hasattr(args, p_name.lower()):

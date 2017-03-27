@@ -44,7 +44,7 @@ class Archiver(PythonRPCTaskGenerator):
         t = PythonTask()
 
         t.link(self.target, 'target_folder')
-        t.call(copy_files, files)
+        t.call(copy_files, files=files)
 
         return t
 
