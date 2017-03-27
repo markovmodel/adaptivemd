@@ -8,5 +8,5 @@ Engine Functions
 .. autosummary::
     :toctree: api/generated/
 
-    Engine
-    openmm.OpenMMEngine
+    ~Engine
+    ~openmm.OpenMMEngine

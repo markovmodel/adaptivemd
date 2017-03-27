@@ -3,9 +3,7 @@
 AdaptiveMD (adaptivemd)
 ========================================
 
-Text
-
-.. autoclass:: Task
+Hello
 
 .. toctree::
    :maxdepth: 2

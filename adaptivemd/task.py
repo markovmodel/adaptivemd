@@ -265,7 +265,7 @@ class Task(BaseTask):
         Returns
         -------
         bool
-            `True` if all dependencies are fulfilled
+            True if all dependencies are fulfilled
         """
         dependencies = self.dependencies
         if dependencies is not None:
@@ -284,7 +284,7 @@ class Task(BaseTask):
         Returns
         -------
         bool
-            if `True` the task can now be executed
+            if True the task can now be executed
 
         """
         if self.dependencies:
@@ -404,7 +404,7 @@ class Task(BaseTask):
         Returns
         -------
         bool
-            `True` if the task has finished its execution
+            True if the task has finished its execution
 
         """
         return self.state in ['fail', 'success', 'cancelled']
@@ -416,7 +416,7 @@ class Task(BaseTask):
         Returns
         -------
         bool
-            `True` if the task has finished successfully
+            True if the task has finished successfully
 
         """
         return self.state in ['success']
@@ -428,7 +428,7 @@ class Task(BaseTask):
         Returns
         -------
         bool
-            `True` if the task has finished but failed
+            True if the task has finished but failed
 
         """
         return self.state in ['fail']
@@ -944,7 +944,7 @@ class PythonTask(PrePostTask):
         the name of the function of the `TaskGenerator` to be called with
         the resulting output
     store_output : bool
-        if `True` then the result from the RPC called function will also be
+        if True then the result from the RPC called function will also be
         stored in the database. It can later be retrieved using the `.output`
         attribute on the task completed successfully
     """
@@ -988,7 +988,7 @@ class PythonTask(PrePostTask):
         self.add_cb('success', self.__class__._cb_success)
         self.add_cb('submit', self.__class__._cb_submit)
 
-        # if `True` the RPC result will be stored in the DB with the task
+        # if True the RPC result will be stored in the DB with the task
         self.store_output = True
 
     def backup_output_json(self, target):
@@ -1066,7 +1066,7 @@ class PythonTask(PrePostTask):
             package then the package needs to be installed on the cluster to be
             called. A function defined in a local file can be called as long
             as dependencies are installed.
-        kwargs : **kwargs
+        kwargs : ``**kwargs``
             named arguments to the function
 
         """

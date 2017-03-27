@@ -51,7 +51,7 @@ class ObjectStore(StorableMixin):
     cache : :py:class:`mongodb.cache.Cache`
         a dictionary that holds references to all stored elements by index
         or string for named objects. This is only used for cached access
-        if caching is not `False`. Must be of type
+        if caching is not False. Must be of type
         :obj:`mongodb.base.StorableMixin` or subclassed.
 
     """
@@ -74,36 +74,10 @@ class ObjectStore(StorableMixin):
         Parameters
         ----------
         name : str
+            the name of the store
         content_class : class
-
-        Notes
-        -----
-        Usually you want caching, but limited. Recommended is to use an LRUCache
-        with a reasonable maximum number of objects that depends on the typical
-        number of objects to cache and their size
-
-        The class that takes care of storing data in a file is called a
-        `Storage`, so the netCDF+ subclassed `Storage` is a storage.
-        The classes that know how to load and save an object from the storage
-        are called `Store`, like ObjectStore, SampleStore, etc...
-
-        The difference between `json` and `jsonobj` is subtle. Consider
-        storing a complex object. Then there are two ways to do that.
-        1. `json`: Store a reference to the object (provided) it is stored and
-        2. `jsonobj`: serialize the object and only use references for contained
-        objects. All inner objects will always be stored using references.
-        The only exception is using nestable. Consider objects that contain
-        references to objects of the same type, like e.g. operations in an
-        equation (2*3 + 3). Each operation represents a value but each
-        operation needs values to operate on. To save such an object you have
-        again two options:
-        1. `nestable=False`. Store all single objects and always reference
-        the contained objects. For an equation that would mean to store several
-        objects `op1 = plus(op2, 3), op2 = times(2, 3)`. Since this is correct
-        though not intuitive you can also use
-        2. `nestable=True`. Store all the serialized objects nested into one
-        object (string). For our example this corresponds to
-        `plus(times(2,3), 3)`.
+            the base class of the content, must be subclassed from
+            `StorableMixin`
 
         """
 
@@ -154,7 +128,7 @@ class ObjectStore(StorableMixin):
         Returns
         -------
         bool
-            returns `True` if an update was performed
+            returns True if an update was performed
 
         """
         if len(self) > len(self.index):

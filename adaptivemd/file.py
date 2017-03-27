@@ -12,6 +12,7 @@ class Action(StorableMixin):
     The main purpose is to have a worker/hpc independent description of
     what should happen. This objects carry all the necessary information
     and will be parsed into a bash script on the actual HPC / worker
+
     """
     def __init__(self):
         super(Action, self).__init__()
@@ -23,6 +24,7 @@ class Action(StorableMixin):
 class AddPathAction(Action):
     """
     An Action to add a path to the $PATH environment variables
+
     """
     def __init__(self, path):
         """
@@ -30,6 +32,7 @@ class AddPathAction(Action):
         ----------
         path : `Location` or str
             the path to be added
+
         """
         super(AddPathAction, self).__init__()
         self.path = path
@@ -43,6 +46,7 @@ class FileAction(Action):
     ----------
     source : `File`
         the source file for the action
+
     """
     def __init__(self, source):
         super(FileAction, self).__init__()
@@ -96,6 +100,7 @@ class FileTransaction(FileAction):
     ----------
     target : `File`
         the target file
+
     """
     def __init__(self, source, target):
         """
@@ -134,6 +139,7 @@ class FileTransaction(FileAction):
 class Touch(FileAction):
     """
     An action that creates an empty file or folder
+
     """
     pass
 
@@ -141,6 +147,7 @@ class Touch(FileAction):
 class MakeDir(FileAction):
     """
     An action that creates a folder
+
     """
     pass
 
@@ -148,6 +155,7 @@ class MakeDir(FileAction):
 class Copy(FileTransaction):
     """
     An action that copies a file from source to target
+
     """
     pass
 
@@ -155,6 +163,7 @@ class Copy(FileTransaction):
 class Transfer(FileTransaction):
     """
     An action that transfers between local and HPC
+
     """
     pass
 
@@ -162,6 +171,7 @@ class Transfer(FileTransaction):
 class Link(FileTransaction):
     """
     An action that links a source file to a target
+
     """
     pass
 
@@ -170,7 +180,8 @@ class Move(FileTransaction):
     """
     An action that moves a file from source to target
 
-    The source is removed in the proess
+    The source is removed in the process
+
     """
     @property
     def removed(self):
@@ -180,6 +191,7 @@ class Move(FileTransaction):
 class Remove(FileAction):
     """
     An action that removes a file
+
     """
     @property
     def removed(self):
@@ -194,29 +206,30 @@ class Location(StorableMixin):
     """
     A representation of a path in adaptiveMD
 
-    This is an important part of adaptiveMD. It allows you to specify filepaths
+    This is an important part of adaptiveMD. It allows you to specify file paths
     also relative to certain special folders in adaptiveMD, like the project
     folder. These special paths will be interpreted by the schedulers when
     they actually execute tasks
 
-    Note that folder names ALWAYS end in `/` while filenames NEVER
+    Note that folder names ALWAYS end in ``/`` while filenames NEVER
 
     You can use special prefixes
 
-    - `file://{relative}/{path}` references local files. If you want
-      absolute paths you start with `file:///{absolute}/{path}`
-    - `worker://{relative_to_worker} relative ro working directory`
-    - `staging://` relative to staging directory
-    - `sandbox://` relative to the sandbox, the folder that contains worker
+    - ``file://{relative}/{path}`` references local files. If you want
+      absolute paths you start with ``file:///{absolute}/{path}``
+    - ``worker://{relative_to_worker}`` relative to the working directory
+    - ``staging://`` relative to staging directory
+    - ``sandbox://`` relative to the sandbox, the folder that contains worker
       directories
-    - `shared://` relative to the main shared FS folder
-    - `project://` relative to the specific project folder. Usually in
-      `shared://projects/{project-name}/
+    - ``shared://`` relative to the main shared FS folder
+    - ``project://`` relative to the specific project folder. Usually in
+      ``shared://projects/{project-name}/``
 
     Attributes
     ----------
     location : str
         the full location using special prefixed
+
     """
     allowed_drives = ['worker', 'staging', 'file', 'shared']
     default_drive = 'worker'
@@ -272,7 +285,8 @@ class Location(StorableMixin):
         Returns
         -------
         bool
-            `True` when the location is a temporary folder that might be deleted
+            True when the location is a temporary folder that might be
+            deleted
 
         """
         return self.drive == 'worker'
@@ -280,7 +294,6 @@ class Location(StorableMixin):
     @property
     def short(self):
         """
-
         Returns
         -------
         str
@@ -307,7 +320,6 @@ class Location(StorableMixin):
     @property
     def url(self):
         """
-
         Returns
         -------
         str
@@ -318,7 +330,6 @@ class Location(StorableMixin):
     @property
     def basename(self):
         """
-
         Returns
         -------
         str
@@ -330,11 +341,10 @@ class Location(StorableMixin):
     @property
     def is_folder(self):
         """
-
         Returns
         -------
         bool
-            `True` if location is a folder
+            True if location is a folder
         """
         return not self.basename
 
@@ -353,10 +363,9 @@ class Location(StorableMixin):
     @property
     def split(self):
         """
-
         Returns
         -------
-            os.path.split on the `.path` without prefixes
+            os.path.split on the :py:attr:`path` without prefixes
         """
         return os.path.split(self.path)
 
@@ -448,9 +457,9 @@ class File(Location):
     """
     Represents a file object at a specific location
 
-    `File`s can but do not have to exist you can check using the `.created`
-    attribute. If it is a positive number it represents the time stamp when
-    it was created.
+    `File`s can but do not have to exist you can check using the
+    :attr:`created` attribute. If it is a positive number it represents
+    the time stamp when it was created.
     """
     _find_by = ['created', 'task']
 
@@ -500,14 +509,15 @@ class File(Location):
         """
         Mark file as being existent on a specific scheduler.
 
-        This should only work for file in `staging://`, `shared://`,
-        `sandbox://` or `file://`
-        Files in `unit://` will potentially be deleted, others are already existing
+        This should only work for file in ``staging://``, ``shared://``,
+        ``sandbox://`` or ``file://``
+        Files in ``worker://`` will potentially be deleted,
+        others are already existing
 
         Notes
         -----
         We usually assume that objects are immutable. The way to think about
-        creation is that a file is something like a _Promise_ and it promises
+        creation is that a file is something like a *Promise* and it promises
         a certain file with a name. Once it is created it is still the same file
         but now it exists and can be used.
 
@@ -520,12 +530,13 @@ class File(Location):
 
     def modified(self):
         """
-        Mark a file as being altered and hence not existent anymore in the current description
+        Mark a file as being altered and not existent anymore
 
         Notes
         -----
-        Negative timestamps indicate the (negative) time when the object disappeared
-        in the form described
+        Negative timestamps indicate the (negative) time when the object
+        disappeared in the form described
+
         """
         stamp = self.created
         if stamp is not None and stamp > 0:
@@ -538,7 +549,8 @@ class File(Location):
         Returns
         -------
         bool
-            `True` if the file exists, i.e. has a positive `created` timestamp
+            True if the file exists, i.e. has a positive `created` timestamp
+
         """
         created = self.created
         return created is not None and created > 0
@@ -563,7 +575,7 @@ class File(Location):
         """
         copy file to a target
         
-        Shortcut for `Copy(self, target)`
+        Shortcut for ``Copy(self, target)``
 
         Parameters
         ----------
@@ -583,7 +595,7 @@ class File(Location):
         """
         move file to a target
 
-        Shortcut for `Move(self, target)`
+        Shortcut for ``Move(self, target)``
 
         Parameters
         ----------
@@ -603,7 +615,7 @@ class File(Location):
         """
         link file to a target
 
-        Shortcut for `Link(self, target)`
+        Shortcut for ``Link(self, target)``
 
         Parameters
         ----------
@@ -741,7 +753,7 @@ class File(Location):
         Returns
         -------
         bool
-            `True` if the file content is attached.
+            True if the file content is attached.
 
         """
         return self._file is not None
@@ -869,11 +881,13 @@ class JSONFile(File):
 
         return False
 
+
 class Directory(File):
     """
     A directory
 
-    Gets an additional `/` if missing at the end of the file location
+    Gets an additional ``/`` if missing at the end of the file location
+
     """
     def __init__(self, location):
         super(Directory, self).__init__(location)

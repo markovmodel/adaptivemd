@@ -279,7 +279,7 @@ class Scheduler(object):
 
         Parameters
         ----------
-        submission : (list of) [`Task` or `object` or `Event`]
+        submission : (list of) [`Task` or object or `Event`]
 
         Returns
         -------
@@ -315,7 +315,7 @@ class Scheduler(object):
         Parameters
         ----------
         wait_to_finish : bool
-            if `True` default the function will block until all tasks report
+            if True default the function will block until all tasks report
             finish
 
         """

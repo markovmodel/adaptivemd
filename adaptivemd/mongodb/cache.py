@@ -78,14 +78,14 @@ class Cache(object):
 
         Parameters
         ----------
-        item : `object`
+        item : object
             key to select element in cache
-        default : `object`
+        default : object
             return value if item is not present in cache
 
         Returns
         -------
-        `object` or None
+        object or None
             cached value at key item if present, returns default otherwise
         """
         try:
@@ -324,7 +324,7 @@ class WeakLRUCache(Cache):
 
         Returns
         -------
-        `object` or None
+        object or None
             the requested object if it exists else None
         """
         if item is None:

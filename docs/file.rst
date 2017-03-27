@@ -8,7 +8,7 @@ File Functions
 .. autosummary::
     :toctree: api/generated/
 
-    Location
-    File
-    engine.Trajectory
-    engine.Frame
+    ~file.Location
+    ~file.File
+    ~engine.Trajectory
+    ~engine.Frame

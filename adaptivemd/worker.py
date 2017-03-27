@@ -79,7 +79,7 @@ class WorkerScheduler(Scheduler):
         resource : `Resource`
             the resourse this scheduler should use.
         verbose : bool
-            if `True` the worker will report lots of stuff
+            if True the worker will report lots of stuff
         """
         super(WorkerScheduler, self).__init__(resource)
         self._current_sub = None
@@ -240,7 +240,7 @@ class WorkerScheduler(Scheduler):
         Returns
         -------
         bool
-            if `True` the current task was cancelled, `False` if there
+            if True the current task was cancelled, False if there
             was no task running
 
         """
@@ -779,7 +779,7 @@ class Worker(StorableMixin):
         Parameters
         ----------
         gracefully : bool
-            if `True` the worker is allowed some time to finish running tasks
+            if True the worker is allowed some time to finish running tasks
 
         """
         self._scheduler.shut_down(gracefully)

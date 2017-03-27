@@ -68,15 +68,15 @@ def remote_analysis(
 
     topfile : `File`
         a reference to the full topology `.pdb` file using in pyemma
-    tica_lag : `int`
+    tica_lag : int
         the lagtime used for tCIA
-    tica_dim : `int`
+    tica_dim : int
         number of dimensions using in tICA. This refers to the number of tIC used
-    msm_states : `int`
+    msm_states : int
         number of microstates used for the MSM
-    msm_lag : `int`
+    msm_lag : int
         lagtime used for the MSM construction
-    stride : `int`
+    stride : int
         a stride to be used on the data. Can speed up computation at reduced accuracy
 
     Returns

@@ -20,7 +20,9 @@ Documentation
    action
    task
    engine
+   worker
    adaptivemd
+   subpackages
    api/index
 
 

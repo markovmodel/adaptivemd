@@ -44,7 +44,7 @@ class TaskGenerator(StorableMixin):
     initial_staging : list of dict or str or `Action`
         a list of actions to be run once before this generator can be used
     items : dict of `File`
-        a dictionary of `File`s by name to simplify access to certain files
+        a dictionary of `File` by name to simplify access to certain files
     """
     def __init__(self):
         super(TaskGenerator, self).__init__()
