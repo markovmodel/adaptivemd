@@ -114,7 +114,7 @@ class StorableMixin(object):
         Returns
         -------
         int or None
-            the integer index for the object of it exists or `None` else
+            the integer index for the object of it exists or None else
 
         """
         if hasattr(store, 'index'):

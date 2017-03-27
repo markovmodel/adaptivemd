@@ -268,8 +268,8 @@ class ObjectStore(StorableMixin):
 
         Returns
         -------
-        int or `None`
-            The integer index of the given object or `None` if it is not
+        int or None
+            The integer index of the given object or None if it is not
             stored yet
         """
         return self.index[obj.__uuid__]
@@ -379,7 +379,7 @@ class ObjectStore(StorableMixin):
         Returns
         -------
         None or `StorableMixin`
-            if `None` then no object was altered, otherwise the changed object
+            if None then no object was altered, otherwise the changed object
             is returned
 
         """
@@ -427,7 +427,7 @@ class ObjectStore(StorableMixin):
         Returns
         -------
         None or `StorableMixin`
-            if `None` then no object was altered, otherwise the changed object
+            if None then no object was altered, otherwise the changed object
             is returned
 
         """
@@ -470,7 +470,7 @@ class ObjectStore(StorableMixin):
         Returns
         -------
         None or `StorableMixin`
-            if `None` then no object was altered, otherwise the changed object
+            if None then no object was altered, otherwise the changed object
             is returned
 
         """

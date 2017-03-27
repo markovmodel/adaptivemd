@@ -940,7 +940,7 @@ class PythonTask(PrePostTask):
 
     Attributes
     ----------
-    then_func_name : str or `None`
+    then_func_name : str or None
         the name of the function of the `TaskGenerator` to be called with
         the resulting output
     store_output : bool

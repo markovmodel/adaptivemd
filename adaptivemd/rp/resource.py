@@ -27,7 +27,7 @@ class RPCluster(Resource):
 
         Parameters
         ----------
-        queue : str or `None`
+        queue : str or None
             name of the queue to be used
         runtime : int
             maximal walltime in minutes

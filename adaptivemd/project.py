@@ -303,7 +303,7 @@ class Project(object):
         ----------
         name : str
             name of the scheduler class provided by the `Resource` used in
-            this project. If `None` (default) the cluster/queue `default` is
+            this project. If None (default) the cluster/queue `default` is
             used that needs to be implemented for every resource
 
         kwargs : **kwargs

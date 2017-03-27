@@ -487,8 +487,8 @@ class StoredBundle(Bundle):
 
         Returns
         -------
-        `StorableMixin` or `None`
-            The deleted object if possible otherwise `None`
+        `StorableMixin` or None
+            The deleted object if possible otherwise None
         """
         if self._set is not None:
             return self._set.consume_one()

@@ -725,8 +725,8 @@ class File(Location):
 
         Returns
         -------
-        str or `None`
-            the file content, if it exists `None` else
+        str or None
+            the file content, if it exists None else
         """
         f = self._file
         if f:

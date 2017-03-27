@@ -159,8 +159,8 @@ class WorkerScheduler(Scheduler):
         Return the current path to the worker directory
         Returns
         -------
-        str or `None`
-            the path or `None` if no task is executed at the time
+        str or None
+            the path or None if no task is executed at the time
 
         """
         if self._current_unit_dir is not None:
