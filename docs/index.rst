@@ -20,6 +20,7 @@ Documentation
    action
    task
    engine
+   adaptivemd
    api/index
 
 
