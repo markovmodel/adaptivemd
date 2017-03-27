@@ -225,7 +225,10 @@ class ObjectJSON(object):
                 attributes = self.build(obj['_dict'])
                 ret = self.class_list[obj['_cls']].from_dict(attributes)
                 if '_obj_uuid' in obj:
+                    # vals = {x: getattr(ret, x) for x in ret._find_by}
                     ret.__uuid__ = int(UUID(obj['_obj_uuid']))
+                    # for k,v in vals.iteritems():
+                    #     setattr(ret, )
 
                 return ret
 
@@ -470,29 +473,14 @@ class ObjectJSON(object):
         simplified = self.simplify(obj, base_type)
         return ujson.dumps(simplified)
 
-    # def to_json_object(self, obj):
-    #     if hasattr(obj, 'base_cls') \
-    #             and type(obj) is not type and type(obj) is not abc.ABCMeta:
-    #         simplified = self.simplify_object(obj)
-    #     else:
-    #         simplified = self.simplify(obj)
-    #     try:
-    #         json_str = ujson.dumps(simplified)
-    #     except TypeError as e:
-    #         err = (
-    #             'Cannot convert object of type `%s` to json. '
-    #             '\n__dict__: %s\n'
-    #             '\nsimplified: %s\n'
-    #             '\nError: %s'
-    #         ) % (
-    #             obj.__class__.__name__,
-    #             obj.__dict__,
-    #             simplified,
-    #             str(e)
-    #         )
-    #         raise ValueError(err)
-    #
-    #     return json_str
+    def to_json_object(self, obj):
+        if hasattr(obj, 'base_cls') \
+                and type(obj) is not type and type(obj) is not abc.ABCMeta:
+            simplified = self.simplify_object(obj)
+        else:
+            simplified = self.simplify(obj)
+
+        return ujson.dumps(simplified)
 
     def from_json(self, json_string):
         simplified = ujson.loads(json_string)
@@ -507,6 +495,7 @@ class ObjectJSON(object):
 
     def from_simple_dict(self, simplified):
         obj = self.build(simplified)
+
         obj.__uuid__ = int(UUID(simplified.get('_id')))
         obj.__time__ = simplified.get('_time', 0)  # use time or 0 if unset
 

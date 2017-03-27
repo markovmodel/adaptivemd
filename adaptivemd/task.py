@@ -893,7 +893,7 @@ class PythonTask(PrePostTask):
         '_python_import', '_python_source_files', '_python_function_name',
         '_python_args', '_python_kwargs',
         '_rpc_input_file', '_rpc_output_file',
-        'then_func_name']
+        'then_func_name', 'store_output']
 
     then_func = None
 
@@ -928,13 +928,23 @@ class PythonTask(PrePostTask):
         self.add_cb('success', self.__class__._cb_success)
         self.add_cb('submit', self.__class__._cb_submit)
 
+        # if `True` the RPC result will be stored in the DB with the task
+        self.store_output = True
+
+    def backup_output_json(self, target):
+        self.post.append(File('output.json').copy(target))
+
     def _cb_success(self, scheduler):
         # here is the logic to retrieve the result object
         # the output file is a JSON and these know how to load itself
-        self._rpc_output_file.load(scheduler)
+
+        if self.store_output:
+            # by default store the returned result. If you handle it yourself you
+            # might want to turn it off to not save the data twice
+            self._rpc_output_file.load(scheduler)
 
         filename = scheduler.get_path(self._rpc_output_file)
-        data = self._rpc_output_file.data
+        data = self._rpc_output_file.get(scheduler)
 
         if self.generator is not None and hasattr(self.generator, self.then_func_name):
             getattr(self.generator, self.then_func_name)(

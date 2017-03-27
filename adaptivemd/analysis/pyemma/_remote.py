@@ -66,7 +66,6 @@ def remote_analysis(
 
     import pyemma
     import mdtraj as md
-    from adaptivemd import Model
 
     pdb = md.load(topfile)
     topology = pdb.topology
@@ -140,4 +139,4 @@ def remote_analysis(
         }
     }
 
-    return Model(data)
+    return data

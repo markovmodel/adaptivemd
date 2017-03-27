@@ -8,3 +8,5 @@ from mongodb import MongoDBStorage
 from object import ObjectStore
 
 from proxy import DelayedLoader, lazy_loading_attributes, LoaderProxy
+
+from file import FileStore, DataDict

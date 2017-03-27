@@ -1,5 +1,4 @@
 import uuid
-import weakref
 
 from dictify import ObjectJSON
 
@@ -11,7 +10,7 @@ class SyncVariable(object):
     def __init__(self, name, fix_fnc=None):
         self.name = name
         self.fix_fnc = fix_fnc
-        self.values = weakref.WeakKeyDictionary()
+        self.key = '_' + self.name + '_'
 
     @staticmethod
     def _idx(instance):
@@ -27,30 +26,39 @@ class SyncVariable(object):
                 {'_id': idx})
 
         return None
+    
+    def read(self, instance):
+        try:
+            return getattr(instance, self.key)
+        except AttributeError:
+            return None
+        
+    def write(self, instance, v):
+        setattr(instance, self.key, v)
 
     def __get__(self, instance, owner):
         if instance is None:
             return self
         else:
             if self.fix_fnc:
-                val = self.values.get(instance)
+                val = self.read(instance)
                 if val is not None and self.fix_fnc(val):
                     return val
 
             if instance.__store__ is not None:
                 idx = self._idx(instance)
                 dct = self._update(instance.__store__, idx)
-                if self.name in dct:
+                if dct and self.name in dct:
                     value = dct[self.name]
-                    self.values[instance] = value
+                    self.write(instance, value)
                     return value
 
-            return self.values.get(instance)
+            return self.read(instance)
 
     def __set__(self, instance, value):
         if instance.__store__ is not None:
             if self.fix_fnc:
-                val = self.values.get(instance)
+                val = self.read(instance)
                 if val is not None and self.fix_fnc(val):
                     return
 
@@ -61,7 +69,7 @@ class SyncVariable(object):
                 upsert=False
                 )
 
-        self.values[instance] = value
+        self.write(instance, value)
 
 
 # class NoneOrValueSyncVariable(SyncVariable):
@@ -73,16 +81,16 @@ class SyncVariable(object):
 #         if instance is None:
 #             return self
 #         else:
-#             if self.values.get(instance) is None:
+#             if self.read(instance) is None:
 #                 idx = self._idx(instance)
 #                 value = self._update(instance.__store__, idx)
-#                 self.values[instance] = value
+#                 self.write(instance, value)
 #                 return value
 #
-#             return self.values.get(instance)
+#             return self.read(instance)
 #
 #     def __set__(self, instance, value):
-#         if self.values.get(instance) is None and value is not None:
+#         if self.read(instance) is None and value is not None:
 #             if instance.__store__ is not None:
 #                 idx = self._idx(instance)
 #                 instance.__store__._document.find_and_modify(
@@ -92,7 +100,7 @@ class SyncVariable(object):
 #                     )
 #                 value = self._update(instance.__store__, idx)
 #
-#             self.values[instance] = value
+#             self.write(instance, value)
 #
 #
 # class IncreasingNumericSyncVariable(SyncVariable):
@@ -101,7 +109,7 @@ class SyncVariable(object):
 #     """
 #
 #     def __set__(self, instance, value):
-#         val = self.values.get(instance)
+#         val = self.read(instance)
 #
 #         if self.fix_fnc:
 #             if val is not None and self.fix_fnc(val):
@@ -121,7 +129,7 @@ class SyncVariable(object):
 #
 #                 value = current
 #
-#             self.values[instance] = value
+#             self.write(instance, value)
 
 
 class ObjectSyncVariable(SyncVariable):
@@ -129,20 +137,37 @@ class ObjectSyncVariable(SyncVariable):
         super(ObjectSyncVariable, self).__init__(name, fix_fnc)
         self.store = store
 
-    def _update(self, store, idx):
-        if store is not None:
-            data = store._document.find_one(
-                {'_id': idx})[self.name]
-            if data is None:
-                return None
-            else:
-                obj_idx = long(data['_hex_uuid'], 16)
-                return getattr(store.storage, self.store).load(obj_idx)
+    def __get__(self, instance, owner):
+        if instance is None:
+            return self
+        else:
+            if self.fix_fnc:
+                val = self.read(instance)
+                if val is not None and self.fix_fnc(val):
+                    return val
+
+            if instance.__store__ is not None:
+                idx = self._idx(instance)
+                dct = self._update(instance.__store__, idx)
+
+                if dct and self.name in dct:
+                    data = dct[self.name]
+
+                    if data is None:
+                        value = None
+                    else:
+                        obj_idx = long(data['_hex_uuid'], 16)
+                        value = getattr(instance.__store__.storage, self.store).load(obj_idx)
+
+                    self.write(instance, value)
+                    return value
+
+            return self.read(instance)
 
     def __set__(self, instance, value):
         if instance.__store__ is not None:
             if self.fix_fnc:
-                val = self.values.get(instance)
+                val = self.read(instance)
                 if val is not None and self.fix_fnc(val):
                     return
 
@@ -162,7 +187,7 @@ class ObjectSyncVariable(SyncVariable):
                     upsert=False
                     )
 
-        self.values[instance] = value
+        self.write(instance, value)
 
 
 _json_sync_simplifier = ObjectJSON()
@@ -172,19 +197,36 @@ class JSONDataSyncVariable(SyncVariable):
     def __init__(self, name, fix_fnc=None):
         super(JSONDataSyncVariable, self).__init__(name, fix_fnc)
 
-    def _update(self, store, idx):
-        if store is not None:
-            data = store._document.find_one(
-                {'_id': idx})[self.name]
-            if data is None:
-                return None
-            else:
-                return _json_sync_simplifier.build(data)
+    def __get__(self, instance, owner):
+        if instance is None:
+            return self
+        else:
+            if self.fix_fnc:
+                val = self.read(instance)
+                if val is not None and self.fix_fnc(val):
+                    return val
+
+            if instance.__store__ is not None:
+                idx = self._idx(instance)
+                dct = self._update(instance.__store__, idx)
+
+                if dct and self.name in dct:
+                    data = dct[self.name]
+
+                    if data is None:
+                        value = None
+                    else:
+                        value = _json_sync_simplifier.build(data)
+
+                    self.write(instance, value)
+                    return value
+
+            return self.read(instance)
 
     def __set__(self, instance, value):
         if instance.__store__ is not None:
             if self.fix_fnc:
-                val = self.values.get(instance)
+                val = self.read(instance)
                 if val is not None and self.fix_fnc(val):
                     return
 
@@ -202,4 +244,4 @@ class JSONDataSyncVariable(SyncVariable):
                     upsert=False
                     )
 
-        self.values[instance] = value
+        self.write(instance, value)

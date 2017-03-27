@@ -216,14 +216,12 @@ class WorkerScheduler(Scheduler):
                 log_err = LogEntry(
                     'worker',
                     'stderr from running task',
-                    stderr,
-                    objs={'task': task}
+                    stderr
                 )
                 log_out = LogEntry(
                     'worker',
                     'stdout from running task',
-                    stdout,
-                    objs={'task': task}
+                    stdout
                 )
                 self.project.logs.add(log_err)
                 self.project.logs.add(log_out)
@@ -338,7 +336,9 @@ class WorkerScheduler(Scheduler):
         paths = [
             self.path + '/projects/',
             self.path + '/projects/' + self.project.name,
-            self.path + '/projects/' + self.project.name + '/trajs']
+            self.path + '/projects/' + self.project.name + '/trajs',
+            self.path + '/projects/' + self.project.name + '/models'
+        ]
 
         self._create_dirs(paths)
 

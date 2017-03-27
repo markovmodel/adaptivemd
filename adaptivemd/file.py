@@ -240,8 +240,8 @@ class File(Location):
     _find_by = ['created', 'task']
 
     created = SyncVariable('created', lambda x: x is not None and x < 0)
-    _file = SyncVariable('_file', lambda x: not bool(x))
-    task = SyncVariable('task', lambda x: not bool(x))
+    _file = SyncVariable('_file', lambda x: x is not None)
+    task = SyncVariable('task', lambda x: x is not None)
 
     def __init__(self, location):
         super(File, self).__init__(location)
@@ -387,6 +387,10 @@ class File(Location):
         if '_file_' in dct:
             obj._file = base64.b64decode(dct['_file_'])
 
+            # print 'set', len(obj._file), obj.__uuid__
+
+        # print len(obj._file)
+
         return obj
 
     def get_file(self):
@@ -446,6 +450,17 @@ class JSONFile(File):
         return None
 
     def load(self, scheduler=None):
+        if self._data is None:
+            s = self.get(scheduler)
+            if s is not None:
+                self._data = s
+
+        return self
+
+    def get(self, scheduler=None):
+        if self._data is not None:
+            return self._data
+
         path = None
 
         if self.drive == 'file':
@@ -456,9 +471,9 @@ class JSONFile(File):
 
         if path:
             with open(path, 'r') as f:
-                self._data = _json_file_simplifier.from_json(f.read())
+                return _json_file_simplifier.from_json(f.read())
 
-        return self
+        return None
 
     @property
     def exists(self):
