@@ -169,6 +169,22 @@ class Task(BaseTask):
     Attributes
     ----------
     worker : `WorkingScheduler`
+        the currently assigned Worker instance (not the scheduler!)
+    generator : `TaskGenerator`
+        if given the `TaskGenerator` that was used to create this task
+    state : str
+        a string representing the current state of the execution. One of
+        - 'create' : task has been created and is available for execution
+        - 'running': task is currently executed by a scheduler
+        - 'queued' : task has been captured by a worker for execution
+        - 'fail' : task has completed but failed. You can restart it
+        - 'succedd` : task has completed and succeeded.
+        - 'halt' : task has been halted by user. You can restart it
+        - 'cancelled' : task has been cancelled by user. You CANNOT restart it
+    stdout : `LogEntry`
+        After completion you can access the stdout of the task here
+    stderr : `LogEntry`
+        After completion you can access the stderr of the task here
 
     """
     _events = ['submit', 'fail', 'success', 'change']
@@ -740,8 +756,32 @@ class Task(BaseTask):
         self.append(transaction)
         return transaction.source
 
+    def add_conda_env(self, name):
+        """
+        Add loading a conda env to all tasks of this resource
+
+        This calls `resource.wrapper.append('source activate {name}')`
+        Parameters
+        ----------
+        name : str
+            name of the conda environment
+
+        """
+        self.append('source activate %s' % name)
+
 
 class PrePostTask(Task):
+    """
+    Special task where the script is devided into Pre/Main/Post
+
+    Attributes
+    ----------
+    pre : list
+        the pre part of the script. Attach actions with `.append`
+    post : list
+        the post part of the script. Attach actions with `.append`
+
+    """
 
     _copy_attributes = Task._copy_attributes + [
         'pre', 'post'
@@ -762,23 +802,10 @@ class PrePostTask(Task):
     def main(self):
         return self.pre + self._main + self.post
 
-    def add_conda_env(self, name):
-        """
-        Add loading a conda env to all tasks of this resource
-
-        This calls `resource.wrapper.append('source activate {name}')`
-        Parameters
-        ----------
-        name : str
-            name of the conda environment
-
-        """
-        self.append('source activate %s' % name)
-
 
 class MPITask(PrePostTask):
     """
-    A description for a task running on an HPC
+    A description for a task running on an HPC with MPI (used for RP)
 
     """
 
@@ -835,7 +862,7 @@ class MPITask(PrePostTask):
 
 class DummyTask(PrePostTask):
     """
-    A Task not to be executed
+    A Task not to be executed. Only to be wrapped around other tasks
     """
 
     def __init__(self):
@@ -860,7 +887,7 @@ class DummyTask(PrePostTask):
 
 class EnclosedTask(Task):
     """
-    Wrap any task with a PrePostTask
+    Helper class to wrap any task with a PrePostTask
     """
     _copies = [
         'environment', 'stdout', 'stderr', 'restartable', 'cleanup']
@@ -909,7 +936,17 @@ class EnclosedTask(Task):
 
 class PythonTask(PrePostTask):
     """
-    A special task that does a RPC python call
+    A special task that does a RPC python calls
+
+    Attributes
+    ----------
+    then_func_name : str or `None`
+        the name of the function of the `TaskGenerator` to be called with
+        the resulting output
+    store_output : bool
+        if `True` then the result from the RPC called function will also be
+        stored in the database. It can later be retrieved using the `.output`
+        attribute on the task completed successfully
     """
 
     _copy_attributes = PrePostTask._copy_attributes + [
@@ -929,8 +966,8 @@ class PythonTask(PrePostTask):
         self._python_args = None
         self._python_kwargs = None
 
-        self.executable = 'python'
-        self.arguments = '_run_.py'
+        # self.executable = 'python'
+        # self.arguments = '_run_.py'
 
         self.then_func_name = 'then_func'
 
@@ -955,6 +992,15 @@ class PythonTask(PrePostTask):
         self.store_output = True
 
     def backup_output_json(self, target):
+        """
+        Add an action that will copy the resulting JSON file to the given path
+
+        Parameters
+        ----------
+        target : `Location`
+            the place to copy the resulting `output.json` file to
+
+        """
         self.post.append(File('output.json').copy(target))
 
     def _cb_success(self, scheduler):
@@ -962,7 +1008,7 @@ class PythonTask(PrePostTask):
         # the output file is a JSON and these know how to load itself
 
         if self.store_output:
-            # by default store the returned result. If you handle it yourself you
+            # by default store the result. If you handle it yourself you
             # might want to turn it off to not save the data twice
             self._rpc_output_file.load(scheduler)
 

@@ -28,7 +28,11 @@ class Model(StorableMixin):
     """
     A wrapper to hold model data
 
-    This uses a special grid storage to save models larger than 16MB
+    Examples
+    --------
+    >>> m = Model({'msm' : [[0.9, 0.1], [0.1, 0.9]]})
+    >>> print m.msm
+    >>> print m['msm']
 
     Attributes
     ----------

@@ -20,6 +20,24 @@
 # License along with MDTraj. If not, see <http://www.gnu.org/licenses/>.
 ##############################################################################
 
+"""
+Implementation of a single instance stand-alone worker to execute tasks
+
+The main idea is that you want tasks that you created in your project to be
+executed somehow. There can be several ways to do that and this _worker_
+approach will allow you to run a single instance worker somewhere on your
+HPC which will search your project for unfinished tasks that can be run,
+assign one of these tasks to itself and excute it. Once finished will
+continue with the next task
+
+The worker consists of two parts:
+
+1. the single worker scheduler that will interprete a task, convert it to
+   a bash script and run it
+2. the worker job instance that runs a loop in the background, checking the DB
+   for new tasks and submitting these to the scheduler for execution
+
+"""
 
 import os
 import socket
@@ -33,7 +51,8 @@ import re
 import shutil
 from fcntl import fcntl, F_GETFL, F_SETFL
 
-from mongodb import StorableMixin, SyncVariable, create_to_dict, ObjectSyncVariable
+from mongodb import StorableMixin, SyncVariable, create_to_dict, \
+    ObjectSyncVariable
 
 from scheduler import Scheduler
 from reducer import StrFilterParser, WorkerParser, BashParser, PrefixParser
@@ -52,14 +71,22 @@ except OSError:
 
 class WorkerScheduler(Scheduler):
     def __init__(self, resource, verbose=False):
+        """
+        A single instance worker scheduler to interprete `Task` objects
+
+        Parameters
+        ----------
+        resource : `Resource`
+            the resourse this scheduler should use.
+        verbose : bool
+            if `True` the worker will report lots of stuff
+        """
         super(WorkerScheduler, self).__init__(resource)
         self._current_sub = None
         self._current_unit_dir = None
         self.current_task = None
         self.home_path = os.path.expanduser('~')
         self._done_tasks = set()
-        self.state = 'booting'
-        self._state_cb = None
         self._save_log_to_db = True
         self.verbose = verbose
         self._fail_after_each_command = True
@@ -73,38 +100,44 @@ class WorkerScheduler(Scheduler):
 
     @property
     def staging_area_location(self):
-        return 'remote:///staging_area'
-
-    @property
-    def staging_area_location(self):
         return 'sandbox:///workers/staging_area'
 
     def task_to_script(self, task):
-        # create a task that wraps errands from the resource and the scheduler as well
+        """
+        Convert a task to an executable bash script
 
+        Parameters
+        ----------
+        task : `Task`
+            the `Task` instance to be converted
+
+        Returns
+        -------
+        list of str
+            a list of bash commands
+
+        """
+
+        # create a task that wraps errands from resource and scheduler
         wrapped_task = task >> self.wrapper >> self.project.resource.wrapper
 
+        # call the reducer that interpretes task actions
         reducer = StrFilterParser() >> PrefixParser() >> WorkerParser() >> BashParser()
-
         script = reducer(self, wrapped_task.script)
 
         if self._fail_after_each_command:
-            # make sure that a script exits if ANY command fails not just the last one
+            # the bash script exits if ANY command fails not just the last one
             script = ['set -e'] + script
 
         return script
 
     def submit(self, submission):
         """
-        Submit a task in form of an event, a task or an taskable object
-
-        Notes
-        -----
-        You can only
+        Submit a `Task` or a `Trajectory`
 
         Parameters
         ----------
-        submission : (list of) [`Task` or `object` or `Event`]
+        submission : (list of) `Task` or `Trajectory`
 
         Returns
         -------
@@ -114,24 +147,37 @@ class WorkerScheduler(Scheduler):
         """
         tasks = self._to_tasks(submission)
 
-        # filter all tasks that have not run yet
-        # tasks = [t for t in tasks if t.__uuid__ not in self._done_tasks]
-
         if tasks:
             for task in tasks:
-                # task.state = 'pending'
                 self.tasks[task.__uuid__] = task
 
         return tasks
 
     @property
     def current_task_dir(self):
+        """
+        Return the current path to the worker directory
+        Returns
+        -------
+        str or `None`
+            the path or `None` if no task is executed at the time
+
+        """
         if self._current_unit_dir is not None:
             return self.path + '/workers/' + self._current_unit_dir
         else:
             return None
 
     def _start_job(self, task):
+        """
+        Start execution of a task
+
+        Parameters
+        ----------
+        task : `Task`
+            the task to be executed
+
+        """
         self._current_unit_dir = 'worker.%s' % hex(task.__uuid__)
 
         script_location = self.current_task_dir
@@ -188,6 +234,16 @@ class WorkerScheduler(Scheduler):
         self._start_std()
 
     def stop_current(self):
+        """
+        Stop execution of the current task immediately
+
+        Returns
+        -------
+        bool
+            if `True` the current task was cancelled, `False` if there
+            was no task running
+
+        """
         if self._current_sub is not None:
             task = self.current_task
             self._current_sub.kill()
@@ -207,8 +263,7 @@ class WorkerScheduler(Scheduler):
 
     def _advance_std(self):
         """
-        Advance the stdout and stderr for some bytes, save it and redirect if desired
-
+        Advance the stdout and stderr for some bytes, save it and redirect
         """
         for s in ['stdout', 'stderr']:
             try:
@@ -224,6 +279,10 @@ class WorkerScheduler(Scheduler):
                 pass
 
     def _final_std(self):
+        """
+        Finish capturing of stdout and stderr
+
+        """
         task = self.current_task
         try:
             out, err = self._current_sub.communicate()
@@ -256,6 +315,13 @@ class WorkerScheduler(Scheduler):
             pass
 
     def advance(self):
+        """
+        Advance checking if tasks are completed or failed
+
+        Needs to be called in regular intervals. Usually by the main
+        worker instance
+
+        """
         if self.current_task is None:
             if len(self.tasks) > 0:
                 t = next(self.tasks.itervalues())
@@ -330,6 +396,13 @@ class WorkerScheduler(Scheduler):
                 self._initialize_current()
 
     def release_queued_tasks(self):
+        """
+        Release captured tasks scheduled for execution (if not started yet)
+
+        You can prefetch tasks (although not recommended for single workers)
+        and this releases not started jobs back to the queue
+
+        """
         for t in list(self.tasks.values()):
             if t.state == 'queued':
                 t.state = 'created'
@@ -356,11 +429,23 @@ class WorkerScheduler(Scheduler):
         self.change_state('running')
 
     def stage_project(self):
+        """
+        Create paths necessary for the current project
+
+        """
         paths = [
             self.path + '/projects/',
             self.path + '/projects/' + self.project.name,
             self.path + '/projects/' + self.project.name + '/trajs',
             self.path + '/projects/' + self.project.name + '/models'
+        ]
+
+        self._create_dirs(paths)
+
+        paths = [
+            self.path + '/workers',
+            self.path + '/workers/staging_area'
+            # self.path + '/workers/staging_area/trajs'
         ]
 
         self._create_dirs(paths)
@@ -374,14 +459,6 @@ class WorkerScheduler(Scheduler):
                 pass
 
     def stage_generators(self):
-        paths = [
-            self.path + '/workers',
-            self.path + '/workers/staging_area'
-            # self.path + '/workers/staging_area/trajs'
-        ]
-
-        self._create_dirs(paths)
-
         os.chdir(self.path + '/workers/staging_area/')
 
         reducer = StrFilterParser() >> PrefixParser() >> WorkerParser() >> BashParser()
@@ -414,12 +491,6 @@ class WorkerScheduler(Scheduler):
         path = super(WorkerScheduler, self).replace_prefix(path)
         return path
 
-    def change_state(self, new_state):
-        print 'changed state to', new_state
-        self.state = new_state
-        if self._state_cb is not None:
-            self._state_cb(self)
-
     def shut_down(self, wait_to_finish=True):
         self.change_state('releaseunfinished')
         self.release_queued_tasks()
@@ -443,12 +514,11 @@ class WorkerScheduler(Scheduler):
 
         self.change_state('down')
 
-    @property
-    def is_idle(self):
-        return len(self.tasks) == 0 and self.state == 'running'
-
 
 class Worker(StorableMixin):
+    """
+    A Worker instance the will submit tasks from the DB to a scheduler
+    """
 
     _find_by = ['state', 'n_tasks', 'seen', 'verbose', 'prefetch', 'current']
 
@@ -460,8 +530,8 @@ class Worker(StorableMixin):
     command = SyncVariable('command')
     current = ObjectSyncVariable('current', 'tasks')
 
-    def __init__(self, walltime=None, generators=None, sleep=None, heartbeat=None, prefetch=1,
-                 verbose=False):
+    def __init__(self, walltime=None, generators=None, sleep=None,
+                 heartbeat=None, prefetch=1, verbose=False):
         super(Worker, self).__init__()
         self.hostname = socket.gethostname()
         self.cwd = os.getcwd()
@@ -481,8 +551,8 @@ class Worker(StorableMixin):
         self.pid = os.getpid()
 
     to_dict = create_to_dict([
-        'walltime', 'generators', 'sleep', 'heartbeat', 'hostname', 'cwd', 'seen', 'prefetch',
-        'pid'
+        'walltime', 'generators', 'sleep', 'heartbeat', 'hostname',
+        'cwd', 'seen', 'prefetch', 'pid'
     ])
 
     @classmethod
@@ -507,10 +577,23 @@ class Worker(StorableMixin):
 
     @property
     def scheduler(self):
+        """
+        Returns
+        -------
+        'WorkerScheduler`
+            the currently used scheduler to execute tasks
+
+        """
         return self._scheduler
 
     @property
     def project(self):
+        """
+        Returns
+        -------
+        `Project`
+            the currently used project
+        """
         return self._project
 
     _running_states = ['running', 'waitandshutdown']
@@ -538,11 +621,29 @@ class Worker(StorableMixin):
                 pass
 
     def execute(self, command):
+        """
+        Send and execute a single command to the worker
+
+        Note that the worker is registered on the DB but running on your HPC.
+        Just loading it does not allow you to call functions like `.shutdown`.
+        These would only be called on your local instance. All you can do
+        is use `execute` which will store a command in the DB and once the
+        real running worker executed it. The command will be cleared from the
+        DB.
+
+        Parameters
+        ----------
+        command : str
+            the command to be executed
+
+        """
         self.command = command
 
-        # todo: add a wait here until worker responds with timeout
-
     def run(self):
+        """
+        Start the worker to execute tasks until it is shut down
+
+        """
         scheduler = self._scheduler
         project = self._project
 
@@ -672,4 +773,13 @@ class Worker(StorableMixin):
             pass
 
     def shutdown(self, gracefully=True):
+        """
+        Shut down the worker
+
+        Parameters
+        ----------
+        gracefully : bool
+            if `True` the worker is allowed some time to finish running tasks
+
+        """
         self._scheduler.shut_down(gracefully)

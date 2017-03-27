@@ -26,6 +26,20 @@ class Condition(object):
     A function that returns a bool
 
     It uses some caching to keep checking fast and allows basic bool operations
+
+    This is really just to replace some simple lambda functions, nothing more.
+    It is kind of deprecated and raraly used.
+
+    Examples
+    --------
+    >>> a = Never()  # never fulfilles
+    >>> if a: print 'fulfilled' else 'not fulfilled'  # not fulfilled
+    >>> b = Now()  # always fulfilled
+    >>> if b: print 'fulfilled' else 'not fulfilled'  # fulfilled
+    >>> bool(a & b)  # False
+    >>> bool(a | b)  # True
+    >>> not a  # True
+
     """
     def __init__(self):
         self._met = None

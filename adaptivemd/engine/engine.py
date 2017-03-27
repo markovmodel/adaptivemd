@@ -261,7 +261,7 @@ class Trajectory(File):
 
         Parameters
         ----------
-        f : str
+        f : str or `OutputTypeDescription`
             the filenameto be appended to the trajectories directory
 
         Returns
@@ -352,13 +352,11 @@ class Trajectory(File):
     @property
     def existing_frames(self):
         """
-        list of in
-            a sorted list of frame indices with full coordinates that can be used for restart
-
         Returns
         -------
         list of int
-            the list of frames relative to the engines timesteps
+            a sorted list of frame indices with full coordinates that can be
+            used for restart. relative to the engines timesteps
         """
         full_strides = self.engine.full_strides
         frames = set()
@@ -385,17 +383,6 @@ class Frame(StorableMixin):
         super(Frame, self).__init__()
         self.trajectory = trajectory
         self.index = index
-
-    # @property
-    # def location(self):
-    #     """
-    #     str
-    #         the
-    #     Returns
-    #     -------
-    #
-    #     """
-    #     return self.trajectory.location
 
     def __repr__(self):
         return 'Frame(%s[%d])' % (self.trajectory.short, self.index)
@@ -444,16 +431,6 @@ class Frame(StorableMixin):
         ty, idx = self.index_in_outputs
         return ty is not None
 
-# class RestartFile(File):
-#     """
-#     Represents a restart (velocities) `File` on the cluster
-#
-#     """
-#
-#     def __repr__(self):
-#         return "RestartFile(%s)" % (
-#             self.basename)
-
 
 class TrajectoryGenerationTask(Task):
     """
@@ -496,8 +473,9 @@ class TrajectoryGenerationTask(Task):
         """
         t = self.generator.extend(self.trajectory, length)
 
-        # this is not really necessary since we require internally that the source exists
-        # but this will cause all dependencies to be submitted, too
+        # this is not really necessary since we require internally that the
+        # source exists but this will cause all dependencies to be
+        # submitted, too
         t.dependencies = [self]
         return t
 

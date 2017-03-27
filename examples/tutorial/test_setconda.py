@@ -21,7 +21,7 @@ os.environ['RADICAL_PILOT_DBURL'] = path_to_db
 # import adaptive components
 
 from adaptivemd import Project
-from adaptivemd import LocalCluster
+from adaptivemd import LocalResource
 
 from adaptivemd import OpenMMEngine
 from adaptivemd import PyEMMAAnalysis
@@ -38,7 +38,7 @@ if __name__ == '__main__':
     #   the instance to know about the place where we run simulations
     # --------------------------------------------------------------------------
 
-    project.initialize(LocalCluster('$HOME/miniconda2/bin'))
+    project.initialize(LocalResource('$HOME/miniconda2/bin'))
 
     # --------------------------------------------------------------------------
     # CREATE THE ENGINE

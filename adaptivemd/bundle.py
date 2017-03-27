@@ -20,6 +20,66 @@
 # License along with MDTraj. If not, see <http://www.gnu.org/licenses/>.
 ##############################################################################
 
+"""
+Bundle - A set-enhancement to add filtering and store handling capabilities
+
+A bundle can be accessed as a normal set using iteration. You can add objects
+using `.add(item)` if the bundle is not a view
+
+Examples
+--------
+Some basic functions
+
+>>> bundle = Bundle(['10', '20', 1, 2, 3])
+>>> str_view = bundle.c(basestring)  # only how strings
+>>> print list(str_view)  # ['10', '20']
+>>> fnc_view = bundle.v(lambda x: int(x) < 3)
+>>> print list(fnc_view) # [1, 2]
+
+Some `File` specific functions
+
+>>> import adaptivemd as amd
+>>> bundle = Bundle([amd.File('0.dcd'), amd.File('a.pdb')])
+>>> file_view = bundle.f('*.dcd')
+>>> print list(file_view)  # [File('0.dcd')]
+
+Logic operations produce view on the resulting bundle
+
+>>> and_bundle = str_view & fnc_view
+>>> print list(and_bundle)  # []
+>>> and_bundle = str_view | fnc_view
+>>> print list(and_bundle)  # [1, 2, '10', '20']
+
+A `StorableBundle` is attached to a mongodb store (a stored object list).
+Adding will append the object to the store if not stored yet. All iteration
+and views will always be kept synced with the DB store content.
+
+>>> p = amd.Project('test-project')
+>>> store = StoredBundle()  # new bundle
+>>> store.set_store(p.storage.trajectories)  # attach to DB
+>>> print list(store)  # show all trajectories
+>>> len_store = store.v(lambda x: len(x) > 10)  # all trajs with len > 10
+>>> print list(len_store)
+
+Set do not have ordering so some functions do not make sense. As long as
+you are working with storable objects (subclassed from `StorableMixin`)
+you have some time-ordering (accurate to seconds)
+
+>>> print store.first  # get the earlist created object
+>>> print store.one    # get one (any) single object
+>>> print store.last   # get the last created object
+
+A bundle is mostly meant to work with storable objects (but does not have to)
+To simplify access to certain attributes or apply function to all members you
+can use the `.all` attribute and get a _delegator_ that will apply and
+attribute or method to all objects
+
+>>> print len_store.all.length  # print all lengths of all objects in len_store
+>>> print store.all.path  # print all path of all trajectories
+>>> # call `.execute('shutdown') on all workers in the `.workers` bundle
+>>> print p.workers.all.execute('shutdown')
+
+"""
 
 import fnmatch
 import random
@@ -198,7 +258,7 @@ class BaseBundle(object):
 
 class Bundle(BaseBundle):
     """
-    A container of Storable Objects objects
+    A container of objects
     """
 
     def __init__(self, iterable=None):
@@ -229,9 +289,16 @@ class Bundle(BaseBundle):
         """
         map(self.add, iterable)
 
-    def add(self, x):
+    def add(self, item):
+        """
+        Add a single item to the bundle
+
+        Parameters
+        ----------
+        x : object
+        """
         if self._set is not None:
-            self._set.add(x)
+            self._set.add(item)
 
     def __iter__(self):
         if self._set is not None:
@@ -241,6 +308,9 @@ class Bundle(BaseBundle):
 
 
 class LogicBundle(BaseBundle):
+    """
+    Implement simple and and or logic for bundles
+    """
     def __init__(self, bundle1, bundle2):
         super(LogicBundle, self).__init__()
         self.bundle1 = bundle1
@@ -248,11 +318,17 @@ class LogicBundle(BaseBundle):
 
 
 class AndBundle(LogicBundle):
+    """
+    And logic
+    """
     def __iter__(self):
         return iter(set(self.bundle1) & set(self.bundle2))
 
 
 class OrBundle(LogicBundle):
+    """
+    Or logic
+    """
     def __iter__(self):
         return iter(set(self.bundle1) | set(self.bundle2))
 
@@ -293,21 +369,9 @@ class SortedBundle(BaseBundle):
         return next(iter(self))
 
 
-# class LongestViewBundle(BaseBundle):
-#     def __init__(self, bundle, view):
-#         super(LongestViewBundle, self).__init__()
-#         self.bundle = bundle
-#         self.view = view
-#
-#     def __iter__(self):
-#         for o in self.bundle:
-#             if self.view(o):
-#                 yield o
-
-
 class BundleDelegator(object):
     """
-    This will delegate attribute calls to all elements
+    Delegate an attribute call to all elements in a bundle
     """
     def __init__(self, bundle):
         self._bundle = bundle
@@ -325,6 +389,9 @@ class BundleDelegator(object):
 
 
 class FunctionDelegator(object):
+    """
+    Delegate a function call to all elements in a bundle
+    """
     def __init__(self, bundle, item):
         self._bundle = bundle
         self._item = item
@@ -356,6 +423,7 @@ class StoredBundle(Bundle):
 
         """
         self._set = store
+        return self
 
     def close(self):
         """

@@ -28,7 +28,23 @@ import os
 
 class TaskGenerator(StorableMixin):
     """
-    A generator for `Task` objects
+    A generator helper for `Task` object creation
+
+    This is an important group and is supposed to make it easy for you to
+    create `Task` object. In a real situation a user should not be faced
+    with the `Task` details, or at least the programming of a generator is
+    a separate problem. Once you have the generators use them in your
+    adaptive scripts.
+
+    Examples
+    --------
+
+    Attributes
+    ----------
+    initial_staging : list of dict or str or `Action`
+        a list of actions to be run once before this generator can be used
+    items : dict of `File`
+        a dictionary of `File`s by name to simplify access to certain files
     """
     def __init__(self):
         super(TaskGenerator, self).__init__()
@@ -77,10 +93,18 @@ class TaskGenerator(StorableMixin):
         """
         return self.initial_staging
 
-    # def file_generators(self):
-    #     return {}
-
     def stage(self, obj, target=None):
+        """
+        Short cut to add a file to be staged
+
+        Parameters
+        ----------
+        obj : `File`
+            the file to be staged in the initial staging phase
+        target : `Location` or str
+            the (different) target name to be used
+
+        """
         self.initial_staging.append(
             obj.transfer(target)
         )
@@ -91,9 +115,11 @@ rpc_exec = File('file://' + os.path.join(os.path.dirname(__file__), 'scripts/_ru
 class PythonRPCTaskGenerator(TaskGenerator):
     """
     A python remote procedure call that executes a python function remotely
+
+    Represents a TaskGenerator that uses the `PythonTask` as a basis. This
+    tasks require a special python script to be staged
     """
     def __init__(self):
         super(PythonRPCTaskGenerator, self).__init__()
 
-        stage = rpc_exec.transfer('staging:///')
-        self.initial_staging.append(stage)
+        self.stage(rpc_exec, 'staging:///')

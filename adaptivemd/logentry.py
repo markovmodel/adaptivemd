@@ -28,6 +28,26 @@ from util import DT
 class LogEntry(StorableMixin):
     """
     A storable representation of a log entry
+
+    Examples
+    --------
+    >>> p = Project('tutorial-project')
+    >>> l = LogEntry('worker', 'failed execution', 'simsalabim, didnt work')
+    >>> print l
+    >>> p.logs.add(l)
+
+    Attributes
+    ----------
+    logger : str
+        the name of the logger for classification
+    title : str
+        a short title for the log entry
+    message : str
+        the long and detailed message
+    level : int
+        pick `LogEntry.SEVERE`, `LogEntry.ERROR` or `LogEntry.INFO` (default)
+    objs : dict of storable objects
+        you can attach objects that can help with specifying the error message
     """
 
     SEVERE = 1

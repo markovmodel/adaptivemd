@@ -3,7 +3,7 @@
 import os
 
 from adaptivemd import Project
-from adaptivemd import LocalCluster
+from adaptivemd import LocalResource
 
 from adaptivemd import OpenMMEngine
 from adaptivemd import PyEMMAAnalysis
@@ -24,7 +24,7 @@ if __name__ == '__main__':
     #   the instance to know about the place where we run simulations
     # --------------------------------------------------------------------------
 
-    project.initialize(LocalCluster())
+    project.initialize(LocalResource())
 
     # --------------------------------------------------------------------------
     # CREATE THE ENGINE

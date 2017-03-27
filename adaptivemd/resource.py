@@ -27,9 +27,7 @@ from task import DummyTask
 
 class Resource(StorableMixin):
     """
-    Representation of a shared FS with attached cluster(s)
-
-    Similar to a resource in RP
+    Representation of a shared FS with attached execution resources
     """
 
     def __init__(self, shared_path=None, wrapper=None):
@@ -46,7 +44,7 @@ class Resource(StorableMixin):
 
 class AllegroCluster(Resource):
     """
-    The FUB Allegro cluster and its queues
+    The FUB Allegro cluster and its queues with shared FS on `NO_BACKUP`
     """
     def __init__(self, shared_path=None):
         if shared_path is None:
@@ -65,5 +63,8 @@ class AllegroCluster(Resource):
         w.pre.append('module load cuda/7.5')
 
 
-class LocalCluster(Resource):
+class LocalResource(Resource):
+    """
+    Run tasks locally and store results in `$HOME/adaptivemd/
+    """
     pass

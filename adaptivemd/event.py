@@ -37,6 +37,13 @@ class Event(object):
     _wait_for_completion = True
 
     def __init__(self, when=None):
+        """
+
+        Parameters
+        ----------
+        when : `Condition`
+            the callable that determines when an Event should be executed
+        """
         self._on = None
         self._until = None
 
@@ -92,6 +99,14 @@ class Event(object):
 
     @property
     def active_tasks(self):
+        """
+
+        Returns
+        -------
+        list of `Task`
+            the list of currently active tasks in this event
+
+        """
         self._update_conditions()
         return self._active_tasks
 
@@ -130,7 +145,7 @@ class Event(object):
 
     def trigger(self, scheduler):
         """
-        Test conditions and trigger execution if fulfilled
+        Test conditions and trigger execution if they are fulfilled
 
         Parameters
         ----------
@@ -140,7 +155,7 @@ class Event(object):
         Returns
         -------
         list of `Task`
-            a list of task that should be run
+            a list of new tasks that should be submitted
         """
         if self:
             if not self.has_running_tasks or not self._wait_for_completion:
