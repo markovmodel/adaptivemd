@@ -227,12 +227,15 @@ class FileStore(ObjectStore):
 
 
 class DataDict(StorableMixin):
+    """
+    Delegate to the contained .data object
+    """
     def __init__(self, data):
         super(DataDict, self).__init__()
         self.data = data
 
     def __getitem__(self, item):
-        return self.data.get(item)
+        return self.data[item]
 
     def __contains__(self, item):
         return item in self.data

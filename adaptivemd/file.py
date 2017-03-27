@@ -1,9 +1,8 @@
 import os
 import time
-import base64
 
 from mongodb import StorableMixin, ObjectJSON, \
-    JSONDataSyncVariable, SyncVariable
+    JSONDataSyncVariable, SyncVariable, ObjectSyncVariable, DataDict
 
 
 class Action(StorableMixin):
@@ -240,7 +239,7 @@ class File(Location):
     _find_by = ['created', 'task']
 
     created = SyncVariable('created', lambda x: x is not None and x < 0)
-    _file = SyncVariable('_file', lambda x: x is not None)
+    _file = ObjectSyncVariable('_file', lambda x: x is not None)
     task = SyncVariable('task', lambda x: x is not None)
 
     def __init__(self, location):
@@ -370,22 +369,24 @@ class File(Location):
                 path = self.path
 
             with open(path, 'r') as f:
-                self._file = f.read()
+                self._file = DataDict(f.read())
 
         return self
 
     def to_dict(self):
         ret = super(File, self).to_dict()
-        if self._file:
-            ret['_file_'] = base64.b64encode(self._file)
+        ret['_file'] = self._file
+        # if self._file:
+        #     ret['_file_'] = base64.b64encode(self._file)
 
         return ret
 
     @classmethod
     def from_dict(cls, dct):
         obj = super(File, cls).from_dict(dct)
-        if '_file_' in dct:
-            obj._file = base64.b64decode(dct['_file_'])
+        obj._file = dct['_file']
+        # if '_file_' in dct:
+        #     obj._file = base64.b64decode(dct['_file_'])
 
             # print 'set', len(obj._file), obj.__uuid__
 
@@ -394,14 +395,18 @@ class File(Location):
         return obj
 
     def get_file(self):
-        return self._file
+        f = self._file
+        if f:
+            return self._file.data
+        else:
+            return None
 
     @property
     def has_file(self):
-        return bool(self._file)
+        return self._file is not None
 
     def set_file(self, content):
-        self._file = content
+        self._file = DataDict(content)
 
 
 _json_file_simplifier = ObjectJSON()
