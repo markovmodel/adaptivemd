@@ -30,14 +30,6 @@ from mongodb import SyncVariable, ObjectSyncVariable
 
 
 class BaseTask(StorableMixin):
-    """
-    Enhanced version of the ComputeUnitDescription
-
-    This mainly makes it easier to create a CU for RP. Similar to the
-    purpose of RP kernels.
-
-    """
-
     _copy_attributes = [
         '_main', '_add_paths', '_environment'
         ]
@@ -168,10 +160,11 @@ class Task(BaseTask):
 
     Attributes
     ----------
-    worker : `WorkingScheduler`
+    worker : :class:`~adaptivemd.worker.WorkingScheduler`
         the currently assigned Worker instance (not the scheduler!)
-    generator : `TaskGenerator`
-        if given the `TaskGenerator` that was used to create this task
+    generator : :class:`~adaptivemd.generator.TaskGenerator`
+        if given the :class:`~adaptivemd.generator.TaskGenerator` that
+        was used to create this task
     state : str
         a string representing the current state of the execution. One of
         - 'create' : task has been created and is available for execution
@@ -181,9 +174,9 @@ class Task(BaseTask):
         - 'succedd` : task has completed and succeeded.
         - 'halt' : task has been halted by user. You can restart it
         - 'cancelled' : task has been cancelled by user. You CANNOT restart it
-    stdout : `LogEntry`
+    stdout : :class:`~adaptivemd.logentry.LogEntry`
         After completion you can access the stdout of the task here
-    stderr : `LogEntry`
+    stderr : :class:`~adaptivemd.logentry.LogEntry`
         After completion you can access the stderr of the task here
 
     """

@@ -263,20 +263,24 @@ class FunctionalEvent(Event):
     """
     An Event to wrap a python function
 
-    The function is executed on start and interrupted if you use `yield {condition to continue}`
+    The function is executed on start and interrupted if you use
+    ``yield {condition to continue}``
 
-    To make writing of asynchronous code easy you can use this wrapper class. Usually you
-    start by opening a scheduler that you submit tasks to. Then submit a first task or
-    yield a condition to wait for. Once this is met the code will continue to execute and
-    you can submit more tasks until finally you will close the scheduler
-
-    Attributes
-    ----------
-    generator : generator
-        the function (generator) to be used
+    To make writing of asynchronous code easy you can use this wrapper class.
+    Usually you start by opening a scheduler that you submit tasks to. Then
+    submit a first task or yield a condition to wait for. Once this is met the
+    code will continue to execute and you can submit more tasks until finally
+    you will close the scheduler
 
     """
     def __init__(self, generator):
+        """
+        Parameters
+        ----------
+        generator : function
+            the function (generator) to be used
+
+        """
         super(FunctionalEvent, self).__init__()
 
         if not isinstance(generator, types.GeneratorType):
@@ -320,7 +324,8 @@ class FunctionalEvent(Event):
 
 class TasksFinished(Condition):
     """
-    Condition to represent the completion of an `Event`
+    Condition to represent the completion of an event
+
     """
     def __init__(self, event):
         super(TasksFinished, self).__init__()
@@ -333,6 +338,7 @@ class TasksFinished(Condition):
 class StopEvent(Event):
     """
     Event that represents the termination of the used scheduler
+
     """
     def __call__(self, scheduler):
         return StopIteration

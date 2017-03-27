@@ -27,21 +27,20 @@ from adaptivemd.engine import Engine, Frame, Trajectory
 
 
 class ACEMDEngine(Engine):
-    """
-    Implementation of the AceMD engine
-
-    Attributes
-    ----------
-    conf_file : `File`
-        reference to the .conf file
-    pdb_file : `File`
-        reference to a .pdb file
-    args : str
-        arguments passed to the AceMD command line
-
-    """
-
     def __init__(self, conf_file, pdb_file, args=None):
+        """
+        Implementation of the AceMD engine
+
+        Parameters
+        ----------
+        conf_file : `File`
+            reference to the .conf file
+        pdb_file : `File`
+            reference to a .pdb file
+        args : str
+            arguments passed to the AceMD command line
+
+        """
         super(ACEMDEngine, self).__init__()
 
         self._items = dict()

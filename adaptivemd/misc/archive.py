@@ -29,17 +29,16 @@ import os
 
 
 class Archiver(PythonRPCTaskGenerator):
-    """
-    An generator that will essentially copy all files in a project to a specified location
-
-    Attributes
-    ----------
-    target : `Directory`
-        the directory to dump all simulations to
-
-    """
-
     def __init__(self, target):
+        """
+        Generator to copy all files in a project to a specified location
+
+        Parameters
+        ----------
+        target : `Directory`
+            the directory to dump all simulations to
+
+        """
         super(Archiver, self).__init__()
         self.target = target
 

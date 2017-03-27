@@ -424,8 +424,6 @@ class Frame(StorableMixin):
     @property
     def exists(self):
         """
-        Check if the frame has full coordinates
-
         Returns
         -------
         bool

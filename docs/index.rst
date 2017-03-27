@@ -20,6 +20,7 @@ Documentation
    action
    task
    engine
+   scheduler
    worker
    adaptivemd
    subpackages

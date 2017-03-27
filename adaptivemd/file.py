@@ -457,8 +457,8 @@ class File(Location):
     """
     Represents a file object at a specific location
 
-    `File`s can but do not have to exist you can check using the
-    :attr:`created` attribute. If it is a positive number it represents
+    `File` objects can but do not have to exist - you can check using the
+    :py:attr:`File.created` attribute. If it is a positive number it represents
     the time stamp when it was created.
     """
     _find_by = ['created', 'task']
