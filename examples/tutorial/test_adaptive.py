@@ -75,7 +75,7 @@ if __name__ == '__main__':
 
     # create 4 blocks a 4 trajectories
     trajectories = [project.new_trajectory(engine['pdb_file'], 100, 4) for _ in range(4)]
-    tasks = map(engine.task_run_trajectory, trajectories)
+    tasks = map(engine.run, trajectories)
 
     print trajectories
 
@@ -92,7 +92,7 @@ if __name__ == '__main__':
     for loop in range(2):
         trajectories = [project.new_ml_trajectory(length=100, number=4) for _ in range(4)]
         print trajectories
-        tasks = map(engine.task_run_trajectory, trajectories)
+        tasks = map(engine.run, trajectories)
 
         finals = scheduler(tasks)
         scheduler.wait()
@@ -100,7 +100,7 @@ if __name__ == '__main__':
         for f in project.trajectories:
             print f.url
 
-        task = scheduler(modeller.task_run_msm_files(list(project.trajectories)))
+        task = scheduler(modeller.execute(list(project.trajectories)))
         scheduler.wait()
 
     # print

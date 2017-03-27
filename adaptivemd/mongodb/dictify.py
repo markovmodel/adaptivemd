@@ -515,7 +515,7 @@ class ObjectJSON(object):
 
         for key in obj._find_by:
             if key in simplified:
-                setattr(obj, key, simplified[key])
+                setattr(obj, key, self.build(simplified[key]))
 
         return obj
 
@@ -532,7 +532,7 @@ class ObjectJSON(object):
 
         for key in obj._find_by:
             if hasattr(obj, key):
-                dct[key] = getattr(obj, key)
+                dct[key] = self.simplify(getattr(obj, key))
 
         return dct
 

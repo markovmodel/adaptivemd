@@ -49,7 +49,7 @@ if __name__ == '__main__':
     # print scheduler.resource.resource
 
     trajectories = project.new_trajectory(engine['pdb_file'], 100, 4)
-    tasks = map(engine.task_run_trajectory, trajectories)
+    tasks = map(engine.run, trajectories)
 
     project.queue(tasks)
 

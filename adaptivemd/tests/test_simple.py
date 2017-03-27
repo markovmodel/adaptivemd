@@ -59,7 +59,7 @@ if __name__ == '__main__':
     # --------------------------------------------------------------------------
 
     trajectory = project.new_trajectory(engine['pdb_file'], 100, restart=True)
-    task = engine.task_run_trajectory(trajectory)
+    task = engine.run(trajectory)
 
     # project.queue(task)
 

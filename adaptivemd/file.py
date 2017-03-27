@@ -112,6 +112,8 @@ class Location(StorableMixin):
 
     use_absolute_local_paths = True
 
+    _restore_non_initial_attr = False
+
     _ignore = True
 
     def __init__(self, location):
@@ -236,7 +238,7 @@ class Location(StorableMixin):
 
 
 class File(Location):
-    _find_by = ['created', 'state', '_file', 'task']
+    _find_by = ['created', 'task']
 
     created = SyncVariable('created', lambda x: x is not None and x < 0)
     _file = SyncVariable('_file', lambda x: not bool(x))
@@ -395,7 +397,7 @@ _json_file_simplifier = ObjectJSON()
 
 
 class JSONFile(File):
-    _find_by = ['created', 'state', '_data']
+    _find_by = ['created', '_data', 'task']
 
     _data = JSONDataSyncVariable('_data', lambda x: not None)
     # _file = SyncVariable('_data', lambda x: not None)

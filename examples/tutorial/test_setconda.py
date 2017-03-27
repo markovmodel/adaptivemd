@@ -73,7 +73,7 @@ if __name__ == '__main__':
     scheduler = project.get_scheduler(cores=1)
 
     trajectory = project.new_trajectory(engine['pdb_file'], 100)
-    task = engine.task_run_trajectory(trajectory)
+    task = engine.run(trajectory)
 
     scheduler(task)
 
