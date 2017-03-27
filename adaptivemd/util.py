@@ -1,25 +1,62 @@
+##############################################################################
+# adaptiveMD: A Python Framework to Run Adaptive Molecular Dynamics (MD)
+#             Simulations on HPC Resources
+# Copyright 2017 FU Berlin and the Authors
+#
+# Authors: Jan-Hendrik Prinz
+# Contributors:
+#
+# `adaptiveMD` is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as
+# published by the Free Software Foundation, either version 2.1
+# of the License, or (at your option) any later version.
+#
+# This library is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Lesser General Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public
+# License along with MDTraj. If not, see <http://www.gnu.org/licenses/>.
+##############################################################################
+
+
 import pip
 import os
 import datetime
 
 
-def strip_type(s):
-    return s.split('://')[-1]
+# def strip_type(s):
+#     return s.split('://')[-1]
 
+# def get_type(s):
+#     parts = s.split('://')
+#     if len(parts) > 1:
+#         return parts[0]
+#     else:
+#         return 'worker'
 
-def get_type(s):
-    parts = s.split('://')
-    if len(parts) > 1:
-        return parts[0]
-    else:
-        return 'worker'
-
-path_conda_local_sheep = '/home/mi/jprinz/anaconda2/bin'
-path_conda_local_jhp = '/Users/jan-hendrikprinz/anaconda/bin/'
-path_conda_allegro_jhp = '/home/jprinz/miniconda2/bin/'
+# path_conda_local_sheep = '/home/mi/jprinz/anaconda2/bin'
+# path_conda_local_jhp = '/Users/jan-hendrikprinz/anaconda/bin/'
+# path_conda_allegro_jhp = '/home/jprinz/miniconda2/bin/'
 
 
 def get_function_source(func):
+    """
+    Determine the source file of a function
+
+    Parameters
+    ----------
+    func : function
+
+    Returns
+    -------
+    str
+        the module name
+    list of str
+        a list of filenames necessary to be copied
+
+    """
     installed_packages = pip.get_installed_distributions()
     inpip = func.__module__.split('.')[0] in [p.key for p in installed_packages]
     insubdir = os.path.realpath(
@@ -34,6 +71,10 @@ def get_function_source(func):
 
 
 class DT(object):
+    """
+    Helper class to convert timestamps to human readable output
+
+    """
 
     default_format = "%Y-%m-%d %H:%M:%S"
 

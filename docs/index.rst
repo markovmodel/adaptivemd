@@ -16,6 +16,7 @@ Documentation
    project
    resource
    file
+   bundle
    action
    task
    engine

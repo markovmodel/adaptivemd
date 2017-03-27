@@ -21,7 +21,7 @@ import sys
 # import adaptive components
 
 from adaptivemd import Project
-from adaptivemd import LocalCluster AllegroCluster
+from adaptivemd import LocalResource AllegroCluster
 
 from adaptivemd import OpenMMEngine
 from adaptivemd import PyEMMAAnalysis

@@ -1,3 +1,26 @@
+##############################################################################
+# adaptiveMD: A Python Framework to Run Adaptive Molecular Dynamics (MD)
+#             Simulations on HPC Resources
+# Copyright 2017 FU Berlin and the Authors
+#
+# Authors: Jan-Hendrik Prinz
+# Contributors:
+#
+# `adaptiveMD` is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as
+# published by the Free Software Foundation, either version 2.1
+# of the License, or (at your option) any later version.
+#
+# This library is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Lesser General Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public
+# License along with MDTraj. If not, see <http://www.gnu.org/licenses/>.
+##############################################################################
+
+
 import threading
 import time
 import numpy as np
@@ -29,16 +52,6 @@ class Project(object):
 
     Attributes
     ----------
-    name : str
-        a short descriptive name for the project. This name will be used in the
-        database creation also.
-    resource : `Resource`
-        a resource to run the project on. The resource specifies the memory
-        storage location. Not necessarily which cluster is used. An example is,
-        if at an institute several clusters (CPU, GPU) share the same shared FS.
-        If clusters use the same FS you can run simulations across clusters
-        without problems and so so this resource is the most top-level
-        limitation.
 
     Notes
     -----
@@ -50,23 +63,56 @@ class Project(object):
     Attributes
     ----------
 
-    session : `radical.pilot.Session`
-        the session object, that, if it exists, encapsulates all RP objects
-        and allows for a controlled shutdown
-    pilot_manager : `radical.pilot.Pilot`
-        the current pilot manager that reference all pilots used in the
-         attached schedulers
+    name : str
+        a short descriptive name for the project. This name will be used in the
+        database creation also.
+    resource : `Resource`
+        a resource to run the project on. The resource specifies the memory
+        storage location. Not necessarily which cluster is used. An example is,
+        if at an institute several clusters (CPU, GPU) share the same shared FS.
+        If clusters use the same FS you can run simulations across clusters
+        without problems and so so this resource is the most top-level
+        limitation.
     files : `Bundle`
         a set of file objects that are available in the project and are
         believed to be available within the resource as long as the project
         lives
+    trajectories : `ViewBundle`
+        all `File` object that are of `Trajectory` type and which have a
+        positive `created` attribute. This means the file was really created
+        and has not been altered yet.
+    workers : `Bundle`
+        a set of all registered `Worker` instanced in the project
+    files : `Bundle`
+        a set of file objects that are available in the project and are
+        believed to be available within the resource as long as the project
+        lives
+    models : `Bundle`
+        a set of stored models in the DB
+    tasks : `Bundle`
+        a set of all queued `Task`s in the project
+    logs : `Bundle`
+        a set of all stored log entries
+    data : `Bundle`
+        a set of `DataDict` objects that represent completely stored files in
+        the database of arbitrary size
     schedulers : set of `Scheduler`
         a set of attached schedulers with controlled shutdown and reference
-    models : list of dict
-        a list of returned objects from analysis (might change in the future)
-
     storage : `MongoDBStorage`
         the mongodb storage wrapper to access the database of the project
+    _worker_dead_time : int
+        the time after which an unresponsive worker is considered dead. Its
+        tasks will be assigne the state set in
+        `_set_task_state_from_dead_workers`. Default is 60s. Make sure that
+        the heartbeat of a worker is much less that this.
+    _set_task_state_from_dead_workers : str
+        if a worker is dead then its tasks are assigned this state. Default is
+        `created` which means the task will be restarted by another worker.
+        You can also chose `halt` or `cancelled`. See `Task` for details
+
+    See also
+    --------
+    `Task`
 
     """
 
@@ -543,9 +589,36 @@ class Project(object):
                 self.find_ml_next_frame(number)]
 
     def events_done(self):
+        """
+        Check if all events are done
+
+        Returns
+        -------
+        bool
+            `True` if all events are done
+        """
         return len(self._events) == 0
 
     def add_event(self, event):
+        """
+        Attach an `Event` to the project
+
+        These events will not be stored and only run in the current python
+        session. These are the parts responsible to create tasks given
+        certain conditions.
+
+        Parameters
+        ----------
+        event : `Event` or generator
+            the event to be added or a generator function that is then
+            converted to an `FunctionalEvent`
+
+        Returns
+        -------
+        `Event`
+        the actual event used
+
+        """
         if isinstance(event, (tuple, list)):
             return map(self._events.append, event)
 
@@ -562,6 +635,10 @@ class Project(object):
     def trigger(self):
         """
         Trigger a check of state changes that leads to task execution
+
+        This needs to be called regularly to advance the simulation. If not,
+        certain checks for state change will not be called and no new tasks
+        will be generated.
 
         """
         with self._lock:
@@ -611,6 +688,11 @@ class Project(object):
         """
         Starts observing events in the project
 
+        This is still somehow experimental and will call a background thread to
+        call `.trigger()` in regular intervals. Make sure to call `.stop()`
+        before you quit the notebook session or exit. Otherwise there might
+        be a job in the background left (not confirmed but possible!)
+
         """
         if not self._event_timer:
             self._stop_event = threading.Event()
@@ -628,11 +710,24 @@ class Project(object):
             self._stop_event = None
 
     def wait_until(self, condition):
+        """
+        Block until the gven condition evaluates to true
+
+        Parameters
+        ----------
+        condition : callable
+            function that is called in regular intervals. If it evaluates to
+            `True` the function returns
+
+        """
         while not condition():
             self.trigger()
             time.sleep(5.0)
 
     class EventTriggerTimer(threading.Thread):
+        """
+        A special thread to call `.trigger()`
+        """
         def __init__(self, event, project):
 
             super(Project.EventTriggerTimer, self).__init__()

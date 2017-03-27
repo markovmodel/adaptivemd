@@ -1,3 +1,26 @@
+##############################################################################
+# adaptiveMD: A Python Framework to Run Adaptive Molecular Dynamics (MD)
+#             Simulations on HPC Resources
+# Copyright 2017 FU Berlin and the Authors
+#
+# Authors: Jan-Hendrik Prinz
+# Contributors:
+#
+# `adaptiveMD` is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as
+# published by the Free Software Foundation, either version 2.1
+# of the License, or (at your option) any later version.
+#
+# This library is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Lesser General Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public
+# License along with MDTraj. If not, see <http://www.gnu.org/licenses/>.
+##############################################################################
+
+
 # Create compute units for various simulation tools
 import random
 import os
@@ -238,7 +261,7 @@ class Trajectory(File):
 
         Parameters
         ----------
-        f : str
+        f : str or `OutputTypeDescription`
             the filenameto be appended to the trajectories directory
 
         Returns
@@ -329,13 +352,11 @@ class Trajectory(File):
     @property
     def existing_frames(self):
         """
-        list of in
-            a sorted list of frame indices with full coordinates that can be used for restart
-
         Returns
         -------
         list of int
-            the list of frames relative to the engines timesteps
+            a sorted list of frame indices with full coordinates that can be
+            used for restart. relative to the engines timesteps
         """
         full_strides = self.engine.full_strides
         frames = set()
@@ -362,17 +383,6 @@ class Frame(StorableMixin):
         super(Frame, self).__init__()
         self.trajectory = trajectory
         self.index = index
-
-    # @property
-    # def location(self):
-    #     """
-    #     str
-    #         the
-    #     Returns
-    #     -------
-    #
-    #     """
-    #     return self.trajectory.location
 
     def __repr__(self):
         return 'Frame(%s[%d])' % (self.trajectory.short, self.index)
@@ -421,16 +431,6 @@ class Frame(StorableMixin):
         ty, idx = self.index_in_outputs
         return ty is not None
 
-# class RestartFile(File):
-#     """
-#     Represents a restart (velocities) `File` on the cluster
-#
-#     """
-#
-#     def __repr__(self):
-#         return "RestartFile(%s)" % (
-#             self.basename)
-
 
 class TrajectoryGenerationTask(Task):
     """
@@ -473,8 +473,9 @@ class TrajectoryGenerationTask(Task):
         """
         t = self.generator.extend(self.trajectory, length)
 
-        # this is not really necessary since we require internally that the source exists
-        # but this will cause all dependencies to be submitted, too
+        # this is not really necessary since we require internally that the
+        # source exists but this will cause all dependencies to be
+        # submitted, too
         t.dependencies = [self]
         return t
 

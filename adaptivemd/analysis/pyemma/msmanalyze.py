@@ -1,16 +1,43 @@
+##############################################################################
+# adaptiveMD: A Python Framework to Run Adaptive Molecular Dynamics (MD)
+#             Simulations on HPC Resources
+# Copyright 2017 FU Berlin and the Authors
+#
+# Authors: Jan-Hendrik Prinz
+# Contributors:
+#
+# `adaptiveMD` is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as
+# published by the Free Software Foundation, either version 2.1
+# of the License, or (at your option) any later version.
+#
+# This library is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Lesser General Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public
+# License along with MDTraj. If not, see <http://www.gnu.org/licenses/>.
+##############################################################################
+
+
 import pyemma.coordinates as coor
 import pyemma.msm as msm
 
-import numpy as np
 import argparse
 from sys import exit
 from pyemma import config
 
-import json
+import ujson
 
 import logging
 
 logging.disable(logging.CRITICAL)
+
+##############################################################################
+# this is only a stub and not used. If you want to create an pyemma script
+# start here
+##############################################################################
 
 
 if __name__ == '__main__':
@@ -67,8 +94,6 @@ if __name__ == '__main__':
     trajfiles = args.file
     topfile = args.topology_pdb
 
-    print trajfiles
-
     # Choose parameters to be used in the task
 
     config.show_progress_bars = False
@@ -78,43 +103,20 @@ if __name__ == '__main__':
     feat = coor.featurizer(topfile)
     feat.add_backbone_torsions()
 
-    # print feat.describe()
-
     inp = coor.source(trajfiles, feat)
-    # print 'trajectory length = ', inp.trajectory_length(0)
-    # print 'number of dimension = ', inp.dimension()
-
     dim = args.tica_dim
 
     tica_obj = coor.tica(inp, lag=lag, dim=dim, kinetic_map=False)
     Y = tica_obj.get_output()
 
-    # print 'Mean values: ', np.mean(Y, axis=0)
-    # print 'Variances:   ', np.var(Y, axis=0)
-
-    # print -lag / np.log(tica_obj.eigenvalues[:dim])
-
-    # clr = coor.cluster_regspace(data=Y, dmin=0.5)
     cl = coor.cluster_kmeans(data=Y, k=args.msm_states, stride=args.stride)
-
     M = msm.estimate_markov_model(cl.dtrajs, args.msm_lag)
 
-    # print 'fraction of states used = ', M.active_state_fraction
-    # print 'fraction of counts used = ', M.active_count_fraction
-
-    # print M.timescales()
-
-    # print cl.dtrajs
-
-    # os.makedirs('dtrajs/')
-
-    with open("model.dtraj", "w") as f:
-        f.write("\n".join(" ".join(map(str, x)) for x in cl.dtrajs))
-
-    # np.savetxt("model.dtraj", cl.dtrajs, delimiter=" ", fmt='%d')
-    np.savetxt("model.msm", M.P, delimiter=",")
-
-    # print M.P
+    # with open("model.dtraj", "w") as f:
+    #     f.write("\n".join(" ".join(map(str, x)) for x in cl.dtrajs))
+    #
+    # # np.savetxt("model.dtraj", cl.dtrajs, delimiter=" ", fmt='%d')
+    # np.savetxt("model.msm", M.P, delimiter=",")
 
     data = {
         'input': {
@@ -136,6 +138,6 @@ if __name__ == '__main__':
         }
     }
 
-    print json.dumps(data)
+    print ujson.dumps(data)
 
     exit(0)

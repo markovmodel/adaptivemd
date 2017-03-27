@@ -1,3 +1,26 @@
+##############################################################################
+# adaptiveMD: A Python Framework to Run Adaptive Molecular Dynamics (MD)
+#             Simulations on HPC Resources
+# Copyright 2017 FU Berlin and the Authors
+#
+# Authors: Jan-Hendrik Prinz
+# Contributors:
+#
+# `adaptiveMD` is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as
+# published by the Free Software Foundation, either version 2.1
+# of the License, or (at your option) any later version.
+#
+# This library is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Lesser General Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public
+# License along with MDTraj. If not, see <http://www.gnu.org/licenses/>.
+##############################################################################
+
+
 import types
 
 from condition import Condition
@@ -14,6 +37,13 @@ class Event(object):
     _wait_for_completion = True
 
     def __init__(self, when=None):
+        """
+
+        Parameters
+        ----------
+        when : `Condition`
+            the callable that determines when an Event should be executed
+        """
         self._on = None
         self._until = None
 
@@ -69,6 +99,14 @@ class Event(object):
 
     @property
     def active_tasks(self):
+        """
+
+        Returns
+        -------
+        list of `Task`
+            the list of currently active tasks in this event
+
+        """
         self._update_conditions()
         return self._active_tasks
 
@@ -107,7 +145,7 @@ class Event(object):
 
     def trigger(self, scheduler):
         """
-        Test conditions and trigger execution if fulfilled
+        Test conditions and trigger execution if they are fulfilled
 
         Parameters
         ----------
@@ -117,7 +155,7 @@ class Event(object):
         Returns
         -------
         list of `Task`
-            a list of task that should be run
+            a list of new tasks that should be submitted
         """
         if self:
             if not self.has_running_tasks or not self._wait_for_completion:

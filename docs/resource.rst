@@ -8,5 +8,5 @@ Resource Functions
 .. autosummary::
     :toctree: api/generated/
 
-    LocalCluster
+    LocalResource
     AllegroCluster

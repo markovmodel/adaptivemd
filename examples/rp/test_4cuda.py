@@ -21,7 +21,7 @@ import sys
 # import adaptive components
 
 from adaptivemd import Project
-from adaptivemd import LocalCluster, AllegroCluster
+from adaptivemd import LocalResource, AllegroCluster
 
 from adaptivemd import OpenMMEngine4CUDA
 from adaptivemd import PyEMMAAnalysis
@@ -46,9 +46,9 @@ if __name__ == '__main__':
         resource_id = sys.argv[1]
 
     if resource_id == 'local.jhp':
-        project.initialize(LocalCluster())
+        project.initialize(LocalResource())
     elif resource_id == 'local.sheep':
-        project.initialize(LocalCluster())
+        project.initialize(LocalResource())
     elif resource_id == 'fub.allegro':
         project.initialize(AllegroCluster())
 

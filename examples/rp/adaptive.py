@@ -25,7 +25,7 @@ import radical.utils as ru
 # import adaptive components
 
 from adaptivemd import OpenMMEngine, AllegroCluster, Brain, MDCluster, \
-    LocalCluster, File, PyEMMAAnalysis
+    LocalResource, File, PyEMMAAnalysis
 import adaptivemd.misc as amp
 
 
@@ -52,16 +52,16 @@ if __name__ == '__main__':
     # --------------------------------------------------------------------------
 
     if resource_id == 'local.jhp':
-        resource = LocalCluster(15, 2)
+        resource = LocalResource(15, 2)
         resource.add_path(amp.path_conda_local_jhp)
     elif resource_id == 'local.sheep':
-        resource = LocalCluster(15, 2)
+        resource = LocalResource(15, 2)
         resource.add_path(amp.path_conda_local_sheep)
     elif resource_id == 'fub.allegro':
         resource = AllegroCluster(15, 4, 'big')
         resource.add_path(amp.path_conda_allegro_jhp)
     else:
-        resource = LocalCluster(1, 2)
+        resource = LocalResource(1, 2)
 
     # --------------------------------------------------------------------------
     # CREATE THE ENGINE

@@ -1,3 +1,26 @@
+##############################################################################
+# adaptiveMD: A Python Framework to Run Adaptive Molecular Dynamics (MD)
+#             Simulations on HPC Resources
+# Copyright 2017 FU Berlin and the Authors
+#
+# Authors: Jan-Hendrik Prinz
+# Contributors:
+#
+# `adaptiveMD` is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as
+# published by the Free Software Foundation, either version 2.1
+# of the License, or (at your option) any later version.
+#
+# This library is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Lesser General Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public
+# License along with MDTraj. If not, see <http://www.gnu.org/licenses/>.
+##############################################################################
+
+
 from event import Event
 from file import Location
 from mongodb import ObjectJSON
@@ -63,12 +86,25 @@ class Scheduler(object):
 
         self.simplifier = ObjectJSON()
 
+        self._state_cb = None
+        self.state = 'booting'
+
     @property
     def staging_area_location(self):
+        """
+        Return the path to the staging area used by this scheduler
+        """
         return 'sandbox:///' + self.folder_name + '/staging_area'
 
     @property
     def generators(self):
+        """
+        Return the generators of the attached project
+
+        Returns
+        -------
+        list of `TaskGenerator`
+        """
         if self.project:
             return self.project.generators
         else:
@@ -101,18 +137,27 @@ class Scheduler(object):
         """
         return self.replace_prefix(f.url)
 
-    def in_staging_area(self, url):
-        pass
+    # def in_staging_area(self, url):
+    #     pass
 
     def unroll_staging_path(self, location):
+        """
+        Convert a staging location into an adaptiveMD location
+
+        Parameters
+        ----------
+        location : `Location`
+            the location to the changed
+
+        """
         if location.drive == 'staging':
             location.location = self.staging_area_location + location.path
 
-    def has(self, name):
-        if isinstance(name, (list, tuple)):
-            self._generator_list.extend(name)
-        else:
-            self._generator_list.append(name)
+    # def has(self, name):
+    #     if isinstance(name, (list, tuple)):
+    #         self._generator_list.extend(name)
+    #     else:
+    #         self._generator_list.append(name)
 
     def __getitem__(self, item):
         return self.generators.get(item)
@@ -136,6 +181,15 @@ class Scheduler(object):
         return fail
 
     def enter(self, project=None):
+        """
+        Call a preparations to use a scheduler
+
+        Parameters
+        ----------
+        project : `Project`
+            the project the worker should execute for
+
+        """
         if project is not None:
             self.project = project
 
@@ -144,12 +198,24 @@ class Scheduler(object):
 
     @property
     def is_idle(self):
+        """
+        Check whether the scheduler is idle
+
+        """
         return len(self.tasks) == 0
 
     def exit(self):
+        """
+        Shut down the scheduler
+
+        """
         self.shut_down(False)
 
     def stage_generators(self):
+        """
+        Prepare files and folder for all generators
+
+        """
         pass
 
     def stage_in(self, staging):
@@ -292,6 +358,20 @@ class Scheduler(object):
         self._events = []
 
     def replace_prefix(self, path):
+        """
+        Interprete adaptive paths and replace prefixes with real os paths
+
+        Parameters
+        ----------
+        path : str
+            the path with an adaptiveMD prefix
+
+        Returns
+        -------
+        str
+            the path without any adaptiveMD prefixes
+
+        """
         path = path.replace('staging://', '../staging_area')
 
         # the rp sandbox://
@@ -305,3 +385,13 @@ class Scheduler(object):
         path = path.replace('project://', '../../projects/' + self.project.name)
 
         return path
+
+    def change_state(self, new_state):
+        print 'changed state to', new_state
+        self.state = new_state
+        if self._state_cb is not None:
+            self._state_cb(self)
+
+    @property
+    def is_idle(self):
+        return len(self.tasks) == 0 and self.state == 'running'

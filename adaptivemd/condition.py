@@ -1,8 +1,45 @@
+##############################################################################
+# adaptiveMD: A Python Framework to Run Adaptive Molecular Dynamics (MD)
+#             Simulations on HPC Resources
+# Copyright 2017 FU Berlin and the Authors
+#
+# Authors: Jan-Hendrik Prinz
+# Contributors:
+#
+# `adaptiveMD` is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as
+# published by the Free Software Foundation, either version 2.1
+# of the License, or (at your option) any later version.
+#
+# This library is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Lesser General Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public
+# License along with MDTraj. If not, see <http://www.gnu.org/licenses/>.
+##############################################################################
+
+
 class Condition(object):
     """
     A function that returns a bool
 
     It uses some caching to keep checking fast and allows basic bool operations
+
+    This is really just to replace some simple lambda functions, nothing more.
+    It is kind of deprecated and raraly used.
+
+    Examples
+    --------
+    >>> a = Never()  # never fulfilles
+    >>> if a: print 'fulfilled' else 'not fulfilled'  # not fulfilled
+    >>> b = Now()  # always fulfilled
+    >>> if b: print 'fulfilled' else 'not fulfilled'  # fulfilled
+    >>> bool(a & b)  # False
+    >>> bool(a | b)  # True
+    >>> not a  # True
+
     """
     def __init__(self):
         self._met = None
