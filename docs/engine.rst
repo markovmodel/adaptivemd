@@ -2,8 +2,12 @@
 
 .. currentmodule:: adaptivemd
 
-Engine Functions
-================
+Engines
+=======
+
+
+Classes
+-------
 
 .. autosummary::
     :toctree: api/generated/

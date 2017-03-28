@@ -2,8 +2,13 @@
 
 .. currentmodule:: adaptivemd
 
-File Functions
-==============
+Files
+=====
+
+Some text
+
+Classes
+-------
 
 .. autosummary::
     :toctree: api/generated/
