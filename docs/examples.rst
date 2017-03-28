@@ -9,3 +9,4 @@ Examples Notebooks
    examples/example3
    examples/example4
    examples/example5
+   examples/example6

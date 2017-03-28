@@ -58,7 +58,7 @@ from scheduler import Scheduler
 from reducer import StrFilterParser, WorkerParser, BashParser, PrefixParser
 from logentry import LogEntry
 from util import DT
-from file import Transfer
+from adaptivemd import Transfer
 
 import pymongo.errors
 

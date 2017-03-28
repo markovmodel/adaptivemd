@@ -29,10 +29,9 @@
 from brain import Brain
 from event import StopEvent, Event, TasksFinished, FunctionalEvent
 from condition import Condition, Now, Never
-from file import File, Copy, Link, Move, Remove, \
-    Transfer, Directory, AddPathAction, Location, \
-    JSONFile, Action, FileTransaction, FileAction, Touch, \
-    MakeDir
+from file import File, Directory, Location, JSONFile, MakeDir, Copy, \
+    Transfer, Link, Move, Remove, Action, AddPathAction, FileAction, \
+    FileTransaction, Touch
 from bundle import Bundle, SortedBundle, ViewBundle, AndBundle, \
     BaseBundle, BundleDelegator, FunctionDelegator, LogicBundle, \
     OrBundle, StoredBundle

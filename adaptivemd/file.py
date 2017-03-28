@@ -5,211 +5,14 @@ from mongodb import StorableMixin, ObjectJSON, \
     JSONDataSyncVariable, SyncVariable, ObjectSyncVariable, DataDict
 
 
-class Action(StorableMixin):
-    """
-    A bash-command-like action to be executed in a Task
-
-    The main purpose is to have a worker/hpc independent description of
-    what should happen. This objects carry all the necessary information
-    and will be parsed into a bash script on the actual HPC / worker
-
-    """
-    def __init__(self):
-        super(Action, self).__init__()
-
-    def __repr__(self):
-        return str(self)
-
-
-class AddPathAction(Action):
-    """
-    An Action to add a path to the $PATH environment variables
-
-    """
-    def __init__(self, path):
-        """
-        Parameters
-        ----------
-        path : `Location` or str
-            the path to be added
-
-        """
-        super(AddPathAction, self).__init__()
-        self.path = path
-
-
-class FileAction(Action):
-    """
-    An Action that involves (at least) one file called source
-
-    Attributes
-    ----------
-    source : `File`
-        the source file for the action
-
-    """
-    def __init__(self, source):
-        super(FileAction, self).__init__()
-        self.source = source
-
-    def __str__(self):
-        return "%s('%s')" % (
-            self.__class__.__name__,
-            self.source
-        )
-
-    @property
-    def required(self):
-        """
-        Returns
-        -------
-        list of `File`
-            the necessary list of files to be functional
-
-        """
-        return [self.source]
-
-    @property
-    def added(self):
-        """
-        Returns
-        -------
-        list of `File`
-            the list of files added to the project by this action
-
-        """
-        return []
-
-    @property
-    def removed(self):
-        """
-        Returns
-        -------
-        list of `File`
-            the list of files removed by this action
-
-        """
-        return []
-
-
-class FileTransaction(FileAction):
-    """
-    An action involving a source and a target file
-
-    Attributes
-    ----------
-    target : `File`
-        the target file
-
-    """
-    def __init__(self, source, target):
-        """
-
-        Parameters
-        ----------
-        source : `File`
-            the source file for the action
-        target : `File` or `Location` or str
-            the target location for the action
-
-        """
-        super(FileTransaction, self).__init__(source)
-
-        if isinstance(target, str):
-            self.target = source.clone()
-            self.target.location = target
-        elif isinstance(target, Location) and not isinstance(target, File):
-            self.target = source.clone()
-            self.target.location = target.location
-        else:  # e.g. when it is already a `File` object
-            self.target = target
-
-    def __str__(self):
-        return "%s('%s' > '%s)" % (
-            self.__class__.__name__,
-            self.source.short,
-            self.target.short
-        )
-
-    @property
-    def added(self):
-        return [self.target]
-
-
-class Touch(FileAction):
-    """
-    An action that creates an empty file or folder
-
-    """
-    pass
-
-
-class MakeDir(FileAction):
-    """
-    An action that creates a folder
-
-    """
-    pass
-
-
-class Copy(FileTransaction):
-    """
-    An action that copies a file from source to target
-
-    """
-    pass
-
-
-class Transfer(FileTransaction):
-    """
-    An action that transfers between local and HPC
-
-    """
-    pass
-
-
-class Link(FileTransaction):
-    """
-    An action that links a source file to a target
-
-    """
-    pass
-
-
-class Move(FileTransaction):
-    """
-    An action that moves a file from source to target
-
-    The source is removed in the process
-
-    """
-    @property
-    def removed(self):
-        return [self.source]
-
-
-class Remove(FileAction):
-    """
-    An action that removes a file
-
-    """
-    @property
-    def removed(self):
-        return [self.source]
-
-    @property
-    def added(self):
-        return []
-
-
 class Location(StorableMixin):
     """
     A representation of a path in adaptiveMD
 
-    This is an important part of adaptiveMD. It allows you to specify file paths
-    also relative to certain special folders in adaptiveMD, like the project
-    folder. These special paths will be interpreted by the schedulers when
-    they actually execute tasks
+    This is an important part of adaptiveMD. It allows you to specify file
+    paths also relative to certain special folders in adaptiveMD, like the
+    project folder. These special paths will be interpreted by the schedulers
+    when they actually execute tasks
 
     Note that folder names ALWAYS end in ``/`` while filenames NEVER
 
@@ -518,8 +321,8 @@ class File(Location):
         -----
         We usually assume that objects are immutable. The way to think about
         creation is that a file is something like a *Promise* and it promises
-        a certain file with a name. Once it is created it is still the same file
-        but now it exists and can be used.
+        a certain file with a name. Once it is created it is still the same
+        file but now it exists and can be used.
 
         The change of location is also a re-expression of the same location so
         that it is reusable.
@@ -564,7 +367,7 @@ class File(Location):
 
         if isinstance(target, Location):
             if target.basename == '':
-                target.location = target.location + self.basename
+                target.location += self.basename
 
             if extension:
                 target.location = target.location + '.' + self.extension
@@ -584,7 +387,7 @@ class File(Location):
 
         Returns
         -------
-        `Action`
+        `adaptivemd.Action`
             the copy action
 
         """
@@ -604,7 +407,7 @@ class File(Location):
 
         Returns
         -------
-        `Action`
+        `adaptivemd.Action`
             the move action
 
         """
@@ -624,7 +427,7 @@ class File(Location):
 
         Returns
         -------
-        `Action`
+        `adaptivemd.Action`
             the link action
 
         """
@@ -644,7 +447,7 @@ class File(Location):
 
         Returns
         -------
-        `Action`
+        `adaptivemd.Action`
             the transfer action
 
         """
@@ -659,7 +462,7 @@ class File(Location):
 
         Returns
         -------
-        `Action`
+        `adaptivemd.Action`
             the remove action
 
         """
@@ -673,7 +476,7 @@ class File(Location):
 
         Returns
         -------
-        `Action`
+        `adaptivemd.Action`
             the touch action
 
         """
@@ -722,13 +525,6 @@ class File(Location):
     def from_dict(cls, dct):
         obj = super(File, cls).from_dict(dct)
         obj._file = dct['_file']
-        # if '_file_' in dct:
-        #     obj._file = base64.b64decode(dct['_file_'])
-
-            # print 'set', len(obj._file), obj.__uuid__
-
-        # print len(obj._file)
-
         return obj
 
     def get_file(self):
@@ -945,3 +741,204 @@ class URLGenerator(object):
                 self.count = max(g, self.count)
             except Exception:
                 pass
+
+
+##############################################################################
+# Actions
+##############################################################################
+
+class Action(StorableMixin):
+    """
+    A bash-command-like action to be executed in a Task
+
+    The main purpose is to have a worker/hpc independent description of
+    what should happen. This objects carry all the necessary information
+    and will be parsed into a bash script on the actual HPC / worker
+
+    """
+    def __init__(self):
+        super(Action, self).__init__()
+
+    def __repr__(self):
+        return str(self)
+
+
+class AddPathAction(Action):
+    """
+    An Action to add a path to the $PATH environment variables
+
+    """
+    def __init__(self, path):
+        """
+        Parameters
+        ----------
+        path : `Location` or str
+            the path to be added
+
+        """
+        super(AddPathAction, self).__init__()
+        self.path = path
+
+
+class FileAction(Action):
+    """
+    An Action that involves (at least) one file called source
+
+    Attributes
+    ----------
+    source : `File`
+        the source file for the action
+
+    """
+    def __init__(self, source):
+        super(FileAction, self).__init__()
+        self.source = source
+
+    def __str__(self):
+        return "%s('%s')" % (
+            self.__class__.__name__,
+            self.source
+        )
+
+    @property
+    def required(self):
+        """
+        Returns
+        -------
+        list of `File`
+            the necessary list of files to be functional
+
+        """
+        return [self.source]
+
+    @property
+    def added(self):
+        """
+        Returns
+        -------
+        list of `File`
+            the list of files added to the project by this action
+
+        """
+        return []
+
+    @property
+    def removed(self):
+        """
+        Returns
+        -------
+        list of `File`
+            the list of files removed by this action
+
+        """
+        return []
+
+
+class Touch(FileAction):
+    """
+    An action that creates an empty file or folder
+
+    """
+    pass
+
+
+class MakeDir(FileAction):
+    """
+    An action that creates a folder
+
+    """
+    pass
+
+
+class FileTransaction(FileAction):
+    """
+    An action involving a source and a target file
+
+    Attributes
+    ----------
+    target : `File`
+        the target file
+
+    """
+    def __init__(self, source, target):
+        """
+
+        Parameters
+        ----------
+        source : `File`
+            the source file for the action
+        target : `File` or `Location` or str
+            the target location for the action
+
+        """
+        super(FileTransaction, self).__init__(source)
+
+        if isinstance(target, str):
+            self.target = source.clone()
+            self.target.location = target
+        elif isinstance(target, Location) and not isinstance(target, File):
+            self.target = source.clone()
+            self.target.location = target.location
+        else:  # e.g. when it is already a `File` object
+            self.target = target
+
+    def __str__(self):
+        return "%s('%s' > '%s)" % (
+            self.__class__.__name__,
+            self.source.short,
+            self.target.short
+        )
+
+    @property
+    def added(self):
+        return [self.target]
+
+
+class Copy(FileTransaction):
+    """
+    An action that copies a file from source to target
+
+    """
+    pass
+
+
+class Transfer(FileTransaction):
+    """
+    An action that transfers between local and HPC
+
+    """
+    pass
+
+
+class Link(FileTransaction):
+    """
+    An action that links a source file to a target
+
+    """
+    pass
+
+
+class Move(FileTransaction):
+    """
+    An action that moves a file from source to target
+
+    The source is removed in the process
+
+    """
+    @property
+    def removed(self):
+        return [self.source]
+
+
+class Remove(FileAction):
+    """
+    An action that removes a file
+
+    """
+    @property
+    def removed(self):
+        return [self.source]
+
+    @property
+    def added(self):
+        return []

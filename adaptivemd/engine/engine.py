@@ -194,7 +194,7 @@ def lcmm(*args):
 
 class Trajectory(File):
     """
-    Represents a trajectory `File` on the cluster
+    Represents a trajectory :class:`File` on the cluster
 
     Attributes
     ----------

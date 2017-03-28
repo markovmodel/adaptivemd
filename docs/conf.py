@@ -194,7 +194,9 @@ texinfo_documents = [
 # -----------------------------------------------------------------------------
 
 autosummary_generate = True
-autodoc_default_flags = ['members', 'inherited-members']
+autodoc_default_flags = ['members']
+autodoc_member_order = 'bysource'
+autoclass_content = 'both'
 
 numpydoc_class_members_toctree = True
 

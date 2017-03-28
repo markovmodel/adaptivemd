@@ -21,8 +21,8 @@
 ##############################################################################
 
 
-from file import Remove, FileTransaction, Copy, Transfer, Link, Move, \
-    AddPathAction, FileAction, Touch, MakeDir
+from file import AddPathAction, FileAction, FileTransaction, MakeDir, \
+    Copy, Transfer, Link, Move, Remove
 
 import os
 

@@ -25,8 +25,7 @@ import os
 
 from file import File, JSONFile, FileTransaction
 from util import get_function_source
-from mongodb import StorableMixin
-from mongodb import SyncVariable, ObjectSyncVariable
+from mongodb import StorableMixin, SyncVariable, ObjectSyncVariable
 
 
 class BaseTask(StorableMixin):
