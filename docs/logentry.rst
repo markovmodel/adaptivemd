@@ -1,12 +1,11 @@
-.. _engine:
+.. _logentry:
 
 .. currentmodule:: adaptivemd
 
-Engine Functions
-================
+LogEntry Functions
+==================
 
 .. autosummary::
     :toctree: api/generated/
 
-    Engine
-    OpenMMEngine
+    LogEntry

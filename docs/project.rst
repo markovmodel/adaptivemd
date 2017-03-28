@@ -1,10 +1,9 @@
 .. _project:
 
-.. currentmodule:: adaptivemd.project
+.. currentmodule:: adaptivemd
 
 Project Functions
 =================
-
 
 .. autosummary::
     :toctree: api/generated/

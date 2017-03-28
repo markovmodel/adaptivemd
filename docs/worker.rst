@@ -1,6 +1,6 @@
 .. _worker:
 
-.. currentmodule:: adaptivemd.worker
+.. currentmodule:: adaptivemd
 
 Worker Functions
 ================

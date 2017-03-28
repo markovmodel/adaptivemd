@@ -1,11 +1,11 @@
-.. _bundle:
+.. _event:
 
 .. currentmodule:: adaptivemd
 
-Bundles
--------
+Events
+------
 
-.. automodule:: adaptivemd.bundle
+.. automodule:: adaptivemd.event
     :members:
     :undoc-members:
     :show-inheritance:

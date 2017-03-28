@@ -29,9 +29,13 @@
 from brain import Brain
 from event import StopEvent, Event, TasksFinished, FunctionalEvent
 from condition import Condition, Now, Never
-from file import File, Copy, Link, Move, Remove, Transfer, Directory, AddPathAction, Location, \
-    JSONFile
-from bundle import Bundle, SortedBundle, ViewBundle
+from file import File, Copy, Link, Move, Remove, \
+    Transfer, Directory, AddPathAction, Location, \
+    JSONFile, Action, FileTransaction, FileAction, Touch, \
+    MakeDir
+from bundle import Bundle, SortedBundle, ViewBundle, AndBundle, \
+    BaseBundle, BundleDelegator, FunctionDelegator, LogicBundle, \
+    OrBundle, StoredBundle
 from resource import AllegroCluster, LocalResource
 from task import Task, PythonTask, DummyTask
 from project import Project
@@ -40,8 +44,9 @@ from model import Model
 from generator import TaskGenerator
 from worker import WorkerScheduler, Worker
 from logentry import LogEntry
-from reducer import ActionParser, BashParser, ChainedParser, DictFilterParser, \
-    PrefixParser, StageParser, StrFilterParser, StageInParser
+from reducer import ActionParser, BashParser, ChainedParser, \
+    DictFilterParser, PrefixParser, StageParser, StrFilterParser, \
+    StageInParser
 
 from engine import Engine, Trajectory, Frame, \
     TrajectoryGenerationTask, TrajectoryExtensionTask

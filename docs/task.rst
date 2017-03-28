@@ -1,10 +1,9 @@
 .. _task:
 
-.. currentmodule:: adaptivemd.task
+.. currentmodule:: adaptivemd
 
 Task Functions
 ==============
-
 
 .. autosummary::
     :toctree: api/generated/

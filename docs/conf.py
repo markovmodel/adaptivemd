@@ -45,8 +45,9 @@ extensions = [
     'sphinx.ext.napoleon',
     'sphinx.ext.viewcode',
     'sphinx.ext.githubpages',
-    'sphinx.ext.autosummary',
-    'sphinxcontrib.issuetracker']
+    'sphinx.ext.autosummary'
+    # ,'sphinxcontrib.issuetracker'
+]
 
 
 issuetracker = 'github'
@@ -195,7 +196,7 @@ texinfo_documents = [
 autosummary_generate = True
 autodoc_default_flags = ['members', 'inherited-members']
 
-numpydoc_class_members_toctree = False
+numpydoc_class_members_toctree = True
 
 
 # spell checking
@@ -207,10 +208,11 @@ spelling_show_suggestions = True
 # Napoleon settings
 napoleon_google_docstring = False
 napoleon_numpy_docstring = True
+napoleon_include_init_with_doc = True
 napoleon_include_private_with_doc = False
 napoleon_include_special_with_doc = False
 napoleon_use_admonition_for_examples = False
-napoleon_use_admonition_for_notes = False
+napoleon_use_admonition_for_notes = True
 napoleon_use_admonition_for_references = False
 napoleon_use_ivar = True
 napoleon_use_param = True

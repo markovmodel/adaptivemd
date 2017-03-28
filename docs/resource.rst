@@ -1,6 +1,6 @@
 .. _resource:
 
-.. currentmodule:: adaptivemd.resource
+.. currentmodule:: adaptivemd
 
 Resource Functions
 ==================

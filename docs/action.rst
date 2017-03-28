@@ -1,8 +1,8 @@
 .. _action:
 
-.. currentmodule:: adaptivemd.file
+.. currentmodule:: adaptivemd
 
-Engine Functions
+Action Functions
 ================
 
 .. autosummary::

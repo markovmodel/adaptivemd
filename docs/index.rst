@@ -9,7 +9,7 @@ Documentation
 =============
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
    install
    examples
@@ -23,6 +23,7 @@ Documentation
    scheduler
    worker
    adaptivemd
+   logentry
    subpackages
    api/index
 

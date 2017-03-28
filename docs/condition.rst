@@ -1,11 +1,11 @@
-.. _bundle:
+.. _condition:
 
 .. currentmodule:: adaptivemd
 
-Bundles
--------
+Conditions
+----------
 
-.. automodule:: adaptivemd.bundle
+.. automodule:: adaptivemd.condition
     :members:
     :undoc-members:
     :show-inheritance:

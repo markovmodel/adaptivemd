@@ -1,6 +1,6 @@
 .. _scheduler:
 
-.. currentmodule:: adaptivemd.worker
+.. currentmodule:: adaptivemd
 
 Scheduler Functions
 ===================
