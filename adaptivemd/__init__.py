@@ -20,10 +20,6 @@
 # License along with MDTraj. If not, see <http://www.gnu.org/licenses/>.
 ##############################################################################
 
-# part of the code below was taken from `openpathsampling` see
-# <http://www.openpathsampling.org> or
-# <http://github.com/openpathsampling/openpathsampling
-# for details and license
 
 
 from brain import Brain
