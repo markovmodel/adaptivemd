@@ -113,3 +113,10 @@ class DT(object):
         s = '%2d-%02d:%02d:%02d' % (
             td.days, td.seconds / 3600, (td.seconds / 60) % 60, td.seconds % 60)
         return s
+
+    @property
+    def ago(self):
+        td = datetime.datetime.now() - self._dt
+        s = '%2d-%02d:%02d:%02d' % (
+            td.days, td.seconds / 3600, (td.seconds / 60) % 60, td.seconds % 60)
+        return s

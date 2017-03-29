@@ -298,8 +298,8 @@ class Trajectory(File):
 
         Parameters
         ----------
-        length : int
-            the length to extend by
+        length : int or list of int
+            the length to extend by as a single int or a list of ints
 
         Returns
         -------
@@ -308,7 +308,17 @@ class Trajectory(File):
 
         """
         if self.engine:
-            return self.engine.extend(self, length)
+            if isinstance(length, int):
+                length = [length]
+
+            # make sure we have a list now
+            assert(isinstance(length, (tuple, list)))
+
+            x = self
+            for l in length:
+                x = x.engine.extend(x, l)
+
+            return x
         else:
             return None
 
@@ -318,7 +328,8 @@ class Trajectory(File):
 
         Parameters
         ----------
-        outtype : str ot `OutputTypeDescription`
+        outtype : str or `OutputTypeDescription`
+            the name of the outputtype as str or the full description object
 
         Returns
         -------
