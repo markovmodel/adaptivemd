@@ -25,7 +25,8 @@ Documentation
    worker
    file_structure
    promises
-   event
+   plan
+   parser
    logentry
    api/index
 

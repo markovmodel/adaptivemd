@@ -9,3 +9,4 @@ Scheduler Functions
     :toctree: api/generated/
 
     WorkerScheduler
+    Scheduler

@@ -19,7 +19,7 @@ This framework aim to automate this process with the following goals:
 
 There are a few things we need to install to make this work.
 
-### 1. MongoDB
+### MongoDB
 
 AdaptiveMD and RP both need access to a MongoDB. The FU has one that Allegro can access in place and you can use this for storing projects. If you want to store these locally you need to install MongoDB.
 
@@ -74,7 +74,7 @@ conda install ujson pyyaml pymongo=2.8 numpy
 conda install pyemma openmm mdtraj
 ```
 
-### 3. Install _adaptivemd_
+### Install _adaptiveMD_
 
 Let's get adaptivemd from the github repo now.
 
