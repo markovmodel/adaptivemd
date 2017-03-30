@@ -387,7 +387,7 @@ class File(Location):
 
         Returns
         -------
-        `adaptivemd.Action`
+        `adaptivemd.FileTransaction`
             the copy action
 
         """
@@ -407,7 +407,7 @@ class File(Location):
 
         Returns
         -------
-        `adaptivemd.Action`
+        `adaptivemd.FileTransaction`
             the move action
 
         """
@@ -427,7 +427,7 @@ class File(Location):
 
         Returns
         -------
-        `adaptivemd.Action`
+        `adaptivemd.FileTransaction`
             the link action
 
         """
@@ -447,7 +447,7 @@ class File(Location):
 
         Returns
         -------
-        `adaptivemd.Action`
+        `adaptivemd.FileTransaction`
             the transfer action
 
         """
@@ -462,7 +462,7 @@ class File(Location):
 
         Returns
         -------
-        `adaptivemd.Action`
+        `adaptivemd.FileAction`
             the remove action
 
         """
@@ -476,7 +476,7 @@ class File(Location):
 
         Returns
         -------
-        `adaptivemd.Action`
+        `adaptivemd.FileAction`
             the touch action
 
         """

@@ -26,21 +26,6 @@ import os
 import datetime
 
 
-# def strip_type(s):
-#     return s.split('://')[-1]
-
-# def get_type(s):
-#     parts = s.split('://')
-#     if len(parts) > 1:
-#         return parts[0]
-#     else:
-#         return 'worker'
-
-# path_conda_local_sheep = '/home/mi/jprinz/anaconda2/bin'
-# path_conda_local_jhp = '/Users/jan-hendrikprinz/anaconda/bin/'
-# path_conda_allegro_jhp = '/home/jprinz/miniconda2/bin/'
-
-
 def get_function_source(func):
     """
     Determine the source file of a function

@@ -295,7 +295,7 @@ class Bundle(BaseBundle):
 
         Parameters
         ----------
-        x : object
+        item : object
         """
         if self._set is not None:
             self._set.add(item)

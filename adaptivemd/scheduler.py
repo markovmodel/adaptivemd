@@ -110,20 +110,13 @@ class Scheduler(object):
         else:
             return []
 
-    # @property
-    # def file_generators(self):
-    #     if self.project:
-    #         return self.project.file_generators
-    #     else:
-    #         return {}
-
     @property
     def folder_name(self):
         return self._folder_name
 
     def get_path(self, f):
         """
-        Convert the location in a `Location` object to a real path used by the scheduler
+        Get the schedulers representation of the path in `Location` object
 
         Parameters
         ----------
@@ -152,15 +145,6 @@ class Scheduler(object):
         """
         if location.drive == 'staging':
             location.location = self.staging_area_location + location.path
-
-    # def has(self, name):
-    #     if isinstance(name, (list, tuple)):
-    #         self._generator_list.extend(name)
-    #     else:
-    #         self._generator_list.append(name)
-
-    def __getitem__(self, item):
-        return self.generators.get(item)
 
     def __enter__(self):
         return self
@@ -382,7 +366,8 @@ class Scheduler(object):
         path = path.replace('worker://', '')
         path = path.replace('file://', '')
         # the specific project folder://
-        path = path.replace('project://', '../../projects/' + self.project.name)
+        path = path.replace(
+            'project://', '../../projects/' + self.project.name)
 
         return path
 

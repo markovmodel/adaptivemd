@@ -580,7 +580,7 @@ class Worker(StorableMixin):
         """
         Returns
         -------
-        'WorkerScheduler`
+        `WorkerScheduler`
             the currently used scheduler to execute tasks
 
         """
@@ -617,7 +617,7 @@ class Worker(StorableMixin):
                         task.state)
 
             else:
-                # seems that in the meantime the task has finished (success/fail)
+                # semms in the meantime the task has finished (success/fail)
                 pass
 
     def execute(self, command):
@@ -653,7 +653,8 @@ class Worker(StorableMixin):
 
         def task_test(x):
             return x.ready and (not self.generators or (
-                hasattr(x.generator, 'name') and x.generator.name in self.generators))
+                hasattr(x.generator, 'name') and x.generator.name
+                in self.generators))
 
         print 'up and running ...'
 

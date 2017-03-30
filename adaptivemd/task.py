@@ -667,6 +667,8 @@ class Task(BaseTask):
                 f.location)
 
         self.append(transaction)
+
+        assert isinstance(transaction, FileTransaction)
         return transaction.target
 
     def touch(self, f):
