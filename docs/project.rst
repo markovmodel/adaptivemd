@@ -5,6 +5,9 @@
 Projects
 ========
 
+
+Classes
+-------
 .. autosummary::
     :toctree: api/generated/
 

@@ -2,10 +2,10 @@
 
 .. currentmodule:: adaptivemd
 
-Events
-------
+Classes
+-------
 
-.. automodule:: adaptivemd.event
-    :members:
-    :undoc-members:
-    :show-inheritance:
+.. autosummary::
+    :toctree: api/generated/
+
+    FunctionalEvent

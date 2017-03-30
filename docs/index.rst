@@ -22,6 +22,7 @@ Documentation
    engine
    scheduler
    worker
+   filestructure
    event
    condition
    logentry
