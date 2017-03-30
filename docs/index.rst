@@ -20,11 +20,12 @@ Documentation
    action
    task
    engine
+   generators
    scheduler
    worker
-   filestructure
+   file_structure
+   promises
    event
-   condition
    logentry
    api/index
 

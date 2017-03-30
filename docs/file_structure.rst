@@ -2,8 +2,8 @@
 
 .. currentmodule:: adaptivemd
 
-The *adaptiveMD* folder structure on the HPC
-''''''''''''''''''''''''''''''''''''''''''''
+The folder structure
+''''''''''''''''''''
 
 For reference, this is the file structure of *adaptiveMD*.
 
