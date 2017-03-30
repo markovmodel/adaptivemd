@@ -21,9 +21,9 @@
 ##############################################################################
 
 
-
 from brain import Brain
-from event import StopEvent, Event, TasksFinished, FunctionalEvent
+from event import StopEvent, Event, TasksFinished
+from plan import ExecutionPlan
 from condition import Condition, Now, Never
 from file import File, Directory, Location, JSONFile, MakeDir, Copy, \
     Transfer, Link, Move, Remove, Action, AddPathAction, FileAction, \

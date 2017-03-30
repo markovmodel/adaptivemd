@@ -37,7 +37,7 @@ from model import Model
 from task import Task
 from worker import Worker
 from logentry import LogEntry
-from event import FunctionalEvent
+from plan import ExecutionPlan
 
 from mongodb import MongoDBStorage, ObjectStore, FileStore, DataDict, WeakValueCache
 
@@ -611,7 +611,7 @@ class Project(object):
         ----------
         event : `Event` or generator
             the event to be added or a generator function that is then
-            converted to an `FunctionalEvent`
+            converted to an `ExecutionPlan`
 
         Returns
         -------
@@ -623,7 +623,7 @@ class Project(object):
             return map(self._events.append, event)
 
         if isinstance(event, types.GeneratorType):
-            event = FunctionalEvent(event)
+            event = ExecutionPlan(event)
 
         self._events.append(event)
 

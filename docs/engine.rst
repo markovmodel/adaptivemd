@@ -5,6 +5,67 @@
 Engines
 =======
 
+The ``Trajectory`` object
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Before we talk about adaptivity, let's have a look at possibilities to
+generate trajectories.
+
+We assume that you successfully ran a first trajectory using a worker.
+Next, we talk about lot's of ways to generate new trajectories.
+
+You will do this in the beginning. Remember we already have a PDB stored
+from setting up the engine. if you want to start from this configuration
+do as before
+
+1. create the ``Trajectory`` object you want
+2. make a task
+3. submit the task to craft the object into existance on the HPC
+
+A trajectory contains all necessary information to make itself. It has
+
+1. a (hopefully unique) location: This will we the folder where all the
+   files that belong to the trajectory go.
+2. an initial frame: the initial configuration to be used to tell the MD
+   simulation package where to start
+3. a length in frames to run
+4. the ``Engine``: the actual engine I want to use to create the
+   trajectory.
+
+Note, the ``Engine`` is technically not required unless you want to use
+``.run()`` but it makes sense, because the engine contains information
+about the topology and, more importantly information about which output
+files are generated. This is the essential information you will need for
+analysis, e.g. what is the filename of the trajectory file that contains
+the protein structure and what is its stride?
+
+Let's first build a ``Trajectory`` from scratch
+
+.. code:: python
+
+    file_name = next(project.traj_name)              # get a unique new filename
+
+    trajectory = Trajectory(
+        location=file_name,                          # this creates a new filename
+        frame=pdb_file,                              # initial frame is the PDB
+        length=100,                                  # length is 100 frames
+        engine=engine                                # the engine to be used
+    )
+
+Since this is tedious to write there is a shortcut
+
+.. code:: python
+
+    trajectory = project.new_trajectory(
+        frame=pdb_file,
+        length=100,
+        engine=engine,
+        number=1          # if more then one you get a list of trajectories
+    )
+
+Like in the first example, now that we have the parameters of the
+``Trajectory`` we can create the task to do that.
+
 OpenMMEngine
 ------------
 
@@ -55,4 +116,5 @@ Classes
     :toctree: api/generated/
 
     Engine
+    Trajectory
     OpenMMEngine

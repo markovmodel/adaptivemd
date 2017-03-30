@@ -8,4 +8,4 @@ Classes
 .. autosummary::
     :toctree: api/generated/
 
-    FunctionalEvent
+    ExecutionPlan
