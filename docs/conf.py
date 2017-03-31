@@ -46,12 +46,11 @@ extensions = [
     'sphinx.ext.viewcode',
     'sphinx.ext.githubpages',
     'sphinx.ext.autosummary'
-    # ,'sphinxcontrib.issuetracker'
 ]
 
 
-issuetracker = 'github'
-issuetracker_project = 'markovmodel/adaptivemd'
+# issuetracker = 'github'
+# issuetracker_project = 'markovmodel/adaptivemd'
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
