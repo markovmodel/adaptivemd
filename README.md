@@ -109,7 +109,6 @@ To compile the doc pages, clone this github repository, go into the `docs` folde
 
 ```bash 
 conda install sphinx
-pip install sphinxcontrib-issuetracker
 make html
 ```
 
