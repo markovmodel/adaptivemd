@@ -27,7 +27,7 @@
 
 
 from brain import Brain
-from event import StopEvent, Event, TasksFinished, FunctionalEvent
+from event import StopEvent, Event, TasksFinished, FunctionalEvent, event
 from condition import Condition, Now, Never
 from file import File, Copy, Link, Move, Remove, Transfer, Directory, AddPathAction, Location, \
     JSONFile
