@@ -58,7 +58,7 @@ from scheduler import Scheduler
 from reducer import StrFilterParser, WorkerParser, BashParser, PrefixParser
 from logentry import LogEntry
 from util import DT
-from file import Transfer
+from adaptivemd import Transfer
 
 import pymongo.errors
 
@@ -79,7 +79,7 @@ class WorkerScheduler(Scheduler):
         resource : `Resource`
             the resourse this scheduler should use.
         verbose : bool
-            if `True` the worker will report lots of stuff
+            if True the worker will report lots of stuff
         """
         super(WorkerScheduler, self).__init__(resource)
         self._current_sub = None
@@ -159,8 +159,8 @@ class WorkerScheduler(Scheduler):
         Return the current path to the worker directory
         Returns
         -------
-        str or `None`
-            the path or `None` if no task is executed at the time
+        str or None
+            the path or None if no task is executed at the time
 
         """
         if self._current_unit_dir is not None:
@@ -240,7 +240,7 @@ class WorkerScheduler(Scheduler):
         Returns
         -------
         bool
-            if `True` the current task was cancelled, `False` if there
+            if True the current task was cancelled, False if there
             was no task running
 
         """
@@ -580,7 +580,7 @@ class Worker(StorableMixin):
         """
         Returns
         -------
-        'WorkerScheduler`
+        `WorkerScheduler`
             the currently used scheduler to execute tasks
 
         """
@@ -617,7 +617,7 @@ class Worker(StorableMixin):
                         task.state)
 
             else:
-                # seems that in the meantime the task has finished (success/fail)
+                # semms in the meantime the task has finished (success/fail)
                 pass
 
     def execute(self, command):
@@ -653,7 +653,8 @@ class Worker(StorableMixin):
 
         def task_test(x):
             return x.ready and (not self.generators or (
-                hasattr(x.generator, 'name') and x.generator.name in self.generators))
+                hasattr(x.generator, 'name') and x.generator.name
+                in self.generators))
 
         print 'up and running ...'
 
@@ -779,7 +780,7 @@ class Worker(StorableMixin):
         Parameters
         ----------
         gracefully : bool
-            if `True` the worker is allowed some time to finish running tasks
+            if True the worker is allowed some time to finish running tasks
 
         """
         self._scheduler.shut_down(gracefully)

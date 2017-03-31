@@ -21,15 +21,16 @@
 ##############################################################################
 
 
-from file import Remove, FileTransaction, Copy, Transfer, Link, Move, \
-    AddPathAction, FileAction, Touch, MakeDir
+from file import AddPathAction, FileAction, FileTransaction, MakeDir, \
+    Copy, Transfer, Link, Move, Remove, Touch
 
 import os
 
 
 class ActionParser(object):
     """
-    A class that can interprete `Action`s into scheduler understandable commands
+    A class that can interprete actions into scheduler understandable commands
+
     """
 
     def __init__(self):
@@ -50,7 +51,7 @@ class ActionParser(object):
 
         Returns
         -------
-        list of (`Action` or dict or str)
+        list of `Action` or dict or str
 
         """
         return action
@@ -94,6 +95,7 @@ class StrFilterParser(ActionParser):
 class ChainedParser(ActionParser):
     """
     Parser that represents the chained application of two parser
+
     """
     def __init__(self, parent, child):
         super(ChainedParser, self).__init__()
@@ -106,7 +108,8 @@ class ChainedParser(ActionParser):
 
 class StageInParser(ActionParser):
     """
-    Special parser that can interpret actions into RP stage-in phase `dict`s
+    Special parser that can interpret actions into RP stage-in phase
+
     """
     def parse(self, scheduler, action):
         if isinstance(action, FileTransaction):
@@ -191,6 +194,7 @@ class BashParser(ActionParser):
 class StageParser(ActionParser):
     """
     Parse into possible RP Stage commands for ComputeUnits
+
     """
     def parse(self, scheduler, action):
         sa_location = scheduler.staging_area_location
@@ -241,10 +245,11 @@ class StageParser(ActionParser):
 
 class WorkerParser(ActionParser):
     """
-    A parser that can interprete transactions from/to `file://` for workers
+    A parser that can interprete transactions from/to ``file://`` for workers
 
     This will write the files to the target location instead of a real
-    transaction. It requires the file to be stored in the DB using `load()`
+    transaction. It requires the file to be stored in the DB using ``load()``
+
     """
     def parse(self, scheduler, action):
         # all of this is to keep RP compatibility which works with files
@@ -280,6 +285,7 @@ class PrefixParser(ActionParser):
     Replace all adaptiveMD prefixes
 
     Usually the last step to convert all file paths
+
     """
     def parse(self, scheduler, action):
         if isinstance(action, basestring):

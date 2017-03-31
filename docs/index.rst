@@ -9,7 +9,7 @@ Documentation
 =============
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
    install
    examples
@@ -20,6 +20,14 @@ Documentation
    action
    task
    engine
+   generators
+   scheduler
+   worker
+   file_structure
+   promises
+   plan
+   parser
+   logentry
    api/index
 
 

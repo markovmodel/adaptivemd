@@ -1,15 +1,11 @@
-.. _project:
+.. _logentry:
 
 .. currentmodule:: adaptivemd
 
-Projects
-========
+LogEntry Functions
+==================
 
-    file_structure
-
-Classes
--------
 .. autosummary::
     :toctree: api/generated/
 
-    Project
+    LogEntry

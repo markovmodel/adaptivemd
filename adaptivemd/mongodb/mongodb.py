@@ -266,7 +266,7 @@ class MongoDBStorage(object):
         store : :class:`mongodb.ObjectStore`
             the store to be added to this storage
         register_attr : bool
-            if `True` the store will be added to the storage as an
+            if True the store will be added to the storage as an
              attribute with name `name`
 
         """
@@ -308,7 +308,7 @@ class MongoDBStorage(object):
             instance of the object store
         register_attr : bool
             if set to false the store will not be accesible as an attribute.
-            `True` is the default.
+            True is the default.
         """
         name = store.name
         store.register(self)

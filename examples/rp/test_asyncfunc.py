@@ -22,9 +22,9 @@ os.environ['RADICAL_PILOT_DBURL'] = path_to_db
 # import adaptive components
 import time
 
-from adaptivemd import Project
+from adaptivemd import Project, ExecutionPlan
 from adaptivemd import AllegroCluster
-from adaptivemd import FunctionalEvent
+from adaptivemd import ExecutionPlan
 
 from adaptivemd import OpenMMEngine
 from adaptivemd import PyEMMAAnalysis
@@ -90,10 +90,10 @@ if __name__ == '__main__':
             tasks = scheduler(trajectories)
             yield tasks.is_done()
 
-    ev1 = FunctionalEvent(strategy_trajectory(scheduler1, 100))
+    ev1 = ExecutionPlan(strategy_trajectory(scheduler1, 100))
     project.add_event(ev1)
 
-    ev2 = FunctionalEvent(strategy_trajectory(scheduler2, 25))
+    ev2 = ExecutionPlan(strategy_trajectory(scheduler2, 25))
     project.add_event(ev2)
 
     def strategy_model(scheduler):
@@ -104,7 +104,7 @@ if __name__ == '__main__':
             cond = project.on_ntraj(num + 100)
             yield lambda: cond() or not ev1
 
-    ev3 = FunctionalEvent(strategy_model(scheduler3))
+    ev3 = ExecutionPlan(strategy_model(scheduler3))
     project.add_event(ev3)
 
     print

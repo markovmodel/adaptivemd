@@ -26,21 +26,6 @@ import os
 import datetime
 
 
-# def strip_type(s):
-#     return s.split('://')[-1]
-
-# def get_type(s):
-#     parts = s.split('://')
-#     if len(parts) > 1:
-#         return parts[0]
-#     else:
-#         return 'worker'
-
-# path_conda_local_sheep = '/home/mi/jprinz/anaconda2/bin'
-# path_conda_local_jhp = '/Users/jan-hendrikprinz/anaconda/bin/'
-# path_conda_allegro_jhp = '/home/jprinz/miniconda2/bin/'
-
-
 def get_function_source(func):
     """
     Determine the source file of a function
@@ -110,6 +95,13 @@ class DT(object):
     @property
     def length(self):
         td = self._dt - datetime.datetime.fromtimestamp(0)
+        s = '%2d-%02d:%02d:%02d' % (
+            td.days, td.seconds / 3600, (td.seconds / 60) % 60, td.seconds % 60)
+        return s
+
+    @property
+    def ago(self):
+        td = datetime.datetime.now() - self._dt
         s = '%2d-%02d:%02d:%02d' % (
             td.days, td.seconds / 3600, (td.seconds / 60) % 60, td.seconds % 60)
         return s

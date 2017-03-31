@@ -32,9 +32,6 @@ from dictify import ObjectJSON
 
 
 class SyncVariable(object):
-    """
-    A DB synced variable
-    """
     def __init__(self, name, fix_fnc=None):
         self.name = name
         self.fix_fnc = fix_fnc

@@ -25,19 +25,10 @@ import os
 
 from file import File, JSONFile, FileTransaction
 from util import get_function_source
-from mongodb import StorableMixin
-from mongodb import SyncVariable, ObjectSyncVariable
+from mongodb import StorableMixin, SyncVariable, ObjectSyncVariable
 
 
 class BaseTask(StorableMixin):
-    """
-    Enhanced version of the ComputeUnitDescription
-
-    This mainly makes it easier to create a CU for RP. Similar to the
-    purpose of RP kernels.
-
-    """
-
     _copy_attributes = [
         '_main', '_add_paths', '_environment'
         ]
@@ -168,10 +159,11 @@ class Task(BaseTask):
 
     Attributes
     ----------
-    worker : `WorkingScheduler`
+    worker : :class:`~adaptivemd.worker.WorkingScheduler`
         the currently assigned Worker instance (not the scheduler!)
-    generator : `TaskGenerator`
-        if given the `TaskGenerator` that was used to create this task
+    generator : :class:`~adaptivemd.generator.TaskGenerator`
+        if given the :class:`~adaptivemd.generator.TaskGenerator` that
+        was used to create this task
     state : str
         a string representing the current state of the execution. One of
         - 'create' : task has been created and is available for execution
@@ -181,9 +173,9 @@ class Task(BaseTask):
         - 'succedd` : task has completed and succeeded.
         - 'halt' : task has been halted by user. You can restart it
         - 'cancelled' : task has been cancelled by user. You CANNOT restart it
-    stdout : `LogEntry`
+    stdout : :class:`~adaptivemd.logentry.LogEntry`
         After completion you can access the stdout of the task here
-    stderr : `LogEntry`
+    stderr : :class:`~adaptivemd.logentry.LogEntry`
         After completion you can access the stderr of the task here
 
     """
@@ -265,7 +257,7 @@ class Task(BaseTask):
         Returns
         -------
         bool
-            `True` if all dependencies are fulfilled
+            True if all dependencies are fulfilled
         """
         dependencies = self.dependencies
         if dependencies is not None:
@@ -284,7 +276,7 @@ class Task(BaseTask):
         Returns
         -------
         bool
-            if `True` the task can now be executed
+            if True the task can now be executed
 
         """
         if self.dependencies:
@@ -404,7 +396,7 @@ class Task(BaseTask):
         Returns
         -------
         bool
-            `True` if the task has finished its execution
+            True if the task has finished its execution
 
         """
         return self.state in ['fail', 'success', 'cancelled']
@@ -416,7 +408,7 @@ class Task(BaseTask):
         Returns
         -------
         bool
-            `True` if the task has finished successfully
+            True if the task has finished successfully
 
         """
         return self.state in ['success']
@@ -428,7 +420,7 @@ class Task(BaseTask):
         Returns
         -------
         bool
-            `True` if the task has finished but failed
+            True if the task has finished but failed
 
         """
         return self.state in ['fail']
@@ -675,6 +667,8 @@ class Task(BaseTask):
                 f.location)
 
         self.append(transaction)
+
+        assert isinstance(transaction, FileTransaction)
         return transaction.target
 
     def touch(self, f):
@@ -940,11 +934,11 @@ class PythonTask(PrePostTask):
 
     Attributes
     ----------
-    then_func_name : str or `None`
+    then_func_name : str or None
         the name of the function of the `TaskGenerator` to be called with
         the resulting output
     store_output : bool
-        if `True` then the result from the RPC called function will also be
+        if True then the result from the RPC called function will also be
         stored in the database. It can later be retrieved using the `.output`
         attribute on the task completed successfully
     """
@@ -988,7 +982,7 @@ class PythonTask(PrePostTask):
         self.add_cb('success', self.__class__._cb_success)
         self.add_cb('submit', self.__class__._cb_submit)
 
-        # if `True` the RPC result will be stored in the DB with the task
+        # if True the RPC result will be stored in the DB with the task
         self.store_output = True
 
     def backup_output_json(self, target):
@@ -1066,7 +1060,7 @@ class PythonTask(PrePostTask):
             package then the package needs to be installed on the cluster to be
             called. A function defined in a local file can be called as long
             as dependencies are installed.
-        kwargs : **kwargs
+        kwargs : ``**kwargs``
             named arguments to the function
 
         """

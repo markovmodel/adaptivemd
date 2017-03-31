@@ -37,7 +37,7 @@ from model import Model
 from task import Task
 from worker import Worker
 from logentry import LogEntry
-from event import FunctionalEvent
+from plan import ExecutionPlan
 
 from mongodb import MongoDBStorage, ObjectStore, FileStore, DataDict, WeakValueCache
 
@@ -73,7 +73,7 @@ class Project(object):
         If clusters use the same FS you can run simulations across clusters
         without problems and so so this resource is the most top-level
         limitation.
-    files : `Bundle`
+    files : :class:`Bundle`
         a set of file objects that are available in the project and are
         believed to be available within the resource as long as the project
         lives
@@ -102,13 +102,14 @@ class Project(object):
         the mongodb storage wrapper to access the database of the project
     _worker_dead_time : int
         the time after which an unresponsive worker is considered dead. Its
-        tasks will be assigne the state set in
-        `_set_task_state_from_dead_workers`. Default is 60s. Make sure that
+        tasks will be assigned the state set in
+        :attr:`_set_task_state_from_dead_workers`.
+        Default is 60s. Make sure that
         the heartbeat of a worker is much less that this.
     _set_task_state_from_dead_workers : str
         if a worker is dead then its tasks are assigned this state. Default is
-        `created` which means the task will be restarted by another worker.
-        You can also chose `halt` or `cancelled`. See `Task` for details
+        ``created`` which means the task will be restarted by another worker.
+        You can also chose ``halt`` or ``cancelled``. See `Task` for details
 
     See also
     --------
@@ -292,7 +293,6 @@ class Project(object):
         name : str
             the project name to be deleted
 
-
         """
         MongoDBStorage.delete_storage(name)
 
@@ -303,10 +303,10 @@ class Project(object):
         ----------
         name : str
             name of the scheduler class provided by the `Resource` used in
-            this project. If `None` (default) the cluster/queue `default` is
+            this project. If None (default) the cluster/queue ``default`` is
             used that needs to be implemented for every resource
 
-        kwargs : **kwargs
+        kwargs : ``**kwargs``
             Additional arguments to initialize the cluster scheduler provided
             by the `Resource`
 
@@ -315,8 +315,8 @@ class Project(object):
         the scheduler is automatically entered/opened so the pilot jobs is
         submitted to the queueing system and it counts against your
         simulation time! If you do not want to do so directly. Create
-        the `Scheduler` by yourself and later call `scheduler.enter(project)`
-        to start using it. To close the scheduler call `scheduler.exit()`
+        the `Scheduler` by yourself and later call ``scheduler.enter(project)``
+        to start using it. To close the scheduler call ``scheduler.exit()``
 
         Returns
         -------
@@ -372,7 +372,7 @@ class Project(object):
 
         Parameters
         ----------
-        *tasks : (list of) `Task` or `Trajectory`
+        tasks : (list of) `Task` or `Trajectory`
             anything that can be run like a `Task` or a `Trajectory` with engine
 
         """
@@ -423,7 +423,7 @@ class Project(object):
         Parameters
         ----------
         frame : `File` or `Frame`
-            if given a `File` it is assumed to be a `.pdb` file that contains
+            if given a `File` it is assumed to be a ``.pdb`` file that contains
             initial coordinates. If a frame is given one assumes that this
             `Frame` is the initial structure / frame zero in this trajectory
         length : int
@@ -433,7 +433,7 @@ class Project(object):
             the specifics about the trajectory internal structure since it is the
             responsibility of the engine to really create the trajectory.
         number : int
-            the number of trajectory objects to be returned. If `1` it will be
+            the number of trajectory objects to be returned. If ``1`` it will be
             a single object. Otherwise a list of `Trajectory` objects.
 
         Returns
@@ -450,7 +450,7 @@ class Project(object):
 
     def on_ntraj(self, numbers):
         """
-        Return a `Condition` that is `true` as soon a the project has n trajectories
+        Return a condition that is true as soon a the project has n trajectories
 
         Parameters
         ----------
@@ -471,7 +471,7 @@ class Project(object):
 
     def on_nmodel(self, numbers):
         """
-        Return a `Condition` representing the reach of a certain number of models
+        Return a condition representing the reach of a certain number of models
 
         Parameters
         ----------
@@ -578,11 +578,11 @@ class Project(object):
         -------
         list of `Trajectory`
             the list of `Trajectory` objects with initial frames chosen using
-            `find_ml_next_frame`
+            :meth:`find_ml_next_frame`
 
         See Also
         --------
-        `find_ml_next_frame`
+        :meth:`find_ml_next_frame`
 
         """
         return [self.new_trajectory(frame, length, engine) for frame in
@@ -595,13 +595,13 @@ class Project(object):
         Returns
         -------
         bool
-            `True` if all events are done
+            True if all events are done
         """
         return len(self._events) == 0
 
     def add_event(self, event):
         """
-        Attach an `Event` to the project
+        Attach an event to the project
 
         These events will not be stored and only run in the current python
         session. These are the parts responsible to create tasks given
@@ -611,19 +611,19 @@ class Project(object):
         ----------
         event : `Event` or generator
             the event to be added or a generator function that is then
-            converted to an `FunctionalEvent`
+            converted to an `ExecutionPlan`
 
         Returns
         -------
         `Event`
-        the actual event used
+            the actual event used
 
         """
         if isinstance(event, (tuple, list)):
             return map(self._events.append, event)
 
         if isinstance(event, types.GeneratorType):
-            event = FunctionalEvent(event)
+            event = ExecutionPlan(event)
 
         self._events.append(event)
 
@@ -689,7 +689,8 @@ class Project(object):
         Starts observing events in the project
 
         This is still somehow experimental and will call a background thread to
-        call `.trigger()` in regular intervals. Make sure to call `.stop()`
+        call :meth:`Project.trigger` in regular intervals. Make sure to call
+        :meth:`Project.stop`
         before you quit the notebook session or exit. Otherwise there might
         be a job in the background left (not confirmed but possible!)
 
@@ -711,13 +712,13 @@ class Project(object):
 
     def wait_until(self, condition):
         """
-        Block until the gven condition evaluates to true
+        Block until the given condition evaluates to true
 
         Parameters
         ----------
         condition : callable
             function that is called in regular intervals. If it evaluates to
-            `True` the function returns
+            True the function returns
 
         """
         while not condition():
@@ -726,7 +727,8 @@ class Project(object):
 
     class EventTriggerTimer(threading.Thread):
         """
-        A special thread to call `.trigger()`
+        A special thread to call the project trigger mechanism
+
         """
         def __init__(self, event, project):
 
@@ -742,6 +744,7 @@ class Project(object):
 class NTrajectories(Condition):
     """
     Condition that triggers if a resource has at least n trajectories present
+
     """
     def __init__(self, project, number):
         super(NTrajectories, self).__init__()
@@ -764,6 +767,7 @@ class NTrajectories(Condition):
 class NModels(Condition):
     """
      Condition that triggers if a resource has at least n models present
+
      """
 
     def __init__(self, project, number):

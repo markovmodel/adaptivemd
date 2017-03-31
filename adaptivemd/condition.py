@@ -102,7 +102,7 @@ class OrCondition(Condition):
 
 class Now(Condition):
     """
-    The always `True` condition
+    The always True condition
     """
     def __init__(self):
         super(Now, self).__init__()
@@ -114,7 +114,7 @@ class Now(Condition):
 
 class Never(Condition):
     """
-    The never `True` condition
+    The never True condition
     """
     def __init__(self):
         super(Never, self).__init__()

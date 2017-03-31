@@ -43,23 +43,25 @@ class PyEMMAAnalysis(Analysis):
         name of the output description to pick the frames from
     features : dict or list or None
         a feature descriptor in the format. A dict has exactly one entry:
-        functionname: [attr1, attr2, ...]. attributes can be results of
+        ``functionname: [attr1, attr2, ...]``. attributes can be results of
         function calls. All function calls are to the featurizer object!
         If a list is given each element is considered to be a feature
         descriptor. If None (default) all coordinates will be added as
-        features (.add_all())
+        features ``.add_all()``
 
         Examples
 
+        ::code
+
+            # feat.add_backbone_torsions()
             {'add_backbone_torsions': None}
-            -> feat.add_backbone_torsions()
 
+            # feat.add_distances([[0,10], [2,20]])
             {'add_distances': [ [[0,10], [2,20]] ]}
-            -> feat.add_distances([[0,10], [2,20]])
 
-            {'add_inverse_distances':
-                { 'select_backbone': None } }
-            -> feat.add_inverse_distances(select_backbone())
+            # feat.add_inverse_distances(select_backbone())
+            {'add_inverse_distances': {'select_backbone': None}}
+
     """
 
     def __init__(self, engine, outtype='master', features=None):

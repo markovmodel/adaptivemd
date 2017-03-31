@@ -20,18 +20,17 @@
 # License along with MDTraj. If not, see <http://www.gnu.org/licenses/>.
 ##############################################################################
 
-# part of the code below was taken from `openpathsampling` see
-# <http://www.openpathsampling.org> or
-# <http://github.com/openpathsampling/openpathsampling
-# for details and license
-
 
 from brain import Brain
-from event import StopEvent, Event, TasksFinished, FunctionalEvent
-from condition import Condition, Now, Never
-from file import File, Copy, Link, Move, Remove, Transfer, Directory, AddPathAction, Location, \
-    JSONFile
-from bundle import Bundle, SortedBundle, ViewBundle
+# from event import StopEvent, Event, TasksFinished
+from plan import ExecutionPlan
+# from condition import Condition, Now, Never
+from file import File, Directory, Location, JSONFile, MakeDir, Copy, \
+    Transfer, Link, Move, Remove, Action, AddPathAction, FileAction, \
+    FileTransaction, Touch
+from bundle import Bundle, SortedBundle, ViewBundle, AndBundle, \
+    BaseBundle, BundleDelegator, FunctionDelegator, LogicBundle, \
+    OrBundle, StoredBundle
 from resource import AllegroCluster, LocalResource
 from task import Task, PythonTask, DummyTask
 from project import Project
@@ -40,8 +39,9 @@ from model import Model
 from generator import TaskGenerator
 from worker import WorkerScheduler, Worker
 from logentry import LogEntry
-from reducer import ActionParser, BashParser, ChainedParser, DictFilterParser, \
-    PrefixParser, StageParser, StrFilterParser, StageInParser
+from reducer import ActionParser, BashParser, ChainedParser, \
+    DictFilterParser, PrefixParser, StageParser, StrFilterParser, \
+    StageInParser
 
 from engine import Engine, Trajectory, Frame, \
     TrajectoryGenerationTask, TrajectoryExtensionTask

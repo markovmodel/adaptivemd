@@ -1,9 +1,14 @@
 .. _action:
 
-.. currentmodule:: adaptivemd.file
+.. currentmodule:: adaptivemd
 
-Engine Functions
-================
+Actions
+=======
+
+Actions are descriptions for executions on the HPC - basically a bash command
+
+Classes
+-------
 
 .. autosummary::
     :toctree: api/generated/

@@ -22,9 +22,9 @@ os.environ['RADICAL_PILOT_DBURL'] = path_to_db
 # import adaptive components
 import time
 
-from adaptivemd import Project
+from adaptivemd import Project, ExecutionPlan
 from adaptivemd import AllegroCluster
-from adaptivemd import FunctionalEvent
+from adaptivemd import ExecutionPlan
 
 from adaptivemd import OpenMMEngine4CUDA
 from adaptivemd import PyEMMAAnalysis
@@ -91,7 +91,7 @@ if __name__ == '__main__':
             yield tasklist.is_done()
 
     events = [
-        FunctionalEvent(strategy_trajectory(scheduler, 100, 10))
+        ExecutionPlan(strategy_trajectory(scheduler, 100, 10))
         for scheduler in gpu_scheduler]
     map(project.add_event, events)
 
@@ -103,7 +103,7 @@ if __name__ == '__main__':
             cond = project.on_ntraj(num + steps)
             yield lambda: cond() or not any(events)
 
-    ev3 = FunctionalEvent(strategy_model(pyemma_scheduler, steps))
+    ev3 = ExecutionPlan(strategy_model(pyemma_scheduler, steps))
     project.add_event(ev3)
 
     print

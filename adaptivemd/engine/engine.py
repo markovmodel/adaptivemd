@@ -123,8 +123,8 @@ class Engine(TaskGenerator):
         filename : str
             a filename to be used for this output type
         stride : int
-            the stride used by this particular trajectory relative to the native
-            steps of the engine.
+            the stride used by this particular trajectory relative to the
+            native steps of the engine.
         selection : str
             an mdtraj.Topology.select type filter string to store only a subset
             of atoms
@@ -166,19 +166,25 @@ class Engine(TaskGenerator):
 
 
 def gcd(a, b):
-    """Return greatest common divisor using Euclid's Algorithm."""
+    """
+    Return greatest common divisor using Euclid's Algorithm.
+    """
     while b:
         a, b = b, a % b
     return a
 
 
 def lcm(a, b):
-    """Return lowest common multiple."""
+    """
+    Return lowest common multiple.
+    """
     return a * b // gcd(a, b)
 
 
 def lcmm(*args):
-    """Return lcm of args."""
+    """
+    Return lcm of args.
+    """
     return reduce(lcm, args)
 
 
@@ -188,7 +194,7 @@ def lcmm(*args):
 
 class Trajectory(File):
     """
-    Represents a trajectory `File` on the cluster
+    Represents a trajectory :class:`File` on the cluster
 
     Attributes
     ----------
@@ -200,6 +206,7 @@ class Trajectory(File):
         the length of the trajectory in frames
     engine : `Engine`
         the engine used to create the trajectory
+
     """
 
     _find_by = ['created', 'state', 'task', 'engine']
@@ -245,29 +252,23 @@ class Trajectory(File):
 
     @property
     def is_folder(self):
-        """
-        Check whether this is a folder
-
-        Returns
-        -------
-
-        """
         # we treat trajectories from now on as Directories
         return True
 
     def file(self, f):
         """
-        Return a `File` location to a file inside the trajectory folder
+        Return a file location to a file inside the trajectory folder
 
         Parameters
         ----------
         f : str or `OutputTypeDescription`
-            the filenameto be appended to the trajectories directory
+            the filename to be appended to the trajectories directory
 
         Returns
         -------
         `File`
             the object containing the location
+
         """
         if isinstance(f, basestring):
             return File(os.path.join(self.location, f))
@@ -297,16 +298,27 @@ class Trajectory(File):
 
         Parameters
         ----------
-        length : int
-            the length to extend by
+        length : int or list of int
+            the length to extend by as a single int or a list of ints
 
         Returns
         -------
         `Task`
             the task object to extend the trajectory
+
         """
         if self.engine:
-            return self.engine.extend(self, length)
+            if isinstance(length, int):
+                length = [length]
+
+            # make sure we have a list now
+            assert(isinstance(length, (tuple, list)))
+
+            x = self
+            for l in length:
+                x = x.engine.extend(x, l)
+
+            return x
         else:
             return None
 
@@ -316,7 +328,8 @@ class Trajectory(File):
 
         Parameters
         ----------
-        outtype : str ot `OutputTypeDescription`
+        outtype : str or `OutputTypeDescription`
+            the name of the outputtype as str or the full description object
 
         Returns
         -------
@@ -338,6 +351,7 @@ class Trajectory(File):
     def types(self):
         """
         Return the OutputTypeDescriptions for this trajectory
+
         Returns
         -------
         dict str: `OutputTypeDescription`
@@ -357,6 +371,7 @@ class Trajectory(File):
         list of int
             a sorted list of frame indices with full coordinates that can be
             used for restart. relative to the engines timesteps
+
         """
         full_strides = self.engine.full_strides
         frames = set()
@@ -420,12 +435,11 @@ class Frame(StorableMixin):
     @property
     def exists(self):
         """
-        Check if the frame has full coordinates
-
         Returns
         -------
         bool
-            if `True there is a concrete trajectory file with full coordinates for this frame
+            if True there is a concrete trajectory file with full
+            coordinates for this frame
 
         """
         ty, idx = self.index_in_outputs
@@ -435,6 +449,7 @@ class Frame(StorableMixin):
 class TrajectoryGenerationTask(Task):
     """
     A task that will generate a trajectory
+
     """
 
     _copy_attributes = Task._copy_attributes + [
@@ -470,6 +485,7 @@ class TrajectoryGenerationTask(Task):
         -------
         `Task`
             a task to extend the current trajectory
+
         """
         t = self.generator.extend(self.trajectory, length)
 
@@ -483,6 +499,7 @@ class TrajectoryGenerationTask(Task):
 class TrajectoryExtensionTask(TrajectoryGenerationTask):
     """
     A task that generates a trajectory out of a source trajectory
+
     """
 
     _copy_attributes = TrajectoryGenerationTask._copy_attributes + [
@@ -509,19 +526,18 @@ class TrajectoryExtensionTask(TrajectoryGenerationTask):
 class OutputTypeDescription(StorableMixin):
     """
     A description of a general trajectory type
+
+    Attributes
+    ----------
+    filename : str
+        a filename to store these type of trajectory in
+    stride : int
+        the stride to be used relative to native engine timesteps
+    selection : str
+        a :meth:`mdtraj.Topolopgy.select` like selection of an atom subset
+
     """
     def __init__(self, filename=None, stride=1, selection=None):
-        """
-
-        Parameters
-        ----------
-        filename : str
-            a filename to store these type of trajectory in
-        stride : int
-            the stride to be used relative to native engine timesteps
-        selection : str
-            an mdtraj.Topolpgy.select like selection of an atom subset
-        """
         super(OutputTypeDescription, self).__init__()
 
         if filename is None:
