@@ -170,10 +170,18 @@ class PyEMMAAnalysis(Analysis):
                 # ups, one of the trajectories does not have the required type!
                 return
 
+        if len(set(traj.types[outtype].stride for traj in trajs)) > 1:
+            # using different strides in trajectories
+            return
+
+        if len(set(traj.types[outtype].selection for traj in trajs)) > 1:
+            # different selection strings among trajectories
+            return
+
         ty = trajs[0].types[outtype]
 
         traj_paths = []
-        for traj in trajectories:
+        for traj in trajs:
             traj_paths.append(os.path.join(traj.location, traj.types[outtype].filename))
 
 
