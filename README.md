@@ -108,10 +108,12 @@ That's it. Have fun running adaptive simulations.
 To compile the doc pages, clone this github repository, go into the `docs` folder and do
 
 ```bash 
-conda install sphinx
+conda install sphinx sphinx_rtd_theme pandoc
 make html
 ```
 
-Build finished. The HTML pages are in _build/html.
+The HTML pages are in _build/html. Please note that the docs can only be compiled if all the above mentionend
+AdaptiveMD dependencies are available. If you are using conda environments, this means that your AdaptiveMD
+environment should be active.
 
 You might want to start with the examples in `examples/tutorials`
