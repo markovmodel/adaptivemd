@@ -182,8 +182,7 @@ class PyEMMAAnalysis(Analysis):
 
         traj_paths = []
         for traj in trajs:
-            traj_paths.append(os.path.join(traj.location, traj.types[outtype].filename))
-
+            traj_paths.append(traj.file(traj.types[outtype].filename).path)
 
         t.call(
             remote_analysis,
