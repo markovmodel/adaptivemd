@@ -362,7 +362,7 @@ class Scheduler(object):
         path = path.replace('sandbox://', '../..')
 
         # the main remote shared FS
-        path = path.replace('shared://', '')
+        path = path.replace('shared://', '../../..')
         path = path.replace('worker://', '')
         path = path.replace('file://', '')
         # the specific project folder://
