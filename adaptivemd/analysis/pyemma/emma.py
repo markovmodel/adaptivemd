@@ -187,7 +187,7 @@ class PyEMMAAnalysis(Analysis):
 
         t.call(
             remote_analysis,
-            trajectories=trajs,
+            trajectories=traj_paths,
             selection=ty.selection,  # tell pyemma the subsets of atoms
             features=features,
             topfile=input_pdb,
