@@ -36,7 +36,7 @@ class ExecutionPlan(object):
 
     def _update_conditions(self):
         self._finish_conditions = filter(
-            lambda x: not x(), self._finish_conditions)
+            lambda x: not x, self._finish_conditions)
 
     def __call__(self, scheduler):
         if self._running:
@@ -54,9 +54,11 @@ class ExecutionPlan(object):
     def trigger(self, scheduler):
         if self:
             self._update_conditions()
-            while self._running and len(self._finish_conditions) == 0:
+            while self._running:
                 self(scheduler)
                 self._update_conditions()
+
+
 
     def __nonzero__(self):
         return self._running
