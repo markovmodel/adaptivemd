@@ -93,3 +93,6 @@ ENV/
 
 # rp test virtualenv
 examples/rp/myenv
+
+# generated version file
+adaptivemd/version.py
