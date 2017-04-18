@@ -58,8 +58,6 @@ class ExecutionPlan(object):
                 self(scheduler)
                 self._update_conditions()
 
-
-
     def __nonzero__(self):
         return self._running
 
