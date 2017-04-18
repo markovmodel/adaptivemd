@@ -32,6 +32,7 @@ class ExecutionPlan(object):
 
         self._generator = generator
         self._running = True
+        self._finish_conditions = []
 
     def _update_conditions(self):
         self._finish_conditions = filter(
