@@ -20,11 +20,11 @@
 # License along with MDTraj. If not, see <http://www.gnu.org/licenses/>.
 ##############################################################################
 
-
-from event import Event
-from file import Location
-from mongodb import ObjectJSON
-from task import Task, DummyTask
+from __future__ import print_function, absolute_import
+from .event import Event
+from .file import Location
+from .mongodb import ObjectJSON
+from .task import Task, DummyTask
 
 
 class Scheduler(object):
@@ -213,7 +213,7 @@ class Scheduler(object):
         elif isinstance(obj, dict):
             return {
                 self.flatten_location(key): self.flatten_location(value)
-                for key, value in obj.iteritems()
+                for key, value in obj.items()
             }
         elif isinstance(obj, tuple):
             return tuple(map(self.flatten_location, obj))
@@ -372,7 +372,7 @@ class Scheduler(object):
         return path
 
     def change_state(self, new_state):
-        print 'changed state to', new_state
+        print('changed state to', new_state)
         self.state = new_state
         if self._state_cb is not None:
             self._state_cb(self)

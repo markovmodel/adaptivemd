@@ -24,13 +24,13 @@
 # <http://www.openpathsampling.org> or
 # <http://github.com/openpathsampling/openpathsampling
 # for details and license
-
+from __future__ import absolute_import, print_function
 
 import abc
 import logging
 from collections import OrderedDict
-from dictify import UUIDObjectJSON
-from object import ObjectStore
+from .dictify import UUIDObjectJSON
+from .object import ObjectStore
 
 from pymongo import MongoClient
 
@@ -499,7 +499,7 @@ class MongoDBStorage(object):
         total_file = 0
         total_index = 0
 
-        for name, store in self.objects.iteritems():
+        for name, store in self.objects.items():
             size = store.cache.size
             count = store.cache.count
             profile = {

@@ -19,13 +19,13 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with MDTraj. If not, see <http://www.gnu.org/licenses/>.
 ##############################################################################
-
+from __future__ import print_function, absolute_import
 
 import os
 
-from file import File, JSONFile, FileTransaction
-from util import get_function_source
-from mongodb import StorableMixin, SyncVariable, ObjectSyncVariable
+from .file import File, JSONFile, FileTransaction
+from .util import get_function_source
+from .mongodb import StorableMixin, SyncVariable, ObjectSyncVariable
 
 
 class BaseTask(StorableMixin):
@@ -297,18 +297,18 @@ class Task(BaseTask):
 
         """
         # todo: improve error handling
-        print 'task did not complete'
+        print('task did not complete')
 
         if hasattr(scheduler, 'units'):
             unit = scheduler.units.get(self)
 
             if unit is not None:
-                print "* %s  state %s (%s), out/err: %s / %s" \
-                      % (unit.uid,
-                         unit.state,
-                         unit.exit_code,
-                         unit.stdout,
-                         unit.stderr)
+                print("* %s  state %s (%s), out/err: %s / %s"
+                       % (unit.uid,
+                          unit.state,
+                          unit.exit_code,
+                          unit.stdout,
+                          unit.stderr))
 
     def _default_success(self, scheduler):
         """

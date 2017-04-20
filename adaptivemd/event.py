@@ -19,12 +19,12 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with MDTraj. If not, see <http://www.gnu.org/licenses/>.
 ##############################################################################
-
+from __future__ import print_function, absolute_import
 
 from itertools import chain
 
-from condition import Condition
-from task import Task
+from .condition import Condition
+from .task import Task
 
 
 class Event(object):

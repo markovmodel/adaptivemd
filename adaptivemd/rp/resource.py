@@ -1,7 +1,9 @@
+from __future__ import absolute_import, print_function
+
 from adaptivemd.scheduler import Scheduler
 from adaptivemd.resource import Resource
 
-from scheduler import RPScheduler
+from .scheduler import RPScheduler
 
 
 class RPCluster(Resource):

@@ -19,7 +19,7 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with MDTraj. If not, see <http://www.gnu.org/licenses/>.
 ##############################################################################
-
+from __future__ import absolute_import
 
 import os
 
@@ -28,7 +28,7 @@ from adaptivemd.analysis import Analysis
 from adaptivemd.mongodb import DataDict
 from adaptivemd.model import Model
 
-from _remote import remote_analysis
+from ._remote import remote_analysis
 
 
 class PyEMMAAnalysis(Analysis):

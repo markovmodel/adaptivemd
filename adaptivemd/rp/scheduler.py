@@ -1,10 +1,12 @@
+from __future__ import absolute_import, print_function
+
 import time
 
-from adaptivemd.scheduler import Scheduler
-from adaptivemd.reducer import DictFilterParser, StrFilterParser, BashParser, StageParser, \
-    StageInParser, PrefixParser
-
 from radical import pilot as rp
+
+from adaptivemd.scheduler import Scheduler
+from adaptivemd.reducer import (DictFilterParser, StrFilterParser, BashParser, StageParser,
+                                StageInParser, PrefixParser)
 
 
 class RPScheduler(Scheduler):
@@ -188,7 +190,7 @@ class RPScheduler(Scheduler):
         unit = self.units[task]
         del self.units[task]
         del self.tasks[unit.uid]
-        print 'Task removed. Remaining', len(self.tasks)
+        print('Task removed. Remaining', len(self.tasks))
 
     def submit(self, submission):
         """

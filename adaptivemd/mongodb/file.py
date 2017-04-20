@@ -1,10 +1,12 @@
+from __future__ import absolute_import, print_function
+
 import logging
 import gridfs
 from uuid import UUID
 
-from base import StorableMixin
-from object import ObjectStore
-from proxy import LoaderProxy
+from .base import StorableMixin
+from .object import ObjectStore
+from .proxy import LoaderProxy
 
 logger = logging.getLogger(__name__)
 

@@ -19,10 +19,11 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with MDTraj. If not, see <http://www.gnu.org/licenses/>.
 ##############################################################################
+from __future__ import absolute_import, print_function
 
 
-from mongodb import StorableMixin
-from task import DummyTask
+from .mongodb import StorableMixin
+from .task import DummyTask
 
 
 class Resource(StorableMixin):

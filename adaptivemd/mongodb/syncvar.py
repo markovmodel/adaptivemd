@@ -24,11 +24,12 @@
 # <http://www.openpathsampling.org> or
 # <http://github.com/openpathsampling/openpathsampling
 # for details and license
+from __future__ import absolute_import
 
 
 import uuid
 
-from dictify import ObjectJSON
+from .dictify import ObjectJSON
 
 
 class SyncVariable(object):

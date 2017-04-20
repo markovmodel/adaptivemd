@@ -24,16 +24,16 @@
 # <http://www.openpathsampling.org> or
 # <http://github.com/openpathsampling/openpathsampling
 # for details and license
-
+from __future__ import absolute_import, print_function
 
 import logging
 from uuid import UUID
 from weakref import WeakValueDictionary
 
-from base import StorableMixin
-from cache import MaxCache, Cache, NoCache, \
+from .base import StorableMixin
+from .cache import MaxCache, Cache, NoCache, \
     WeakLRUCache
-from proxy import LoaderProxy
+from .proxy import LoaderProxy
 
 logger = logging.getLogger(__name__)
 

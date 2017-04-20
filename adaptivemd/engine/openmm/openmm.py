@@ -19,15 +19,15 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with MDTraj. If not, see <http://www.gnu.org/licenses/>.
 ##############################################################################
-
+from __future__ import absolute_import
 
 import os
 import ujson
 
 # from adaptivemd.task import PythonTask
 from adaptivemd.file import Location, File
-from adaptivemd.engine import Engine, Frame, Trajectory, \
-    TrajectoryGenerationTask, TrajectoryExtensionTask
+from adaptivemd.engine import (Engine, Frame, Trajectory,
+                               TrajectoryGenerationTask, TrajectoryExtensionTask)
 
 
 exec_file = File('file://' + os.path.join(os.path.dirname(__file__), 'openmmrun.py')).load()
@@ -90,7 +90,7 @@ class OpenMMEngine(Engine):
 
     def _create_output_str(self):
         d = dict()
-        for name, opt in self.types.iteritems():
+        for name, opt in self.types.items():
             d[name] = opt.to_dict()
 
         return '--types="%s"' % ujson.dumps(d).replace('"', "'")
@@ -193,7 +193,7 @@ class OpenMMEngine(Engine):
         t.append(cmd)
 
         # join both trajectories for all outputs
-        for ty, desc in self.types.iteritems():
+        for ty, desc in self.types.items():
             # stride = desc['stride']
 
             t.append('mdconvert -o {output} {source} {extension}'.format(

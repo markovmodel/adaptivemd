@@ -19,6 +19,7 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with MDTraj. If not, see <http://www.gnu.org/licenses/>.
 ##############################################################################
+from __future__ import absolute_import, print_function
 
 
 import threading
@@ -27,19 +28,19 @@ import numpy as np
 import os
 import types
 
-from file import URLGenerator, File
-from engine import Trajectory
-from bundle import StoredBundle
-from condition import Condition
-from resource import Resource
-from generator import TaskGenerator
-from model import Model
-from task import Task
-from worker import Worker
-from logentry import LogEntry
-from plan import ExecutionPlan
+from .file import URLGenerator, File
+from .engine import Trajectory
+from .bundle import StoredBundle
+from .condition import Condition
+from .resource import Resource
+from .generator import TaskGenerator
+from .model import Model
+from .task import Task
+from .worker import Worker
+from .logentry import LogEntry
+from .plan import ExecutionPlan
 
-from mongodb import MongoDBStorage, ObjectStore, FileStore, DataDict, WeakValueCache
+from .mongodb import MongoDBStorage, ObjectStore, FileStore, DataDict, WeakValueCache
 
 
 import logging
