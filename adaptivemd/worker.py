@@ -325,7 +325,7 @@ class WorkerScheduler(Scheduler):
         """
         if self.current_task is None:
             if len(self.tasks) > 0:
-                t = next(self.tasks.values())
+                t = next(iter(self.tasks.values()))
                 self.current_task = t
                 self._start_job(t)
         else:
