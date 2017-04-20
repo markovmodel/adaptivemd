@@ -3,7 +3,7 @@ from __future__ import print_function, absolute_import
 import os
 import time
 
-from mongodb import (StorableMixin, ObjectJSON,
+from .mongodb import (StorableMixin, ObjectJSON,
                       JSONDataSyncVariable, SyncVariable, ObjectSyncVariable, DataDict)
 
 
