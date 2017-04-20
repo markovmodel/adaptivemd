@@ -45,7 +45,7 @@ class MongoDBStorage(object):
 
     @property
     def version(self):
-        import version
+        from . import version
         return version.short_version
 
     @property
@@ -335,8 +335,12 @@ class MongoDBStorage(object):
         try:
             return self.__dict__[item]
         except KeyError:
-            return self.__class__.__dict__[item]
+            try:
+                return self.__class__.__dict__[item]
+            except KeyError:
+                raise AttributeError()
 
+    # TODO: is still really needed? it looks like the default impl of object.__setattr__
     def __setattr__(self, key, value):
         self.__dict__[key] = value
 
