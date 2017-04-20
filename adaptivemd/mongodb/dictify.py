@@ -24,7 +24,7 @@
 # <http://www.openpathsampling.org> or
 # <http://github.com/openpathsampling/openpathsampling
 # for details and license
-
+from __future__ import absolute_import, print_function
 
 import base64
 import importlib
@@ -34,14 +34,14 @@ import math
 import abc
 from uuid import UUID
 
+import six
 import ujson
 
 import marshal
 import types
 import opcode
-import __builtin__
 
-from base import StorableMixin
+from .base import StorableMixin, long_t
 
 __author__ = 'Jan-Hendrik Prinz'
 
@@ -58,7 +58,7 @@ class ObjectJSON(object):
     prevent_unsafe_modules = False
 
     allowed_storable_atomic_types = [
-        int, float, bool, long, str,
+        int, float, bool, long_t, str,
         np.float32, np.float64,
         np.int8, np.int16, np.int32, np.int64,
         np.uint8, np.uint16, np.uint32, np.uint64,
@@ -90,7 +90,7 @@ class ObjectJSON(object):
             cls.__name__: cls for cls in self.allowed_storable_atomic_types}
         self.type_names.update(self.class_list)
         self.type_classes = {
-            cls: name for name, cls in self.type_names.iteritems()}
+            cls: name for name, cls in self.type_names.items()}
 
     def simplify_object(self, obj):
         return {
@@ -187,12 +187,12 @@ class ObjectJSON(object):
                 result = {
                     '_dict': [
                         self.simplify(tuple([key, o]))
-                        for key, o in obj.iteritems()
+                        for key, o in obj.items()
                         if key not in self.excluded_keys
                     ]}
             else:
                 result = {
-                    key: self.simplify(o) for key, o in obj.iteritems()
+                    key: self.simplify(o) for key, o in obj.items()
                     if key not in self.excluded_keys
                 }
 
@@ -206,7 +206,7 @@ class ObjectJSON(object):
 
     @staticmethod
     def _unicode2str(s):
-        if type(s) is unicode:
+        if type(s) is six.text_type:
             return s.encode('utf8')
         else:
             return s
@@ -286,13 +286,14 @@ class ObjectJSON(object):
             else:
                 return {
                     self._unicode2str(key): self.build(o)
-                    for key, o in obj.iteritems()
+                    for key, o in obj.items()
                 }
 
         elif type(obj) is list:
             return [self.build(o) for o in obj]
 
-        elif type(obj) is unicode:
+        # unicode in py2 and str in py3
+        elif type(obj) is six.text_type:
             return self._unicode2str(obj)
 
         else:
@@ -351,7 +352,7 @@ class ObjectJSON(object):
             # use marshal
             global_vars = ObjectJSON._find_var(c, opcode.opmap['LOAD_GLOBAL'])
             import_vars = ObjectJSON._find_var(c, opcode.opmap['IMPORT_NAME'])
-
+            import __builtin__
             builtins = dir(__builtin__)
 
             global_vars = list(set(
@@ -588,7 +589,7 @@ class UUIDObjectJSON(ObjectJSON):
 
             if '_hex_uuid' in obj and '_store' in obj:
                 store = self.storage._stores[obj['_store']]
-                result = store.load(long(obj['_hex_uuid'], 16))
+                result = store.load(long_t(obj['_hex_uuid'], 16))
 
                 return result
 
