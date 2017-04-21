@@ -240,10 +240,17 @@ class StorableMixin(object):
 
         """
         try:
-            args = inspect.getargspec(cls.__init__)
-        except TypeError:
+            if six.PY2:
+                args = inspect.getargspec(cls.__init__)[0]
+            else:
+                args = inspect.getfullargspec(cls.__init__)
+                if args.args and args.args[0] == 'self':
+                    args = args.args[1:]
+                else:
+                    args = args.args
+        except TypeError as t:
             return []
-        return args[0]
+        return args
 
     _excluded_attr = []
     _included_attr = []
