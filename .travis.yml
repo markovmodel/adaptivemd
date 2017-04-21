@@ -22,7 +22,7 @@ env:
 
 before_install:
 - mongod --version
-- nohop mongod -dbpath ~/db &
+- nohup mongod -dbpath ~/db &
 - cat nohup.out
 
 
