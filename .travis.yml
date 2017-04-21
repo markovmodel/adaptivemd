@@ -11,7 +11,7 @@ sudo: false
 #      - mongodb
 env:
   global:
-    - PATH=$HOME/miniconda/bin:$PATH
+#    - PATH=$HOME/miniconda/bin:$PATH
     - common_py_deps="conda-build=2.1.4"
     - PYTHONHASHSEED=0
     - OMP_NUM_THREADS=2
@@ -22,11 +22,12 @@ env:
 
 before_install:
 - mongod --version
+- mkdir ~/db
 - nohup mongod -dbpath ~/db &
 - cat nohup.out
 
 
-- devtools/ci/install.sh
+- source devtools/ci/install.sh
 - conda config --set always_yes true
 - conda config --add channels omnia
 - conda config --add channels conda-forge
