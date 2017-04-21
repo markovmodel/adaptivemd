@@ -3,8 +3,8 @@ package:
   version: "0.2.0"
 
 source:
-  git_url: ../../.git
-#  path: ../../
+#  git_url: ../../.git
+  path: ../../
 
 build:
   preserve_egg_dir: True
@@ -28,13 +28,21 @@ requirements:
 
 test:
   requires:
-    - nose
-    - nose-timer
-    - python-coveralls
-    - ipynbtest
+    - pytest
+    - nbval
+    - pyemma
+    - openmm
 
   imports:
     - adaptivemd
+
+  source_files:
+    - examples/*
+
+  commands:
+    - pip install radical.pilot
+    - py.test -v --pyargs adaptivemd --doctest-modules
+    #- py.test -v --nbval examples/
 
 about:
   home: https://github.com/markovmodel/adaptivemd
