@@ -32,7 +32,10 @@ class Model(StorableMixin):
     --------
     >>> m = Model({'msm' : [[0.9, 0.1], [0.1, 0.9]]})
     >>> print(m.msm)
+    [[0.9, 0.1], [0.1, 0.9]]
     >>> print(m['msm'])
+    [[0.9, 0.1], [0.1, 0.9]]
+
 
     Attributes
     ----------
