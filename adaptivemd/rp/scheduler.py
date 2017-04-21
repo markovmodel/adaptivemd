@@ -2,7 +2,10 @@ from __future__ import absolute_import, print_function
 
 import time
 
-from radical import pilot as rp
+try:
+    from radical import pilot as rp
+except ImportError:
+    rp = NotImplemented
 
 from adaptivemd.scheduler import Scheduler
 from adaptivemd.reducer import (DictFilterParser, StrFilterParser, BashParser, StageParser,
