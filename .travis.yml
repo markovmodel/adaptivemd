@@ -5,10 +5,10 @@ os:
 
 sudo: false
 
-addons:
-  apt:
-    packages:
-      - mongodb
+#addons:
+#  apt:
+#    packages:
+#      - mongodb
 env:
   global:
     - PATH=$HOME/miniconda/bin:$PATH
@@ -21,6 +21,9 @@ env:
     - CONDA_PY=3.6 CONDA_NPY=1.12
 
 before_install:
+- mongod --version
+- exit 1
+
 - devtools/ci/install.sh
 - conda config --set always_yes true
 - conda config --add channels omnia
