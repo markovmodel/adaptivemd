@@ -12,19 +12,18 @@ sudo: false
 env:
   global:
 #    - PATH=$HOME/miniconda/bin:$PATH
-    - common_py_deps="conda-build=2.1.4"
+    - common_py_deps="conda-build=2.1.10"
     - PYTHONHASHSEED=0
     - OMP_NUM_THREADS=2
     - MACOSX_DEPLOYMENT_TARGET=10.9
   matrix:
-    - CONDA_PY=2.7 CONDA_NPY=1.12
-#    - CONDA_PY=3.6 CONDA_NPY=1.12
+    - CONDA_PY=2.7
+    - CONDA_PY=3.6
 
 before_install:
 - mongod --version
 - mkdir ~/db
 - nohup mongod -dbpath ~/db &
-- cat nohup.out
 
 
 - source devtools/ci/install.sh
