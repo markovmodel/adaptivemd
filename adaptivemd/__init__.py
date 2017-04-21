@@ -25,12 +25,12 @@ from .brain import Brain
 # from event import StopEvent, Event, TasksFinished
 from .plan import ExecutionPlan
 # from condition import Condition, Now, Never
-from .file import File, Directory, Location, JSONFile, MakeDir, Copy, \
-    Transfer, Link, Move, Remove, Action, AddPathAction, FileAction, \
-    FileTransaction, Touch
-from .bundle import Bundle, SortedBundle, ViewBundle, AndBundle, \
-    BaseBundle, BundleDelegator, FunctionDelegator, LogicBundle, \
-    OrBundle, StoredBundle
+from .file import (File, Directory, Location, JSONFile, MakeDir, Copy,
+                   Transfer, Link, Move, Remove, Action, AddPathAction, FileAction,
+                   FileTransaction, Touch)
+from .bundle import (Bundle, SortedBundle, ViewBundle, AndBundle,
+                     BaseBundle, BundleDelegator, FunctionDelegator, LogicBundle,
+                     OrBundle, StoredBundle)
 from .resource import AllegroCluster, LocalResource
 from .task import Task, PythonTask, DummyTask
 from .project import Project
@@ -39,12 +39,12 @@ from .model import Model
 from .generator import TaskGenerator
 from .worker import WorkerScheduler, Worker
 from .logentry import LogEntry
-from .reducer import ActionParser, BashParser, ChainedParser, \
-    DictFilterParser, PrefixParser, StageParser, StrFilterParser, \
-    StageInParser
+from .reducer import (ActionParser, BashParser, ChainedParser,
+                      DictFilterParser, PrefixParser, StageParser, StrFilterParser,
+                      StageInParser)
 
-from .engine import Engine, Trajectory, Frame, \
-    TrajectoryGenerationTask, TrajectoryExtensionTask
+from .engine import (Engine, Trajectory, Frame,
+                     TrajectoryGenerationTask, TrajectoryExtensionTask)
 from .analysis import Analysis, DoAnalysis
 
 # specific generators that should be available to the general user
