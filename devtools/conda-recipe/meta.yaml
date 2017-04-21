@@ -40,7 +40,7 @@ test:
     - examples/*
 
   commands:
-    - pip install radical.pilot
+    #- pip install radical.pilot
     - py.test -v --pyargs adaptivemd --doctest-modules
     #- py.test -v --nbval examples/
 
