@@ -338,7 +338,7 @@ class MongoDBStorage(object):
             try:
                 return self.__class__.__dict__[item]
             except KeyError:
-                raise AttributeError()
+                raise AttributeError("attribute %s not found" % item)
 
     # TODO: is still really needed? it looks like the default impl of object.__setattr__
     def __setattr__(self, key, value):
