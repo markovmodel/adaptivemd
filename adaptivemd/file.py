@@ -724,6 +724,8 @@ class URLGenerator(object):
         self.count += 1
         return fn
 
+    __next__ = next
+
     def initialize_from_files(self, files):
         """
         Set the next available number from a list of files
