@@ -91,10 +91,10 @@ class Event(object):
             self._current_when = None
 
     def _update_conditions(self):
-        self._active_tasks = filter(lambda x: not x.is_done(),
-                                    self._active_tasks)
+        self._active_tasks = tuple(filter(lambda x: not x.is_done(),
+                                    self._active_tasks))
 
-        self._finish_conditions = filter(lambda x: x(), self._finish_conditions)
+        self._finish_conditions = tuple(filter(lambda x: x(), self._finish_conditions))
 
     @property
     def active_tasks(self):

@@ -44,7 +44,7 @@ class BaseTask(StorableMixin):
     @staticmethod
     def _format_export_paths(paths):
         paths = sorted(list(set(paths)))
-        return map('export PATH={}:$PATH'.format, paths)
+        return list(map('export PATH={}:$PATH'.format, paths))
 
     @staticmethod
     def _format_environment(env):
@@ -483,9 +483,9 @@ class Task(BaseTask):
 
         transactions = [t for t in self.script if isinstance(t, FileTransaction)]
 
-        return filter(
+        return tuple(filter(
             lambda x: not x.is_temp,
-            set(sum(filter(bool, [f.added for f in transactions]), []) + self._add_files))
+            set(sum(filter(bool, [f.added for f in transactions]), []) + self._add_files)))
 
     @property
     def target_locations(self):
@@ -511,9 +511,9 @@ class Task(BaseTask):
         """
         transactions = [t for t in self.script if isinstance(t, FileTransaction)]
 
-        return filter(
+        return tuple(filter(
             lambda x: not x.is_temp,
-            set(sum(filter(bool, [t.required for t in transactions]), []) + self._add_files))
+            set(sum(filter(bool, [t.required for t in transactions]), []) + self._add_files)))
 
     @property
     def source_locations(self):

@@ -35,8 +35,8 @@ class ExecutionPlan(object):
         self._finish_conditions = []
 
     def _update_conditions(self):
-        self._finish_conditions = filter(
-            lambda x: not x(), self._finish_conditions)
+        self._finish_conditions = tuple(filter(
+            lambda x: not x(), self._finish_conditions))
 
     def __call__(self, scheduler):
         if self._running:
