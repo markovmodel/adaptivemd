@@ -64,13 +64,15 @@ class FileStore(ObjectStore):
                 s,
                 filename=obj.name,
                 _id=_id,
-                _time=obj.__time__
+                _time=obj.__time__,
+                encoding='utf8',
                 **{x: getattr(obj, x) for x in self._find_by})  # add search indices
         else:
             self.grid.put(
                 s,
                 _id=_id,
                 _time=obj.__time__,
+                encoding='utf8',
                 **{x: getattr(obj, x) for x in self._find_by})  # add search indices
 
         obj.__store__ = self
