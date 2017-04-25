@@ -123,7 +123,7 @@ class ObjectJSON(object):
             return {
                 '_integer': str(obj)}
 
-        elif obj.__class__.__module__ != '__builtin__':
+        elif obj.__class__.__module__ not in ('__builtin__', 'builtins'):
             # if obj.__class__ is units.Quantity:
             #     # This is number with a unit so turn it into a list
             #     if self.unit_system is not None:
@@ -206,10 +206,11 @@ class ObjectJSON(object):
 
     @staticmethod
     def _unicode2str(s):
-        if type(s) is six.text_type:
-            return s.encode('utf8')
-        else:
-            return s
+        res = s
+        # we only want to transform python2 unicode objects to str.
+        if six.PY2 and type(s) is unicode:
+            res = s.encode('utf8')
+        return res
 
     def build(self, obj):
         if type(obj) is dict:
@@ -564,7 +565,7 @@ class UUIDObjectJSON(ObjectJSON):
         if obj is self.storage:
             return {'_storage': 'self'}
 
-        if obj.__class__.__module__ != '__builtin__':
+        if obj.__class__.__module__ not in ('__builtin__', 'builtins'):
             if obj.__class__ in self.storage._obj_store:
                 if not obj._ignore:
                     store = self.storage._obj_store[obj.__class__]
