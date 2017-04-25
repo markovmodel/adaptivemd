@@ -136,7 +136,8 @@ class Project(object):
         self.resource = None
 
         self._all_trajectories = self.files.c(Trajectory)
-        self.trajectories = self._all_trajectories.v(lambda x: x.created > 0)
+        # TODO: is created different in semantics from exists?
+        self.trajectories = self._all_trajectories.v(lambda x: x.exists)
 
         self._events = []
 
