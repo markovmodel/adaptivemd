@@ -40,6 +40,7 @@ The worker consists of two parts:
 """
 from __future__ import print_function, absolute_import
 
+import six
 import os
 import socket
 import subprocess
@@ -269,6 +270,8 @@ class WorkerScheduler(Scheduler):
         for s in ['stdout', 'stderr']:
             try:
                 new_std = os.read(getattr(self._current_sub, s).fileno(), 1024)
+                if six.PY3:
+                    new_std = new_std.decode('utf8')
                 self._std[s] += new_std
                 if self.verbose:
                     # send to stdout, stderr
@@ -287,6 +290,9 @@ class WorkerScheduler(Scheduler):
         task = self.current_task
         try:
             out, err = self._current_sub.communicate()
+            if six.PY3:
+                out = out.decode('utf8')
+                err = err.decode('utf8')
             if self.verbose:
                 sys.stderr.write(err)
                 sys.stdout.write(out)
