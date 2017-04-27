@@ -3,4 +3,6 @@
 Example 1 - Setup
 =================
 
-.. notebook:: examples/tutorial/1_example_setup_project.ipynb
+.. toctree::
+
+   ../examples_nb/tutorial/1_example_setup_project
