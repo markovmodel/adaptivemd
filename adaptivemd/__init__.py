@@ -57,3 +57,7 @@ from analysis.pyemma import PyEMMAAnalysis
 import util
 
 from util import DT
+
+from ._version import get_versions
+__version__ = get_versions()['version']
+del get_versions
