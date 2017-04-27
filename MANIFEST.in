@@ -1,2 +1,4 @@
 # include all files by default
 graft adaptivemd
+include versioneer.py
+include adaptivemd/_version.py

@@ -3,4 +3,6 @@
 Example 6 - Multiple Output Types
 =================================
 
-.. notebook:: examples/tutorial/6_example_multi_traj_type.ipynb
+.. toctree::
+
+  ../examples_nb/tutorial/6_example_multi_traj_type.ipynb

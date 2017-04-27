@@ -20,7 +20,7 @@
 # License along with MDTraj. If not, see <http://www.gnu.org/licenses/>.
 ##############################################################################
 
-
+import os
 import argparse
 import ujson
 from sys import stdout, exit
@@ -28,9 +28,9 @@ import socket
 import numpy as np
 import mdtraj as md
 
-from simtk.openmm.app import *
-from simtk.openmm import *
 import simtk.unit as u
+from simtk.openmm import Platform, XmlSerializer
+from simtk.openmm.app import PDBFile, Simulation, DCDReporter, StateDataReporter
 
 if __name__ == '__main__':
 

@@ -3,4 +3,6 @@
 Example 3 - Adaptive
 ====================
 
-.. notebook:: examples/tutorial/3_example_adaptive.ipynb
+.. toctree::
+
+   ../examples_nb/tutorial/3_example_adaptive.ipynb

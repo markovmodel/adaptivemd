@@ -3,4 +3,6 @@
 Example 4 - Tasks
 =================
 
-.. notebook:: examples/tutorial/4_example_advanced_tasks.ipynb
+.. toctree::
+
+  ../examples_nb/tutorial/4_example_advanced_tasks.ipynb

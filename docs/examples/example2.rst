@@ -3,4 +3,6 @@
 Example 2 - Run
 ===============
 
-.. notebook:: examples/tutorial/2_example_run.ipynb
+.. toctree::
+
+  ../examples_nb/tutorial/2_example_run.ipynb

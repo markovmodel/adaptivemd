@@ -1,2 +1,7 @@
+installation
+============
 
-.. markdown:: README.md
+
+.. toctree::
+
+   readme_parent

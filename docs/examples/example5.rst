@@ -3,4 +3,6 @@
 Example 5 - Generators
 ======================
 
-.. notebook:: examples/tutorial/5_example_advanced_generators.ipynb
+.. toctree::
+
+  ../examples_nb/tutorial/5_example_advanced_generators.ipynb
