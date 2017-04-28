@@ -23,6 +23,8 @@ from __future__ import print_function, absolute_import
 
 import os
 
+import six
+
 from .file import File, JSONFile, FileTransaction
 from .util import get_function_source
 from .mongodb import StorableMixin, SyncVariable, ObjectSyncVariable
@@ -820,7 +822,7 @@ class MPITask(PrePostTask):
     def command(self):
         cmd = self.executable or ''
 
-        if isinstance(self.arguments, basestring):
+        if isinstance(self.arguments, six.string_types):
             cmd += ' ' + self.arguments
         elif self.arguments is not None:
             cmd += ' '
@@ -1060,7 +1062,11 @@ class PythonTask(PrePostTask):
             named arguments to the function
 
         """
-        self._python_function_name = '.'.join([command.__module__, command.func_name])
+        if six.PY2:
+            self._python_function_name = '.'.join([command.__module__, command.func_name])
+        else:
+            self._python_function_name = '.'.join([command.__module__, command.__name__])
+
         self._python_kwargs = kwargs
 
         self._python_import, self._python_source_files = \
