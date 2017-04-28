@@ -41,7 +41,8 @@ class Brain(StorableMixin):
 
     def execute(self, project):
         # add events
-        map(project.add_event, self.get_events(project))
+        for e in self.get_events(project):
+            project.add_event(e)
 
         # submit initial tasks
         project.submit(self.initial_tasks(project))

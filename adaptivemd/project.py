@@ -336,7 +336,7 @@ class Project(object):
         scheduler.enter(self)
 
         # add the task generating capabilities to the scheduler
-        map(scheduler.has, self.generators)
+        list(map(scheduler.has, self.generators))
 
         scheduler.stage_generators()
 
@@ -383,7 +383,7 @@ class Project(object):
             if isinstance(task, Task):
                 self.tasks.add(task)
             elif isinstance(task, (list, tuple)):
-                map(self.queue, task)
+                list(map(self.queue, task))
             elif isinstance(task, Trajectory):
                 if task.engine is not None:
                     t = task.run()
@@ -623,7 +623,7 @@ class Project(object):
 
         """
         if isinstance(event, (tuple, list)):
-            return map(self._events.append, event)
+            return list(map(self._events.append, event))
 
         if isinstance(event, types.GeneratorType):
             event = ExecutionPlan(event)

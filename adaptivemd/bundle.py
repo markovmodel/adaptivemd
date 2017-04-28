@@ -295,7 +295,7 @@ class Bundle(BaseBundle):
             the items to be added
 
         """
-        map(self.add, iterable)
+        list(map(self.add, iterable))
 
     def add(self, item):
         """

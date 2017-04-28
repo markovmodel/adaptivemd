@@ -209,7 +209,7 @@ class Scheduler(object):
         if isinstance(obj, Location):
             return self.replace_prefix(obj.url)
         elif isinstance(obj, list):
-            return map(self.flatten_location, obj)
+            return list(map(self.flatten_location, obj))
         elif isinstance(obj, dict):
             return {
                 self.flatten_location(key): self.flatten_location(value)
@@ -226,7 +226,7 @@ class Scheduler(object):
     def _to_tasks(self, submission):
 
         if isinstance(submission, (tuple, list)):
-            return sum(map(self._to_tasks, submission), [])
+            return sum(list(map(self._to_tasks, submission)), [])
 
         elif isinstance(submission, Task):
             if submission in self.tasks.values() or submission.is_done():
@@ -250,7 +250,7 @@ class Scheduler(object):
 
     def _to_events(self, submission):
         if isinstance(submission, (tuple, list)):
-            return sum(map(self._to_events, submission), [])
+            return sum(list(map(self._to_events, submission)), [])
 
         elif isinstance(submission, Event):
             return [submission]
@@ -275,7 +275,7 @@ class Scheduler(object):
 
     def add_event(self, event):
         if isinstance(event, (tuple, list)):
-            map(self._events.append, event)
+            list(map(self._events.append, event))
         else:
             self._events.append(event)
 

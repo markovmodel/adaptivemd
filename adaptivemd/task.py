@@ -360,7 +360,7 @@ class Task(BaseTask):
 
         s += ['']
         s += ['<pretask>']
-        s += map(str, task.script)
+        s += list(map(str, task.script))
         s += ['<posttask>']
 
         return '\n'.join(s)
@@ -869,11 +869,11 @@ class DummyTask(PrePostTask):
         s = ['Task: %s' % task.__class__.__name__]
 
         s += ['<pre>']
-        s += map(str, task.pre_exec + task.pre)
+        s += list(map(str, task.pre_exec + task.pre))
         s += ['</pre>']
         s += ['<main />']
         s += ['<post>']
-        s += map(str, task.post)
+        s += list(map(str, task.post))
         s += ['</post>']
 
         return '\n'.join(s)
