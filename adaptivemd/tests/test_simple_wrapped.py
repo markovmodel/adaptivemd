@@ -62,7 +62,7 @@ class TestSimpleselfProject(unittest.TestCase):
             pdb_file=pdb_file,
             system_file=File('file://examples/files/alanine/system.xml').load(),
             integrator_file=File('file://examples/files/alanine/integrator.xml').load(),
-            args='-r --report-interval 1 -p CPU --store-interval 1'
+            args='-r --report-interval 1 -p Reference --store-interval 1'
         ).named('openmm')
 
         # --------------------------------------------------------------------------
@@ -88,20 +88,19 @@ class TestSimpleselfProject(unittest.TestCase):
         # self.project.queue(task)
 
         pdb = md.load('examples/files/alanine/alanine.pdb')
-        cwd = os.getcwd()
 
         # this part fakes a running worker without starting the worker process
-        worker = WorkerScheduler(self.project.resource)
+        worker = WorkerScheduler(self.project.resource, verbose=True)
         worker.enter(self.project)
 
         worker.submit(task)
 
-        assert(len(self.project.trajectories) == 0)
+        self.assertEqual(len(self.project.trajectories), 0)
 
         while not task.is_done():
             worker.advance()
 
-        assert(len(self.project.trajectories) == 1)
+        self.assertEqual(len(self.project.trajectories), 1)
 
         # FIXME: the worker space is cleared, so the trajectory paths are not valid anymore.
         # traj_path = os.path.join(
@@ -136,7 +135,7 @@ class TestSimpleselfProject(unittest.TestCase):
 
         traj = md.load(traj_path, top=pdb)
 
-        assert (len(traj) == traj_len + 10 + 1)
+        self.assertEqual(len(traj), traj_len + 10 + 1)
 
         # after extension it is traj_len + 10 frames. Excellent
 
