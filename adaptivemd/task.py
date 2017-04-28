@@ -483,9 +483,7 @@ class Task(BaseTask):
 
         transactions = [t for t in self.script if isinstance(t, FileTransaction)]
 
-        return tuple(filter(
-            lambda x: not x.is_temp,
-            set(sum(filter(bool, [f.added for f in transactions]), []) + self._add_files)))
+        return [x for x in set(sum(filter(bool, [f.added for f in transactions]), []) + self._add_files) if not x.is_temp]
 
     @property
     def target_locations(self):
@@ -511,9 +509,7 @@ class Task(BaseTask):
         """
         transactions = [t for t in self.script if isinstance(t, FileTransaction)]
 
-        return tuple(filter(
-            lambda x: not x.is_temp,
-            set(sum(filter(bool, [t.required for t in transactions]), []) + self._add_files)))
+        return [x for x in set(sum(filter(bool, [t.required for t in transactions]), []) + self._add_files) if not x.is_temp]
 
     @property
     def source_locations(self):
@@ -575,9 +571,9 @@ class Task(BaseTask):
 
         """
         if self.generator is not None:
-            return set(sum(filter(bool, [t.required for t in self.generator.stage_in]), []))
+            return set(sum(filter(bool, [t.required for t in self.generator.stage_in])), [])
         else:
-            return {}
+            return set()
 
     @property
     def unstaged_input_files(self):
