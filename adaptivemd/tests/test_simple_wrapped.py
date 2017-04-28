@@ -15,7 +15,7 @@ from adaptivemd import WorkerScheduler
 import mdtraj as md
 
 
-class TestSimpleselfProject(unittest.TestCase):
+class TestSimpleProject(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
@@ -100,7 +100,13 @@ class TestSimpleselfProject(unittest.TestCase):
         while not task.is_done():
             worker.advance()
 
-        self.assertEqual(len(self.project.trajectories), 1)
+        try:
+            assert(len(self.project.trajectories) == 1)
+        except AssertionError:
+            print("stderr from worker task: \n%s" % task.stderr)
+            print("stdout from worker task: \n%s" % task.stdout)
+            raise
+        print("stdout of worker:\n%s" % task.stdout)
 
         # FIXME: the worker space is cleared, so the trajectory paths are not valid anymore.
         # traj_path = os.path.join(
