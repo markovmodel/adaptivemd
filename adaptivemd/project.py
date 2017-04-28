@@ -345,6 +345,7 @@ class Project(object):
         Close the project and all related sessions and DB connections
 
         """
+        self.stop()
         self._close_rp()
         self._close_db()
 
