@@ -114,7 +114,7 @@ class Event(object):
         return len(self._finish_conditions) > 0
         # return len(self._active_tasks) > 0
 
-    def __nonzero__(self):
+    def __bool__(self):
         self._update_conditions()
         return self._current_when is not None or self.has_running_tasks
 
