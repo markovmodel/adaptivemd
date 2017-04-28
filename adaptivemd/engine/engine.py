@@ -188,6 +188,7 @@ def lcmm(*args):
     """
     Return lcm of args.
     """
+    from functools import reduce
     return reduce(lcm, args)
 
 
