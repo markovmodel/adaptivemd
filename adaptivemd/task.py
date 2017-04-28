@@ -1062,10 +1062,7 @@ class PythonTask(PrePostTask):
             named arguments to the function
 
         """
-        if six.PY2:
-            self._python_function_name = '.'.join([command.__module__, command.func_name])
-        else:
-            self._python_function_name = '.'.join([command.__module__, command.__name__])
+        self._python_function_name = '.'.join([command.__module__, command.__name__])
 
         self._python_kwargs = kwargs
 

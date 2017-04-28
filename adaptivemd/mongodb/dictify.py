@@ -353,8 +353,8 @@ class ObjectJSON(object):
             # use marshal
             global_vars = ObjectJSON._find_var(c, opcode.opmap['LOAD_GLOBAL'])
             import_vars = ObjectJSON._find_var(c, opcode.opmap['IMPORT_NAME'])
-            import __builtin__
-            builtins = dir(__builtin__)
+            import builtin
+            builtins = dir(builtin)
 
             global_vars = list(set(
                 [var for var in global_vars if var not in builtins]))
@@ -382,13 +382,13 @@ class ObjectJSON(object):
                 err += '\n4. be passed as an external parameter ' \
                        '(not for imports!)'
                 err += '\n\n        my_cv = FunctionCV("cv_name", ' + \
-                       c.func_name + ', \n' + \
+                       c.__name__ + ', \n' + \
                        ',\n'.join(
                            [' ' * 20 + x + '=' + x for x in global_vars]
                        ) + ')' + '\n'
                 err += '\n    and change your function definition like this'
                 err += '\n\n        def ' + \
-                       c.func_name + '(snapshot, ...,  ' + \
+                       c.__name__ + '(snapshot, ...,  ' + \
                        '\n' + ',\n'.join(
                            [' ' * 16 + x for x in global_vars]
                        ) + '):'
@@ -422,7 +422,7 @@ class ObjectJSON(object):
 
             return {
                 '_marshal': base64.b64encode(
-                    marshal.dumps(c.func_code)),
+                    marshal.dumps(c.__code__)),
                 '_global_vars': global_vars,
                 '_module_vars': import_vars
             }
@@ -483,7 +483,7 @@ class ObjectJSON(object):
         """
 
         # TODO: Clean this up. It now works only for codes that use co_names
-        opcodes = code.func_code.co_code
+        opcodes = code.__code__.co_code
         i = 0
         ret = []
         while i < len(opcodes):
@@ -496,7 +496,7 @@ class ObjectJSON(object):
             else:
                 i += 3
 
-        return [code.func_code.co_names[i[1]] for i in ret]
+        return [code.__code__.co_names[i[1]] for i in ret]
 
     def to_json(self, obj, base_type=''):
         simplified = self.simplify(obj, base_type)
