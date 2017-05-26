@@ -1,4 +1,4 @@
-# adaptive-sampling
+# adaptiveMD
 A Python framework to run adaptive Markov state model (MSM) simulation on HPC resources
 
 The generation of MSMs requires a huge amount of trajectory data to be analyzed. In most cases
@@ -91,6 +91,9 @@ python setup.py develop
 # see if it works
 python -c "import adaptivemd" || echo 'FAILED'
 
+# run the mongodb server if not running already
+mongod --dbpath={path_to_your_db_folder}
+
 # run a simple test
 cd adaptive/tests/
 python test_simple.py
@@ -99,7 +102,7 @@ python test_simple.py
 
 All of this must also be installed on the cluster, where you want to run your simulations.
 
-For allegro I suggest to use a miniconda installation. Note that you only need these packages if you want to use some of it on the cluster like run openmm or make computations using pyemma. Just for running, say `acemd` conda is not required!
+For allegro I suggest to use a miniconda installation. Note that you only need these packages if you want to use some of it on the cluster like run openmm or make computations using pyemma. Just for running, say `acemd`, conda is not required!
 
 That's it. Have fun running adaptive simulations.
 
