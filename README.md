@@ -1,16 +1,19 @@
 # adaptiveMD
-A Python framework to run adaptive Markov state model (MSM) simulation on HPC resources
 
-The generation of MSMs requires a huge amount of trajectory data to be analyzed. In most cases
-this leads to an enhanced understanding of the dynamics of the system which can be used to
-make decision about collection more data to achieve a desired accuracy or level of detail in
-the generated MSM. This alternating process between simulation/actively generating new observations 
-and analysis is currently difficult and involves lots of human decision along the path.
+A Python framework to run adaptive MD simulations using Markov state model (MSM)
+analysis on HPC resources.
+
+The generation of MSMs requires a huge amount of trajectory data to be analyzed.
+In most cases this leads to an enhanced understanding of the dynamics of the
+system, which can be used to make decisions about collecting more data to
+achieve a desired accuracy or level of detail in the generated MSM. This
+alternating process between simulation and actively generating new observations
+& analysis is currently difficult and involves human decision along the path.
 
 This framework aim to automate this process with the following goals:
 
-1. Ease of use: Simple system setup once an HPC has been added.
-2. Flexibility: Modular setup, attach to multiple HPCs and different simulation engines
+1. Ease of use: Simple system setup once an HPC resource has been added.
+2. Flexibility: Modular setup of multiple HPCs and different simulation engines
 3. Automatism: Create an user-defined adaptive strategy that is executed
 4. Compatibility: Build analysis tools and export to known formats
 
@@ -21,10 +24,17 @@ There are a few things we need to install to make this work.
 
 ### MongoDB
 
-AdaptiveMD and RP both need access to a MongoDB. The FU has one that Allegro can access in place and you can use this for storing projects. If you want to store these locally you need to install MongoDB.
+AdaptiveMD needs access to a MongoDB. If you want to store project data locally
+you need to install MongoDB. Both your user resource and compute resource must
+see the databse.
 
-Just download your OS installer from [MongoDB Community Edition](https://www.mongodb.com/download-center#community) and follow the installation instructions. This is very straight forward and should work without any problems. You only need to install MongoDB on your local machine from which you will connect to the cluster. No need to install it on the cluster. 
+[MongoDB Community Edition](https://www.mongodb.com/download-center#community)
+will provide your OS installer, just download and follow the installation
+instructions. This is straight forward and should work without any problems.
+**You only need to install MongoDB on your local machine from which you will
+connect to the cluster. No need to install the database on the cluster.**
 
+For linux systems:
 ```bash
 curl -O https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-debian81-3.4.2.tgz
 tar -zxvf mongodb-linux-x86_64-debian81-3.4.2.tgz
@@ -35,7 +45,7 @@ cp -R -n mongodb-linux-x86_64-debian81-3.4.2/ ~/mongodb
 # add PATH to .bashrc
 echo "export PATH=~/mongodb/bin:$PATH" >> ~/.bash_rc
 
-# create directory for storage (everywhere you have space)
+# create directory for storage
 mkdir -p ~/mongodb/data/db
 
 # run the deamon in the background
@@ -44,7 +54,10 @@ mongod --quiet --dbpath ~/mongodb/data/db &
 
 ### Conda
 
-Whereever you will run the actual tasks (local or a cluster) you probably use some python so we recommend to install the common set of conda packages. If you are remotely executing python then you can even use python 3 without problems. The RPC might also work with python 3 but that needs to be tested. 
+Whereever you will run the actual tasks (local or a cluster) you probably use
+some python so we recommend to install the common set of conda packages. If you
+are remotely executing python then you can even use python 3 without problems.
+The RPC might also work with python 3 but that needs to be tested. 
 
 If you have not yet installed conda please do so using
 
@@ -62,7 +75,8 @@ conda config --append channels conda-forge
 conda config --append channels omnia
 ```
 
-and `--append` will make sure that the regular conda packages are tried first and use `conda-forge` and `omnia` as a fallback.
+`--append` will make sure that the regular conda packages are tried first, then
+use `conda-forge` and `omnia` as a fallback.
 
 Install required and necessary packages now
 
@@ -95,7 +109,7 @@ python -c "import adaptivemd" || echo 'FAILED'
 mongod --dbpath={path_to_your_db_folder}
 
 # run a simple test
-cd adaptive/tests/
+cd adaptivemd/tests/
 python test_simple.py
 
 ```
