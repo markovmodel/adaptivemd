@@ -1,10 +1,12 @@
+from __future__ import absolute_import, print_function
+
 import logging
 import gridfs
 from uuid import UUID
 
-from base import StorableMixin
-from object import ObjectStore
-from proxy import LoaderProxy
+from .base import StorableMixin, long_t
+from .object import ObjectStore
+from .proxy import LoaderProxy
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +34,7 @@ class FileStore(ObjectStore):
         raise NotImplementedError()
 
     def load_indices(self):
-        self.index = [long(x, 16) for x in self.grid.list()]
+        self.index = [long_t(x, 16) for x in self.grid.list()]
 
     def __len__(self):
         if self.grid:
@@ -62,13 +64,15 @@ class FileStore(ObjectStore):
                 s,
                 filename=obj.name,
                 _id=_id,
-                _time=obj.__time__
+                _time=obj.__time__,
+                encoding='utf8',
                 **{x: getattr(obj, x) for x in self._find_by})  # add search indices
         else:
             self.grid.put(
                 s,
                 _id=_id,
                 _time=obj.__time__,
+                encoding='utf8',
                 **{x: getattr(obj, x) for x in self._find_by})  # add search indices
 
         obj.__store__ = self
@@ -98,9 +102,9 @@ class FileStore(ObjectStore):
         """
 
         if type(idx) is str:
-            idx = long(UUID(self.grid.find_one({'filename': idx})['_id']), 16)
+            idx = long_t(UUID(self.grid.find_one({'filename': idx})['_id']), 16)
 
-        if type(idx) is long:
+        if type(idx) is long_t:
             pass
 
         elif type(idx):

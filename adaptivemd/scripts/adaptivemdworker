@@ -26,15 +26,14 @@
 # <http://www.openpathsampling.org> or
 # <http://github.com/openpathsampling/openpathsampling
 # for details and license
-
+from __future__ import print_function
 
 import argparse
 import re
+import signal
 
 from adaptivemd import Project, Worker
 from adaptivemd.mongodb import MongoDBStorage
-
-import signal
 
 
 if __name__ == '__main__':
@@ -174,26 +173,26 @@ if __name__ == '__main__':
                 fn = getattr(wrapper, ex)
                 fn(*ar)
 
-        print 'Using general wrapper:'
-        print wrapper.description
+        print('Using general wrapper:')
+        print(wrapper.description)
 
-    print 'Worker running @ %s' % db_path,
+    print('Worker running @ %s' % db_path)
 
     if args.generators:
-        print '[limited to generators `%s`]' % ', '.join(worker.generators),
+        print('[limited to generators `%s`]' % ', '.join(worker.generators))
 
-    print
+    print()
 
     def signal_term_handler(sig, frame):
-        print 'got SIGTERM ...'
+        print('got SIGTERM ...')
         worker.shutdown()
 
     signal.signal(signal.SIGTERM, signal_term_handler)
 
-    print 'start listening ...'
+    print('start listening ...')
 
     worker.run()
 
-    print 'good-bye'
+    print('good-bye')
 
     exit()

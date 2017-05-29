@@ -19,11 +19,14 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with MDTraj. If not, see <http://www.gnu.org/licenses/>.
 ##############################################################################
+from __future__ import absolute_import
 
 
 # Create compute units for various simulation tools
 import random
 import os
+
+import six
 
 from adaptivemd.file import File
 from adaptivemd.generator import TaskGenerator
@@ -185,6 +188,7 @@ def lcmm(*args):
     """
     Return lcm of args.
     """
+    from functools import reduce
     return reduce(lcm, args)
 
 
@@ -270,7 +274,7 @@ class Trajectory(File):
             the object containing the location
 
         """
-        if isinstance(f, basestring):
+        if isinstance(f, six.string_types):
             return File(os.path.join(self.location, f))
         elif isinstance(f, OutputTypeDescription):
             return self.file(f.filename)
@@ -339,7 +343,7 @@ class Trajectory(File):
 
         """
         if self.engine:
-            if isinstance(outtype, basestring):
+            if isinstance(outtype, six.string_types):
                 if outtype in self.engine.types:
                     return self.file(self.engine.types[outtype])
             elif isinstance(outtype, OutputTypeDescription):
@@ -422,7 +426,7 @@ class Frame(StorableMixin):
             return None, None
 
         if self.trajectory.types:
-            for key, desc in self.trajectory.types.iteritems():
+            for key, desc in self.trajectory.types.items():
                 stride = desc.stride
                 if desc.selection is None:
                     # full atoms

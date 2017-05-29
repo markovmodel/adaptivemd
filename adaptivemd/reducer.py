@@ -19,10 +19,10 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with MDTraj. If not, see <http://www.gnu.org/licenses/>.
 ##############################################################################
+from six import string_types
 
-
-from file import AddPathAction, FileAction, FileTransaction, MakeDir, \
-    Copy, Transfer, Link, Move, Remove, Touch
+from .file import (AddPathAction, FileAction, FileTransaction, MakeDir,
+                   Copy, Transfer, Link, Move, Remove, Touch)
 
 import os
 
@@ -73,7 +73,7 @@ class ActionParser(object):
 
         """
 
-        return filter(bool, sum([x if isinstance(x, list) else [x] for x in actions], []))
+        return list(filter(bool, sum([x if isinstance(x, list) else [x] for x in actions], [])))
 
 
 class DictFilterParser(ActionParser):
@@ -86,7 +86,7 @@ class DictFilterParser(ActionParser):
 
 class StrFilterParser(ActionParser):
     def parse(self, scheduler, action):
-        if isinstance(action, basestring):
+        if isinstance(action, string_types):
             return action
 
         return None
@@ -288,7 +288,7 @@ class PrefixParser(ActionParser):
 
     """
     def parse(self, scheduler, action):
-        if isinstance(action, basestring):
+        if isinstance(action, string_types):
             # a bash command, look for prefixes to be parsed
             return [scheduler.replace_prefix(action)]
 

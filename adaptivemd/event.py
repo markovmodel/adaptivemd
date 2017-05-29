@@ -19,12 +19,12 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with MDTraj. If not, see <http://www.gnu.org/licenses/>.
 ##############################################################################
-
+from __future__ import print_function, absolute_import
 
 from itertools import chain
 
-from condition import Condition
-from task import Task
+from .condition import Condition
+from .task import Task
 
 
 class Event(object):
@@ -91,10 +91,9 @@ class Event(object):
             self._current_when = None
 
     def _update_conditions(self):
-        self._active_tasks = filter(lambda x: not x.is_done(),
-                                    self._active_tasks)
+        self._active_tasks = [x for x in self._active_tasks if not x.is_done()]
 
-        self._finish_conditions = filter(lambda x: x(), self._finish_conditions)
+        self._finish_conditions = [x for x in self._finish_conditions if x()]
 
     @property
     def active_tasks(self):
@@ -115,7 +114,7 @@ class Event(object):
         return len(self._finish_conditions) > 0
         # return len(self._active_tasks) > 0
 
-    def __nonzero__(self):
+    def __bool__(self):
         self._update_conditions()
         return self._current_when is not None or self.has_running_tasks
 

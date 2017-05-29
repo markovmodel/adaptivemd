@@ -1,8 +1,10 @@
+from __future__ import print_function, absolute_import
+
 import os
 import time
 
-from mongodb import StorableMixin, ObjectJSON, \
-    JSONDataSyncVariable, SyncVariable, ObjectSyncVariable, DataDict
+from .mongodb import (StorableMixin, ObjectJSON,
+                      JSONDataSyncVariable, SyncVariable, ObjectSyncVariable, DataDict)
 
 
 class Location(StorableMixin):
@@ -699,9 +701,11 @@ class URLGenerator(object):
 
     Examples
     --------
-    >>> gen = URLGenerator('mypath/{:4}.dcd')
-    >>> print next(gen)  # 'mypath/0000.dcd'
-    >>> print next(gen)  # 'mypath/0001.dcd'
+    >>> gen = URLGenerator('mypath/{count:04}.dcd')
+    >>> next(gen)
+    'mypath/0000.dcd'
+    >>> next(gen)
+    'mypath/0001.dcd'
 
     """
     def __init__(self, shape, bundle=None):
@@ -719,6 +723,8 @@ class URLGenerator(object):
         fn = self.shape.format(count=self.count)
         self.count += 1
         return fn
+
+    __next__ = next
 
     def initialize_from_files(self, files):
         """

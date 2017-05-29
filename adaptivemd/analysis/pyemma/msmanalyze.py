@@ -19,6 +19,7 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with MDTraj. If not, see <http://www.gnu.org/licenses/>.
 ##############################################################################
+from __future__ import absolute_import
 
 
 import pyemma.coordinates as coor
@@ -138,6 +139,6 @@ if __name__ == '__main__':
         }
     }
 
-    print ujson.dumps(data)
+    print(ujson.dumps(data))
 
     exit(0)

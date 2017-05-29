@@ -1,6 +1,6 @@
 """Adaptive-MD
 """
-
+from __future__ import print_function
 from setuptools import setup
 import sys
 
@@ -53,7 +53,7 @@ def build_keyword_dictionary(prefs):
     output = ""
     first_tab = 40
     second_tab = 60
-    for key in sorted(keywords.iterkeys()):
+    for key in sorted(keywords.keys()):
         value = keywords[key]
         output += key.rjust(first_tab) + str(value).rjust(second_tab) + ""
 
@@ -65,7 +65,7 @@ with open('setup.yaml') as f:
     yaml_string = ''.join(f.readlines())
     preferences = yaml.load(yaml_string)
 
-print preferences
+print(preferences)
 
 setup_keywords = build_keyword_dictionary(preferences)
 

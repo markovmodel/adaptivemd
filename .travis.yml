@@ -1,0 +1,40 @@
+language: c 
+os:
+# - osx
+ - linux
+
+sudo: false
+
+#addons:
+#  apt:
+#    packages:
+#      - mongodb
+env:
+  global:
+#    - PATH=$HOME/miniconda/bin:$PATH
+    - common_py_deps="conda-build=2.1.10"
+    - PYTHONHASHSEED=0
+    - OMP_NUM_THREADS=2
+    - MACOSX_DEPLOYMENT_TARGET=10.9
+  matrix:
+    - CONDA_PY=2.7
+    - CONDA_PY=3.6
+
+before_install:
+- mongod --version
+- mkdir ~/db
+- nohup mongod -dbpath ~/db &
+
+
+- source devtools/ci/install.sh
+- conda config --set always_yes true
+- conda config --add channels omnia
+- conda config --add channels conda-forge
+- conda install -q $common_py_deps
+
+script:
+- conda build -q devtools/conda-recipe
+
+#after_script:
+#- bash <(curl -s https://codecov.io/bash) -f $HOME/coverage.xml -e CONDA_PY,CONDA_NPY
+

@@ -19,6 +19,7 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with MDTraj. If not, see <http://www.gnu.org/licenses/>.
 ##############################################################################
+from __future__ import print_function, absolute_import
 
 
 class Condition(object):
@@ -33,12 +34,17 @@ class Condition(object):
     Examples
     --------
     >>> a = Never()  # never fulfilles
-    >>> if a: print 'fulfilled' else 'not fulfilled'  # not fulfilled
+    >>> 'fulfilled' if a else 'not fulfilled'
+    'not fulfilled'
     >>> b = Now()  # always fulfilled
-    >>> if b: print 'fulfilled' else 'not fulfilled'  # fulfilled
-    >>> bool(a & b)  # False
-    >>> bool(a | b)  # True
-    >>> not a  # True
+    >>> 'fulfilled' if b else 'not fulfilled'
+    'fulfilled'
+    >>> bool(a & b)
+    False
+    >>> bool(a | b)
+    True
+    >>> not a
+    True
 
     """
     def __init__(self):
@@ -67,7 +73,7 @@ class Condition(object):
     def __invert__(self):
         return InvertCondition(self)
 
-    def __nonzero__(self):
+    def __bool__(self):
         return self()
 
 

@@ -38,7 +38,9 @@ The worker consists of two parts:
    for new tasks and submitting these to the scheduler for execution
 
 """
+from __future__ import print_function, absolute_import
 
+import six
 import os
 import socket
 import subprocess
@@ -51,13 +53,13 @@ import re
 import shutil
 from fcntl import fcntl, F_GETFL, F_SETFL
 
-from mongodb import StorableMixin, SyncVariable, create_to_dict, \
-    ObjectSyncVariable
+from .mongodb import (StorableMixin, SyncVariable, create_to_dict,
+                      ObjectSyncVariable)
 
-from scheduler import Scheduler
-from reducer import StrFilterParser, WorkerParser, BashParser, PrefixParser
-from logentry import LogEntry
-from util import DT
+from .scheduler import Scheduler
+from .reducer import StrFilterParser, WorkerParser, BashParser, PrefixParser
+from .logentry import LogEntry
+from .util import DT
 from adaptivemd import Transfer
 
 import pymongo.errors
@@ -183,7 +185,7 @@ class WorkerScheduler(Scheduler):
         script_location = self.current_task_dir
 
         if os.path.exists(script_location):
-            print 'removing existing folder', script_location
+            print('removing existing folder', script_location)
             # the folder already exists, probably a failed previous attempt
             # a restart needs a clean folder so remove it now
             shutil.rmtree(script_location)
@@ -268,6 +270,8 @@ class WorkerScheduler(Scheduler):
         for s in ['stdout', 'stderr']:
             try:
                 new_std = os.read(getattr(self._current_sub, s).fileno(), 1024)
+                if six.PY3:
+                    new_std = new_std.decode('utf8')
                 self._std[s] += new_std
                 if self.verbose:
                     # send to stdout, stderr
@@ -286,6 +290,9 @@ class WorkerScheduler(Scheduler):
         task = self.current_task
         try:
             out, err = self._current_sub.communicate()
+            if six.PY3:
+                out = out.decode('utf8')
+                err = err.decode('utf8')
             if self.verbose:
                 sys.stderr.write(err)
                 sys.stdout.write(out)
@@ -324,7 +331,7 @@ class WorkerScheduler(Scheduler):
         """
         if self.current_task is None:
             if len(self.tasks) > 0:
-                t = next(self.tasks.itervalues())
+                t = next(iter(self.tasks.values()))
                 self.current_task = t
                 self._start_job(t)
         else:
@@ -361,9 +368,9 @@ class WorkerScheduler(Scheduler):
                         try:
                             task.fire('success', self)
                             task.state = 'success'
-                            print 'task succeeded'
+                            print('task succeeded')
                             if self._cleanup_successful:
-                                print 'removing worker dir'
+                                print('removing worker dir')
                                 # go to an existing folder before we delete
                                 os.chdir(self.path)
                                 script_location = self.current_task_dir
@@ -611,10 +618,10 @@ class Worker(StorableMixin):
                     # success, so mark the task as cancelled
                     task.state = mode
                     task.worker = None
-                    print 'stopped a task [%s] from generator `%s` and set to `%s`' % (
+                    print('stopped a task [%s] from generator `%s` and set to `%s`' % (
                         task.__class__.__name__,
                         task.generator.name if task.generator else '---',
-                        task.state)
+                        task.state))
 
             else:
                 # semms in the meantime the task has finished (success/fail)
@@ -656,7 +663,7 @@ class Worker(StorableMixin):
                 hasattr(x.generator, 'name') and x.generator.name
                 in self.generators))
 
-        print 'up and running ...'
+        print('up and running ...')
 
         try:
             reconnect = True
@@ -666,10 +673,10 @@ class Worker(StorableMixin):
                 try:
                     if len(scheduler.tasks) > 0:
                         # must have been a DB connection problem, attempt reconnection
-                        print 'attempt reconnection'
+                        print('attempt reconnection')
                         self._project.reconnect()
 
-                        print 'remove all pending tasks'
+                        print('remove all pending tasks')
                         # remove all pending tasks as much as possible
                         for t in list(scheduler.tasks.values()):
                             if t is not scheduler.current_task:
@@ -683,11 +690,11 @@ class Worker(StorableMixin):
                         # unless it has been cancelled and is running with another worker
                         t = scheduler.current_task
                         if t.worker == self and t.state == 'running':
-                            print 'continuing current task'
+                            print('continuing current task')
                             # seems like the task is still ours to finish
                             pass
                         else:
-                            print 'current task has been captured. releasing.'
+                            print('current task has been captured. releasing.')
                             scheduler.stop_current()
 
                     # the main worker loop
@@ -704,9 +711,9 @@ class Worker(StorableMixin):
 
                                     for task in tasklist:
                                         task.worker = self
-                                        print 'queued a task [%s] from generator `%s`' % (
+                                        print('queued a task [%s] from generator `%s`' % (
                                             task.__class__.__name__,
-                                            task.generator.name if task.generator else '---')
+                                            task.generator.name if task.generator else '---'))
 
                                 self.n_tasks = len(scheduler.tasks)
 
@@ -750,7 +757,7 @@ class Worker(StorableMixin):
                         time.sleep(self.sleep)
                         if self.walltime and time.time() - self.__time__ > self.walltime:
                             # we have reached the set walltime and will shutdown
-                            print 'hit walltime of %s' % DT(self.walltime).length
+                            print('hit walltime of %s' % DT(self.walltime).length)
                             scheduler.shut_down()
 
                         if scheduler.current_task is not self._last_current:
@@ -763,8 +770,8 @@ class Worker(StorableMixin):
                             last_n_tasks = n_tasks
 
                 except (pymongo.errors.ConnectionFailure, pymongo.errors.AutoReconnect) as e:
-                    print 'pymongo connection error', e
-                    print 'try reconnection after %d seconds' % self.reconnect_time
+                    print('pymongo connection error', e)
+                    print('try reconnection after %d seconds' % self.reconnect_time)
                     # lost connection to DB, try to reconnect after some time
                     time.sleep(self.reconnect_time)
                     reconnect = True

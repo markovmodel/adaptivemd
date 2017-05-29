@@ -29,26 +29,30 @@ using `.add(item)` if the bundle is not a view
 Examples
 --------
 Some basic functions
-
 >>> bundle = Bundle(['10', '20', 1, 2, 3])
->>> str_view = bundle.c(basestring)  # only how strings
->>> print list(str_view)  # ['10', '20']
+>>> str_view = bundle.c(six.string_types)  # only how strings
+>>> print(sorted(str_view))
+['10', '20']
 >>> fnc_view = bundle.v(lambda x: int(x) < 3)
->>> print list(fnc_view) # [1, 2]
+>>> print(sorted(fnc_view))
+[1, 2]
 
 Some `File` specific functions
 
 >>> import adaptivemd as amd
 >>> bundle = Bundle([amd.File('0.dcd'), amd.File('a.pdb')])
 >>> file_view = bundle.f('*.dcd')
->>> print list(file_view)  # [File('0.dcd')]
+>>> print(list(file_view))
+['0.dcd']
 
 Logic operations produce view on the resulting bundle
 
 >>> and_bundle = str_view & fnc_view
->>> print list(and_bundle)  # []
+>>> print(list(and_bundle))
+[]
 >>> and_bundle = str_view | fnc_view
->>> print list(and_bundle)  # [1, 2, '10', '20']
+>>> print(list(and_bundle)) # doctest: +SKIP
+[1, 2, '10', '20']
 
 A `StorableBundle` is attached to a mongodb store (a stored object list).
 Adding will append the object to the store if not stored yet. All iteration
@@ -57,30 +61,34 @@ and views will always be kept synced with the DB store content.
 >>> p = amd.Project('test-project')
 >>> store = StoredBundle()  # new bundle
 >>> store.set_store(p.storage.trajectories)  # attach to DB
->>> print list(store)  # show all trajectories
+>>> print(list(store)) # show all trajectories
+[]
 >>> len_store = store.v(lambda x: len(x) > 10)  # all trajs with len > 10
->>> print list(len_store)
+>>> print(list(len_store))
+[]
 
 Set do not have ordering so some functions do not make sense. As long as
 you are working with storable objects (subclassed from `StorableMixin`)
 you have some time-ordering (accurate to seconds)
 
->>> print store.first  # get the earlist created object
->>> print store.one    # get one (any) single object
->>> print store.last   # get the last created object
+>>> print(store.first) # get the earlist created object
+>>> print(store.one) # get one (any) single object
+>>> print(store.last) # get the last created object
 
 A bundle is mostly meant to work with storable objects (but does not have to)
 To simplify access to certain attributes or apply function to all members you
 can use the `.all` attribute and get a _delegator_ that will apply and
 attribute or method to all objects
 
->>> print len_store.all.length  # print all lengths of all objects in len_store
->>> print store.all.path  # print all path of all trajectories
+>>> print(len_store.all.length) # print all lengths of all objects in len_store
+>>> print(store.all.path) # print all path of all trajectories
 >>> # call `.execute('shutdown') on all workers in the `.workers` bundle
->>> print p.workers.all.execute('shutdown')
+>>> print(p.workers.all.execute('shutdown'))
 
 """
+from __future__ import print_function, absolute_import
 
+import six
 import fnmatch
 import random
 
@@ -287,7 +295,7 @@ class Bundle(BaseBundle):
             the items to be added
 
         """
-        map(self.add, iterable)
+        list(map(self.add, iterable))
 
     def add(self, item):
         """

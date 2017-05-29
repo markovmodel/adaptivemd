@@ -19,9 +19,9 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with MDTraj. If not, see <http://www.gnu.org/licenses/>.
 ##############################################################################
+from __future__ import absolute_import
 
-
-from mongodb import StorableMixin
+from .mongodb import StorableMixin
 
 
 class Model(StorableMixin):
@@ -31,8 +31,11 @@ class Model(StorableMixin):
     Examples
     --------
     >>> m = Model({'msm' : [[0.9, 0.1], [0.1, 0.9]]})
-    >>> print m.msm
-    >>> print m['msm']
+    >>> print(m.msm)
+    [[0.9, 0.1], [0.1, 0.9]]
+    >>> print(m['msm'])
+    [[0.9, 0.1], [0.1, 0.9]]
+
 
     Attributes
     ----------

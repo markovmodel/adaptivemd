@@ -54,7 +54,7 @@ scripts:
 requires:
   - python
   - numpy
-  - pymongo==2.8
+  - pymongo>=2.8
   - ujson
 
 

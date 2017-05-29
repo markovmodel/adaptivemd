@@ -19,13 +19,15 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with MDTraj. If not, see <http://www.gnu.org/licenses/>.
 ##############################################################################
-
+from __future__ import print_function, absolute_import
 
 import os
 
-from file import File, JSONFile, FileTransaction
-from util import get_function_source
-from mongodb import StorableMixin, SyncVariable, ObjectSyncVariable
+import six
+
+from .file import File, JSONFile, FileTransaction
+from .util import get_function_source
+from .mongodb import StorableMixin, SyncVariable, ObjectSyncVariable
 
 
 class BaseTask(StorableMixin):
@@ -44,7 +46,7 @@ class BaseTask(StorableMixin):
     @staticmethod
     def _format_export_paths(paths):
         paths = sorted(list(set(paths)))
-        return map('export PATH={}:$PATH'.format, paths)
+        return list(map('export PATH={}:$PATH'.format, paths))
 
     @staticmethod
     def _format_environment(env):
@@ -297,18 +299,18 @@ class Task(BaseTask):
 
         """
         # todo: improve error handling
-        print 'task did not complete'
+        print('task did not complete')
 
         if hasattr(scheduler, 'units'):
             unit = scheduler.units.get(self)
 
             if unit is not None:
-                print "* %s  state %s (%s), out/err: %s / %s" \
-                      % (unit.uid,
-                         unit.state,
-                         unit.exit_code,
-                         unit.stdout,
-                         unit.stderr)
+                print("* %s  state %s (%s), out/err: %s / %s"
+                       % (unit.uid,
+                          unit.state,
+                          unit.exit_code,
+                          unit.stdout,
+                          unit.stderr))
 
     def _default_success(self, scheduler):
         """
@@ -360,7 +362,7 @@ class Task(BaseTask):
 
         s += ['']
         s += ['<pretask>']
-        s += map(str, task.script)
+        s += list(map(str, task.script))
         s += ['<posttask>']
 
         return '\n'.join(s)
@@ -483,9 +485,7 @@ class Task(BaseTask):
 
         transactions = [t for t in self.script if isinstance(t, FileTransaction)]
 
-        return filter(
-            lambda x: not x.is_temp,
-            set(sum(filter(bool, [f.added for f in transactions]), []) + self._add_files))
+        return [x for x in set(sum(filter(bool, [f.added for f in transactions]), []) + self._add_files) if not x.is_temp]
 
     @property
     def target_locations(self):
@@ -511,9 +511,7 @@ class Task(BaseTask):
         """
         transactions = [t for t in self.script if isinstance(t, FileTransaction)]
 
-        return filter(
-            lambda x: not x.is_temp,
-            set(sum(filter(bool, [t.required for t in transactions]), []) + self._add_files))
+        return [x for x in set(sum(filter(bool, [t.required for t in transactions]), []) + self._add_files) if not x.is_temp]
 
     @property
     def source_locations(self):
@@ -575,9 +573,9 @@ class Task(BaseTask):
 
         """
         if self.generator is not None:
-            return set(sum(filter(bool, [t.required for t in self.generator.stage_in]), []))
+            return set(sum(filter(bool, [t.required for t in self.generator.stage_in])), [])
         else:
-            return {}
+            return set()
 
     @property
     def unstaged_input_files(self):
@@ -824,7 +822,7 @@ class MPITask(PrePostTask):
     def command(self):
         cmd = self.executable or ''
 
-        if isinstance(self.arguments, basestring):
+        if isinstance(self.arguments, six.string_types):
             cmd += ' ' + self.arguments
         elif self.arguments is not None:
             cmd += ' '
@@ -869,11 +867,11 @@ class DummyTask(PrePostTask):
         s = ['Task: %s' % task.__class__.__name__]
 
         s += ['<pre>']
-        s += map(str, task.pre_exec + task.pre)
+        s += list(map(str, task.pre_exec + task.pre))
         s += ['</pre>']
         s += ['<main />']
         s += ['<post>']
-        s += map(str, task.post)
+        s += list(map(str, task.post))
         s += ['</post>']
 
         return '\n'.join(s)
@@ -1064,7 +1062,8 @@ class PythonTask(PrePostTask):
             named arguments to the function
 
         """
-        self._python_function_name = '.'.join([command.__module__, command.func_name])
+        self._python_function_name = '.'.join([command.__module__, command.__name__])
+
         self._python_kwargs = kwargs
 
         self._python_import, self._python_source_files = \

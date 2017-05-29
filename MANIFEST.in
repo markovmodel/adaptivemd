@@ -2,3 +2,7 @@
 graft adaptivemd
 include versioneer.py
 include adaptivemd/_version.py
+global-exclude *.pyc
+recursive-exclude * __pycache__
+
+include LICENSE

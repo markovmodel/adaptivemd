@@ -24,11 +24,13 @@
 # <http://www.openpathsampling.org> or
 # <http://github.com/openpathsampling/openpathsampling
 # for details and license
+from __future__ import absolute_import
 
 
 import uuid
 
-from dictify import ObjectJSON
+from adaptivemd.mongodb.base import long_t
+from .dictify import ObjectJSON
 
 
 class SyncVariable(object):
@@ -181,7 +183,7 @@ class ObjectSyncVariable(SyncVariable):
                     if data is None:
                         value = None
                     else:
-                        obj_idx = long(data['_hex_uuid'], 16)
+                        obj_idx = long_t(data['_hex_uuid'], 16)
                         value = getattr(instance.__store__.storage, self.store).load(obj_idx)
 
                     self.write(instance, value)

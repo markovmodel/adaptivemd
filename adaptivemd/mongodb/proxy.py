@@ -24,12 +24,11 @@
 # <http://www.openpathsampling.org> or
 # <http://github.com/openpathsampling/openpathsampling
 # for details and license
+from __future__ import absolute_import
 
 
 import functools
 import weakref
-
-from base import StorableMixin
 
 
 # =============================================================================
@@ -158,8 +157,9 @@ def lazy_loading_attributes(*attributes):
         code = 'def _init(self, %s):'
 
         source_code = '\n'.join(code)
+        from six import exec_
         cc = compile(source_code, '<string>', 'exec')
-        exec cc in locals()
+        exec_(cc in locals())
 
         @functools.wraps(cls.__init__)
         def _init(self, *args, **kwargs):

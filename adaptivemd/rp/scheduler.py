@@ -1,10 +1,15 @@
+from __future__ import absolute_import, print_function
+
 import time
 
-from adaptivemd.scheduler import Scheduler
-from adaptivemd.reducer import DictFilterParser, StrFilterParser, BashParser, StageParser, \
-    StageInParser, PrefixParser
+try:
+    from radical import pilot as rp
+except ImportError:
+    rp = NotImplemented
 
-from radical import pilot as rp
+from adaptivemd.scheduler import Scheduler
+from adaptivemd.reducer import (DictFilterParser, StrFilterParser, BashParser, StageParser,
+                                StageInParser, PrefixParser)
 
 
 class RPScheduler(Scheduler):
@@ -188,7 +193,7 @@ class RPScheduler(Scheduler):
         unit = self.units[task]
         del self.units[task]
         del self.tasks[unit.uid]
-        print 'Task removed. Remaining', len(self.tasks)
+        print('Task removed. Remaining', len(self.tasks))
 
     def submit(self, submission):
         """
@@ -207,12 +212,9 @@ class RPScheduler(Scheduler):
         tasks = self._to_tasks(submission)
 
         if tasks:
-            cuds = map(
-                lambda x: self.task_to_cud(x >> self.wrapper),
-                tasks
-            )
+            cuds = [self.task_to_cud(x >> self.wrapper) for x in tasks]
 
-            map(lambda x: x.fire('submit', self), tasks)
+            list(map(lambda x: x.fire('submit', self), tasks))
 
             units = self.unit_manager.submit_units(cuds)
             for unit, task in zip(units, tasks):
@@ -220,13 +222,13 @@ class RPScheduler(Scheduler):
                 self.units[task] = unit
 
         events = self._to_events(submission)
-        map(self._events.append, events)
+        list(map(self._events.append, events))
 
         return tasks
 
     def add_event(self, event):
         if isinstance(event, (tuple, list)):
-            map(self._events.append, event)
+            list(map(self._events.append, event))
         else:
             self._events.append(event)
 

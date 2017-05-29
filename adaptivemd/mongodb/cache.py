@@ -347,10 +347,16 @@ class WeakLRUCache(Cache):
         return item in self._cache or item in self._weak_cache
 
     def keys(self):
-        return self._cache.keys() + self._weak_cache.keys()
+        res = []
+        res.extend(self._cache.keys())
+        res.extend(self._weak_cache.keys())
+        return res
 
     def values(self):
-        return self._cache.values() + self._weak_cache.values()
+        res = []
+        res.extend(self._cache.values())
+        res.extend(self._weak_cache.values())
+        return res
 
     def __len__(self):
         return len(self._cache) + len(self._weak_cache)

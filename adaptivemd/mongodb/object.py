@@ -24,16 +24,18 @@
 # <http://www.openpathsampling.org> or
 # <http://github.com/openpathsampling/openpathsampling
 # for details and license
-
+from __future__ import absolute_import, print_function
 
 import logging
 from uuid import UUID
 from weakref import WeakValueDictionary
 
-from base import StorableMixin
-from cache import MaxCache, Cache, NoCache, \
+import six
+
+from .base import StorableMixin, long_t
+from .cache import MaxCache, Cache, NoCache, \
     WeakLRUCache
-from proxy import LoaderProxy
+from .proxy import LoaderProxy
 
 logger = logging.getLogger(__name__)
 
@@ -61,7 +63,7 @@ class ObjectStore(StorableMixin):
         'int', 'float', 'long', 'str', 'bool',
         'numpy.float32', 'numpy.float64',
         'numpy.int8', 'numpy.inf16', 'numpy.int32', 'numpy.int64',
-        'numpy.uint8', 'numpy.uinf16', 'numpy.uint32', 'numpy.uint64',
+        'numpy.uint8', 'numpy.uint16', 'numpy.uint32', 'numpy.uint64',
         'index', 'length', 'uuid'
     ]
 
@@ -290,9 +292,9 @@ class ObjectStore(StorableMixin):
             return None
 
         tt = type(item)
-        if tt is long:
+        if tt is long_t:
             idx = item
-        elif tt in [str, unicode]:
+        elif tt in six.text_type:
             if item[0] == '-':
                 return None
             idx = int(UUID(item))
@@ -320,7 +322,7 @@ class ObjectStore(StorableMixin):
                 if item < 0:
                     item += len(self)
                 return self.load(item)
-            elif type(item) is str or type(item) is long:
+            elif type(item) is str or type(item) is long_t:
                 return self.load(item)
             elif type(item) is list:
                 return [self.load(idx) for idx in item]
@@ -622,7 +624,7 @@ class ObjectStore(StorableMixin):
         if type(idx) is str:
             idx = int(UUID(self._document.find_one({'name': idx})['_id']))
 
-        if type(idx) is long:
+        if type(idx) is long_t:
             if idx not in self.index:
                 self.check_size()
                 if idx not in self.index:
