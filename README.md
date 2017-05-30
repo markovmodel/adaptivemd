@@ -1,5 +1,4 @@
 # adaptiveMD
-
 A Python framework to run adaptive MD simulations using Markov state model (MSM)
 analysis on HPC resources.
 
@@ -18,6 +17,10 @@ This framework aim to automate this process with the following goals:
 4. Compatibility: Build analysis tools and export to known formats
 
 
+After installation, you might want to start working with the examples
+in `examples/tutorials`.
+
+
 ## Prerequisites
 
 There are a few things we need to install to make this work.
@@ -25,25 +28,29 @@ There are a few things we need to install to make this work.
 ### MongoDB
 
 AdaptiveMD needs access to a MongoDB. If you want to store project data locally
-you need to install MongoDB. Both your user resource and compute resource must
+you need to install MongoDB. Both your user machine and compute resource must
 see the databse.
 
 [MongoDB Community Edition](https://www.mongodb.com/download-center#community)
 will provide your OS installer, just download and follow the installation
 instructions. This is straight forward and should work without any problems.
+Depending on the compute resource filesystem access restrictions, it might be
+necessary to install the database in different locations.
 **You only need to install MongoDB on your local machine from which you will
 connect to the cluster. No need to install the database on the cluster.**
+- only if the compute nodes can see the 'local' drive
+
 
 For linux systems:
 ```bash
 curl -O https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-debian81-3.4.2.tgz
 tar -zxvf mongodb-linux-x86_64-debian81-3.4.2.tgz
 
-mkdir -p ~/mongodb
+mkdir ~/mongodb
 cp -R -n mongodb-linux-x86_64-debian81-3.4.2/ ~/mongodb
 
 # add PATH to .bashrc
-echo "export PATH=~/mongodb/bin:$PATH" >> ~/.bash_rc
+echo "export PATH=~/mongodb/mongodb-linux-x86_64-debian81-3.4.2/bin/:$PATH" >> ~/.bashrc
 
 # create directory for storage
 mkdir -p ~/mongodb/data/db
@@ -66,7 +73,12 @@ If you have not yet installed conda please do so using
 # bash Miniconda2-latest-Linux-x86_64.sh
 ```
 
-or in analogy for python3
+or for a python3 version
+
+```bash
+# curl -O https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh
+# bash Miniconda3-latest-Linux-x86_64.sh
+```
 
 Add 2 useful channels
 
@@ -83,6 +95,9 @@ Install required and necessary packages now
 ```bash
 # for adaptivemd only
 conda install ujson pyyaml pymongo=2.8 numpy
+
+# for using python 3
+conda install pymongo=3.3
 
 # for openmm, pyemma etc
 conda install pyemma openmm mdtraj
@@ -114,23 +129,27 @@ python test_simple.py
 
 ```
 
-All of this must also be installed on the cluster, where you want to run your simulations.
+All of this must also be installed on the cluster, where you want to run your
+simulations.
 
-For allegro I suggest to use a miniconda installation. Note that you only need these packages if you want to use some of it on the cluster like run openmm or make computations using pyemma. Just for running, say `acemd`, conda is not required!
+For allegro I suggest to use a miniconda installation. Note that you only need
+these packages if you want to use some of it on the cluster like run openmm or
+make computations using pyemma. Just for running, say `acemd`, conda is not
+required!
 
 That's it. Have fun running adaptive simulations.
 
 #### Documentation
 
-To compile the doc pages, clone this github repository, go into the `docs` folder and do
+To compile the doc pages, clone this github repository, go into the `docs`
+folder and do
 
 ```bash 
 conda install sphinx sphinx_rtd_theme pandoc
 make html
 ```
 
-The HTML pages are in _build/html. Please note that the docs can only be compiled if all the above mentionend
-AdaptiveMD dependencies are available. If you are using conda environments, this means that your AdaptiveMD
+The HTML pages are in _build/html. Please note that the docs can only be
+compiled if all the above mentionend AdaptiveMD dependencies are available.
+If you are using conda environments, this means that your AdaptiveMD
 environment should be active.
-
-You might want to start with the examples in `examples/tutorials`
