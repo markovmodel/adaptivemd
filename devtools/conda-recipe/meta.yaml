@@ -41,7 +41,8 @@ test:
 
   commands:
     #- pip install radical.pilot
-    - py.test -v --pyargs adaptivemd --doctest-modules
+    - pip install pytest-timeout
+    - py.test -v --pyargs adaptivemd --doctest-modules --timeout=300
     #- py.test -v --nbval examples/
 
 about:

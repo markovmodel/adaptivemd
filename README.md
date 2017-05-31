@@ -34,8 +34,8 @@ see the databse.
 [MongoDB Community Edition](https://www.mongodb.com/download-center#community)
 will provide your OS installer, just download and follow the installation
 instructions. This is straight forward and should work without any problems.
-Depending on the compute resource filesystem access restrictions, it might be
-necessary to install the database in different locations.
+Depending on the compute resource restrictions, it might be necessary to install
+the database in different locations.
 **You only need to install MongoDB on your local machine from which you will
 connect to the cluster. No need to install the database on the cluster.**
 - only if the compute nodes can see the 'local' drive
@@ -50,7 +50,7 @@ mkdir ~/mongodb
 cp -R -n mongodb-linux-x86_64-debian81-3.4.2/ ~/mongodb
 
 # add PATH to .bashrc
-echo "export PATH=~/mongodb/mongodb-linux-x86_64-debian81-3.4.2/bin/:$PATH" >> ~/.bashrc
+echo "export PATH=~/mongodb/mongodb-linux-x86_64-debian81-3.4.2/bin/:\$PATH" >> ~/.bashrc
 
 # create directory for storage
 mkdir -p ~/mongodb/data/db
