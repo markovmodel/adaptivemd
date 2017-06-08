@@ -2,6 +2,8 @@
 **/jro*
 adaptivemd/.project
 adaptivemd/.pydevproject
+## ignore tutorials altogether for now
+examples/tutorials/*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
