@@ -141,7 +141,7 @@ class Location(StorableMixin):
             the file basename
 
         """
-        return os.path.basename(self.path)
+        return os.path.basename(self.path.rstrip('/'))
 
     @property
     def is_folder(self):
