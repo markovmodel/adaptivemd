@@ -3,7 +3,7 @@
 adaptivemd/.project
 adaptivemd/.pydevproject
 ## ignore tutorials altogether for now
-examples/
+examples/*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
