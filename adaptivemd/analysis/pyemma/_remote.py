@@ -102,7 +102,7 @@ def remote_analysis(
     if features:
         def apply_feat_part(featurizer, parts):
             if isinstance(parts, dict):
-                func, attributes = parts.items()[0]
+                func, attributes = list(parts.items())[0]
                 f = getattr(featurizer, func)
                 if attributes is None:
                     return f()

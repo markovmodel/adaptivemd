@@ -432,7 +432,7 @@ class Frame(StorableMixin):
                     # full atoms
                     if absolute_idx % stride == 0:
                         # picked a frame that exists in this stride
-                        return key, absolute_idx / stride
+                        return key, absolute_idx // stride
 
         return None, None
 

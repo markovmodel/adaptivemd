@@ -573,7 +573,7 @@ class Task(BaseTask):
 
         """
         if self.generator is not None:
-            return set(sum(filter(bool, [t.required for t in self.generator.stage_in])), [])
+            return set(filter(bool, [t.target.url for t in self.generator.stage_in]))
         else:
             return set()
 
