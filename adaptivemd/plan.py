@@ -54,11 +54,14 @@ class ExecutionPlan(object):
         if self:
             self._update_conditions()
             while self._running and len(self._finish_conditions) == 0:
-                self(scheduler)
+                self(None)#scheduler)
                 self._update_conditions()
 
     def __bool__(self):
         return self._running
+
+    def __nonzero__(self):
+        return self.__bool__()
 
     def __str__(self):
         return '%s(%s)' % (

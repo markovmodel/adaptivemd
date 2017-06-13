@@ -389,6 +389,14 @@ class Project(object):
                     t = task.run()
                     if t is not None:
                         self.tasks.add(t)
+            # this is to be python 2 safe
+            # cant check if instance type "map"
+            # so ignore TypeError
+            try:
+                if isinstance(task, map):
+                    [self.queue(t) for t in task]
+            except TypeError:
+                pass
 
             # else:
             #     # if the engines can handle some object we parse these into tasks
