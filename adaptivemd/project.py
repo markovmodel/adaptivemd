@@ -389,7 +389,8 @@ class Project(object):
                     t = task.run()
                     if t is not None:
                         self.tasks.add(t)
-            # this is to be python 2 safe
+
+            # try-except to be python 2 safe
             # cant check if instance type "map"
             # so ignore TypeError
             try:

@@ -37,7 +37,7 @@ class ExecutionPlan(object):
     def _update_conditions(self):
         self._finish_conditions = [x for x in self._finish_conditions if not x()]
 
-    def __call__(self, scheduler):
+    def __call__(self, scheduler=None):
         if self._running:
             try:
                 conditions = next(self._generator)
