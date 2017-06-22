@@ -68,7 +68,9 @@ class AllegroCluster(Resource):
 
 class LocalResource(Resource):
     """
-    Run tasks locally and store results in ``$HOME/adaptivemd/``
+    Run tasks locally and store data in ``$HOME/adaptivemd/``
+    or a directory given by "shared_path"
 
     """
-    pass
+    def __init__(self, shared_path=None):
+        super(LocalResource, self).__init__(shared_path=shared_path)
