@@ -66,6 +66,16 @@ class AllegroCluster(Resource):
         w.pre.append('module load cuda/7.5')
 
 
+class LocalCluster(Resource):
+    """
+    general cluster
+    """
+    def __init__(self, shared_path=None):
+        if shared_path is None:
+            shared_path = '$HOME/NO_BACKUP/adaptivemd/'
+
+        super(LocalCluster, self).__init__(shared_path=shared_path)
+
 class LocalResource(Resource):
     """
     Run tasks locally and store results in ``$HOME/adaptivemd/``

@@ -31,7 +31,7 @@ from .file import (File, Directory, Location, JSONFile, MakeDir, Copy,
 from .bundle import (Bundle, SortedBundle, ViewBundle, AndBundle,
                      BaseBundle, BundleDelegator, FunctionDelegator, LogicBundle,
                      OrBundle, StoredBundle)
-from .resource import AllegroCluster, LocalResource
+from .resource import AllegroCluster, LocalCluster, LocalResource
 from .task import Task, PythonTask, DummyTask
 from .project import Project
 from .scheduler import Scheduler
