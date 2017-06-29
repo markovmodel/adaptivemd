@@ -118,6 +118,10 @@ class Project(object):
 
     """
 
+    @classmethod
+    def set_dbhost(cls, host):
+        MongoDBStorage.set_host(host)
+
     def __init__(self, name):
         self.name = name
 

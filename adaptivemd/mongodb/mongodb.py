@@ -43,6 +43,11 @@ class MongoDBStorage(object):
     """
     _db_url = 'mongodb://localhost:27017/'
 
+    @classmethod
+    def set_host(cls, host):
+        #cls._db_url = cls._db_url.replace('localhost', host)
+        cls._db_url = 'mongodb://' + host + ':27017/'
+
     @property
     def version(self):
         from . import version
