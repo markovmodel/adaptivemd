@@ -5,6 +5,8 @@ adaptivemd/.pydevproject
 ## ignore tutorials altogether for now
 examples/*
 **/tutorials
+# Swap files and such
+**/*swp
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
