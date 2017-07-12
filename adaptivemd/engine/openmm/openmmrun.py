@@ -33,7 +33,11 @@ import simtk.unit as u
 from simtk.openmm import Platform, XmlSerializer
 from simtk.openmm.app import PDBFile, Simulation, DCDReporter, StateDataReporter
 
+import time
+
 if __name__ == '__main__':
+
+    print('TIMER OpenMMRun GO... ', time.time())
 
     # add further auto options here
     platform_properties = {
@@ -142,8 +146,6 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    print('GO...')
-
     properties = None
 
     if args.platform in platform_properties:
@@ -165,7 +167,7 @@ if __name__ == '__main__':
     else:
         platform = Platform.getPlatformByName(args.platform)
 
-    print('Reading PDB')
+    print('TIMER OpenMMRun Reading PDB ', time.time())
 
     pdb = PDBFile(args.topology_pdb)
 
@@ -277,11 +279,11 @@ if __name__ == '__main__':
 
     restart_file = os.path.join(output, 'restart.npz')
 
-    print('START SIMULATION')
+    print('TIMER OpenMMRun START SIMULATION ', time.time())
 
     simulation.step(args.length)
 
-    print('DONE')
+    print('TIMER OpenMMRun END SIMULATION ', time.time())
 
     state = simulation.context.getState(getPositions=True, getVelocities=True)
     pbv = state.getPeriodicBoxVectors(asNumpy=True)
@@ -291,5 +293,7 @@ if __name__ == '__main__':
     np.savez(restart_file, positions=pos, box_vectors=pbv, velocities=vel, index=args.length)
 
     print('Written to directory `%s`' % args.output)
+
+    print('TIMER OpenMMRun DONE ', time.time())
 
     exit(0)
