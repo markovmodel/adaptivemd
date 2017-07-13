@@ -96,7 +96,7 @@ class WorkerScheduler(Scheduler):
 
         self._std = {}
 
-        print("TIMER Scheduler initializing ", time.time())
+        print("TIMER Scheduler initializing {0:.5f}".format(time.time()))
 
     @property
     def path(self):
@@ -183,7 +183,7 @@ class WorkerScheduler(Scheduler):
 
         """
 
-        print("TIMER Scheduler Stage Task ", time.time())
+        print("TIMER Scheduler Stage Task {0:.5f}".format(time.time()))
 
         self._current_unit_dir = 'worker.%s' % hex(task.__uuid__)
 
@@ -224,7 +224,7 @@ class WorkerScheduler(Scheduler):
         else:
             preexec_fn = None
 
-        print("TIMER Scheduler Run Task ", time.time())
+        print("TIMER Scheduler Run Task {0:.5f}".format(time.time()))
 
         self._current_sub = subprocess.Popen(
             ['/bin/bash', script_location + '/running.sh'],
@@ -338,7 +338,7 @@ class WorkerScheduler(Scheduler):
         """
         if self.current_task is None:
             if len(self.tasks) > 0:
-                print("TIMER Scheduler Set Task ", time.time()
+                print("TIMER Scheduler Set Task {0:.5f}".format(time.time()))
                 t = next(iter(self.tasks.values()))
                 self.current_task = t
                 self._start_job(t)
@@ -410,7 +410,7 @@ class WorkerScheduler(Scheduler):
                 self._done_tasks.add(task.__uuid__)
                 self._initialize_current()
 
-                print("TIMER Scheduler End Task ", time.timer())
+                print("TIMER Scheduler End Task {0:.5f}".format(time.time()))
 
     def release_queued_tasks(self):
         """
@@ -531,7 +531,7 @@ class WorkerScheduler(Scheduler):
 
         self.change_state('down')
 
-        print("TIMER Scheduler Stopped ", time.time())
+        print("TIMER Scheduler Stopped {0:.5f}".format(time.time()))
 
 
 class Worker(StorableMixin):
@@ -552,7 +552,7 @@ class Worker(StorableMixin):
     def __init__(self, walltime=None, generators=None, sleep=None,
                  heartbeat=None, prefetch=1, verbose=False):
 
-        print("TIMER Working initializing ", time.time())
+        print("TIMER Worker initializing {0:.5f}".format(time.time()))
 
         super(Worker, self).__init__()
         self.hostname = socket.gethostname()
@@ -588,6 +588,9 @@ class Worker(StorableMixin):
         return obj
 
     def create(self, project):
+
+        print("TIMER Worker create scheduler {0:.5f}".format(time.time()))
+
         scheduler = WorkerScheduler(project.resource, self.verbose)
         scheduler._state_cb = self._state_cb
         self._scheduler = scheduler
@@ -666,7 +669,7 @@ class Worker(StorableMixin):
         Start the worker to execute tasks until it is shut down
 
         """
-        print("TIMER Worker running ", time.time())
+        print("TIMER Worker running {0:.5f}".format(time.time()))
         scheduler = self._scheduler
         project = self._project
 
@@ -719,7 +722,7 @@ class Worker(StorableMixin):
                         # check the state of the worker
                         if state in self._running_states:
 
-                            print("TIMER Worker Advance ", time.time())
+                            print("TIMER Worker Advance {0:.5f}".format(time.time()))
 
                             scheduler.advance()
                             if scheduler.is_idle:
@@ -730,7 +733,7 @@ class Worker(StorableMixin):
 
                                     for task in tasklist:
 
-                                        print("TIMER Worker Task Handle ", time.timer())
+                                        print("TIMER Worker Task Handle {0:.5f}".format(time.time()))
 
                                         task.worker = self
                                         print('queued a task [%s] from generator `%s`' % (
@@ -744,7 +747,7 @@ class Worker(StorableMixin):
                         command = self.command
 
                         if command == 'shutdown':
-                            print("TIMER Worker Stopped ", time.time())
+                            print("TIMER Worker Stopped {0:.5f}".format(time.time()))
                             # someone wants us to shutdown
                             scheduler.shut_down()
 
@@ -774,7 +777,7 @@ class Worker(StorableMixin):
 
                         if time.time() - last > self.heartbeat:
 
-                            print("TIMER Worker Heartbeat ", time.time())
+                            print("TIMER Worker Heartbeat {0:.5f}".format(time.time()))
 
                             # heartbeat
                             last = time.time()

@@ -37,7 +37,7 @@ import time
 
 if __name__ == '__main__':
 
-    print('TIMER OpenMMRun GO... ', time.time())
+    print('TIMER OpenMMRun GO... {0:.5f}'.format(time.time()))
 
     # add further auto options here
     platform_properties = {
@@ -167,7 +167,7 @@ if __name__ == '__main__':
     else:
         platform = Platform.getPlatformByName(args.platform)
 
-    print('TIMER OpenMMRun Reading PDB ', time.time())
+    print('TIMER OpenMMRun Reading PDB {0:.5f}'.format(time.time()))
 
     pdb = PDBFile(args.topology_pdb)
 
@@ -279,11 +279,11 @@ if __name__ == '__main__':
 
     restart_file = os.path.join(output, 'restart.npz')
 
-    print('TIMER OpenMMRun START SIMULATION ', time.time())
+    print('TIMER OpenMMRun START SIMULATION {0:.5f}'.format(time.time()))
 
     simulation.step(args.length)
 
-    print('TIMER OpenMMRun END SIMULATION ', time.time())
+    print('TIMER OpenMMRun END SIMULATION {0:.5f}'.format(time.time()))
 
     state = simulation.context.getState(getPositions=True, getVelocities=True)
     pbv = state.getPeriodicBoxVectors(asNumpy=True)
@@ -294,6 +294,6 @@ if __name__ == '__main__':
 
     print('Written to directory `%s`' % args.output)
 
-    print('TIMER OpenMMRun DONE ', time.time())
+    print('TIMER OpenMMRun DONE {0:.5f}'.format(time.time()))
 
     exit(0)
