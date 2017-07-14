@@ -36,6 +36,64 @@ from simtk.openmm.app import PDBFile, Simulation, DCDReporter, StateDataReporter
 import time
 import random
 
+
+
+def get_xml(xml_file):
+    # TODO file access control
+    attempt = 0
+    retries = 500
+    while True:
+        try:
+            with open(xml_file) as f:
+                xml = f.read()
+                cereal = XmlSerializer.deserialize(xml)
+            return xml, cereal
+
+        except ValueError as e:
+            if attempt < retries:
+                attempt += 1
+                time.sleep(random.random())
+            else:
+                raise e
+
+
+def get_platform(platform_name):
+    if platform_name == 'fastest':
+        platform = None
+    else:
+        # TODO file access control
+        attempt = 0
+        retries = 500
+        while True:
+            try:
+                platform = Platform.getPlatformByName(platform_name)
+                return platform
+
+            except IndexErrorError as e:
+                if attempt < retries:
+                    attempt += 1
+                    time.sleep(random.random())
+                else:
+                    raise e
+
+
+def get_pdbfile(topology_pdb):
+    # TODO file access control
+    attempt = 0
+    retries = 500
+    while True:
+        try:
+            pdb = PDBFile(topology_pdb)
+            return pdb
+
+        except ValueError as e:
+            if attempt < retries:
+                attempt += 1
+                time.sleep(random.random())
+            else:
+                raise e
+
+
 if __name__ == '__main__':
 
     print('TIMER OpenMMRun GO... {0:.5f}'.format(time.time()))
@@ -163,61 +221,133 @@ if __name__ == '__main__':
                     args.platform + '_' + v.replace('_', '')
                 ] = value
 
-    if args.platform == 'fastest':
-        platform = None
-    else:
-        
-        # TODO file access control
-        attempt = 0
-        retries = 500
-        done = False
-        while not done and attempt < retries:
-            try:
-                platform = Platform.getPlatformByName(args.platform)
-                done = True
-
-            except IndexErrorError:
-                attempt += 1
-                time.sleep(random.random())
+    # Randomize order of file reading to alleviate traffic
+    # from synchronization
+    rand = random.random()
 
     print('TIMER OpenMMRun Reading PDB {0:.5f}'.format(time.time()))
-
-    # TODO file access control
-    attempt = 0
-    retries = 500
-    done = False
-    while not done and attempt < retries:
-        try:
-            pdb = PDBFile(args.topology_pdb)
-            done = True
-
-        except ValueError:
-            attempt += 1
-            time.sleep(random.random())
-
     print('Done')
-
-    # TODO file access control
-    attempt = 0
-    retries = 500
-    done = False
-    while not done and attempt < retries:
-        try:
-            with open(args.system_xml) as f:
-                system_xml = f.read()
-                system = XmlSerializer.deserialize(system_xml)
-        
-            with open(args.integrator_xml) as f:
-                integrator_xml = f.read()
-                integrator = XmlSerializer.deserialize(integrator_xml)
-
-            done = True
-
-        except ValueError:
-            attempt += 1
-            time.sleep(random.random())
-
     print('Initialize Simulation')
+    if rand < 0.041666666:
+        platform = get_platform(args.platform)
+        pdb = get_pdbfile(args.topology_pdb)
+        system_xml, system = get_xml(args.system_xml)
+        integrator_xml, integrator = get_xml(args.integrator_xml)
+    elif rand < 2*0.041666666:
+        platform = get_platform(args.platform)
+        system_xml, system = get_xml(args.system_xml)
+        pdb = get_pdbfile(args.topology_pdb)
+        integrator_xml, integrator = get_xml(args.integrator_xml)
+    elif rand < 3*0.041666666:
+        platform = get_platform(args.platform)
+        system_xml, system = get_xml(args.system_xml)
+        integrator_xml, integrator = get_xml(args.integrator_xml)
+        pdb = get_pdbfile(args.topology_pdb)
+    elif rand < 4*0.041666666:
+        platform = get_platform(args.platform)
+        integrator_xml, integrator = get_xml(args.integrator_xml)
+        pdb = get_pdbfile(args.topology_pdb)
+        system_xml, system = get_xml(args.system_xml)
+    elif rand < 5*0.041666666:
+        platform = get_platform(args.platform)
+        pdb = get_pdbfile(args.topology_pdb)
+        integrator_xml, integrator = get_xml(args.integrator_xml)
+        system_xml, system = get_xml(args.system_xml)
+    elif rand < 6*0.041666666:
+        platform = get_platform(args.platform)
+        integrator_xml, integrator = get_xml(args.integrator_xml)
+        system_xml, system = get_xml(args.system_xml)
+        pdb = get_pdbfile(args.topology_pdb)
+    elif rand < 7*0.041666666:
+        pdb = get_pdbfile(args.topology_pdb)
+        platform = get_platform(args.platform)
+        system_xml, system = get_xml(args.system_xml)
+        integrator_xml, integrator = get_xml(args.integrator_xml)
+    elif rand < 8*0.041666666:
+        pdb = get_pdbfile(args.topology_pdb)
+        platform = get_platform(args.platform)
+        integrator_xml, integrator = get_xml(args.integrator_xml)
+        system_xml, system = get_xml(args.system_xml)
+    elif rand < 9*0.041666666:
+        pdb = get_pdbfile(args.topology_pdb)
+        system_xml, system = get_xml(args.system_xml)
+        platform = get_platform(args.platform)
+        integrator_xml, integrator = get_xml(args.integrator_xml)
+    elif rand < 10*0.041666666:
+        pdb = get_pdbfile(args.topology_pdb)
+        system_xml, system = get_xml(args.system_xml)
+        integrator_xml, integrator = get_xml(args.integrator_xml)
+        platform = get_platform(args.platform)
+    elif rand < 11*0.041666666:
+        pdb = get_pdbfile(args.topology_pdb)
+        integrator_xml, integrator = get_xml(args.integrator_xml)
+        platform = get_platform(args.platform)
+        system_xml, system = get_xml(args.system_xml)
+    elif rand < 12*0.041666666:
+        pdb = get_pdbfile(args.topology_pdb)
+        integrator_xml, integrator = get_xml(args.integrator_xml)
+        system_xml, system = get_xml(args.system_xml)
+        platform = get_platform(args.platform)
+    elif rand < 13*0.041666666:
+        integrator_xml, integrator = get_xml(args.integrator_xml)
+        pdb = get_pdbfile(args.topology_pdb)
+        platform = get_platform(args.platform)
+        system_xml, system = get_xml(args.system_xml)
+    elif rand < 14*0.041666666:
+        integrator_xml, integrator = get_xml(args.integrator_xml)
+        system_xml, system = get_xml(args.system_xml)
+        pdb = get_pdbfile(args.topology_pdb)
+        platform = get_platform(args.platform)
+    elif rand < 15*0.041666666:
+        integrator_xml, integrator = get_xml(args.integrator_xml)
+        pdb = get_pdbfile(args.topology_pdb)
+        system_xml, system = get_xml(args.system_xml)
+        platform = get_platform(args.platform)
+    elif rand < 16*0.041666666:
+        integrator_xml, integrator = get_xml(args.integrator_xml)
+        platform = get_platform(args.platform)
+        pdb = get_pdbfile(args.topology_pdb)
+        system_xml, system = get_xml(args.system_xml)
+    elif rand < 17*0.041666666:
+        integrator_xml, integrator = get_xml(args.integrator_xml)
+        system_xml, system = get_xml(args.system_xml)
+        platform = get_platform(args.platform)
+        pdb = get_pdbfile(args.topology_pdb)
+    elif rand < 18*0.041666666:
+        integrator_xml, integrator = get_xml(args.integrator_xml)
+        platform = get_platform(args.platform)
+        system_xml, system = get_xml(args.system_xml)
+        pdb = get_pdbfile(args.topology_pdb)
+    elif rand < 19*0.041666666:
+        system_xml, system = get_xml(args.system_xml)
+        integrator_xml, integrator = get_xml(args.integrator_xml)
+        pdb = get_pdbfile(args.topology_pdb)
+        platform = get_platform(args.platform)
+    elif rand < 20*0.041666666:
+        system_xml, system = get_xml(args.system_xml)
+        pdb = get_pdbfile(args.topology_pdb)
+        integrator_xml, integrator = get_xml(args.integrator_xml)
+        platform = get_platform(args.platform)
+    elif rand < 21*0.041666666:
+        system_xml, system = get_xml(args.system_xml)
+        platform = get_platform(args.platform)
+        integrator_xml, integrator = get_xml(args.integrator_xml)
+        pdb = get_pdbfile(args.topology_pdb)
+    elif rand < 22*0.041666666:
+        system_xml, system = get_xml(args.system_xml)
+        integrator_xml, integrator = get_xml(args.integrator_xml)
+        platform = get_platform(args.platform)
+        pdb = get_pdbfile(args.topology_pdb)
+    elif rand < 23*0.041666666:
+        system_xml, system = get_xml(args.system_xml)
+        platform = get_platform(args.platform)
+        pdb = get_pdbfile(args.topology_pdb)
+        integrator_xml, integrator = get_xml(args.integrator_xml)
+    else:
+        system_xml, system = get_xml(args.system_xml)
+        pdb = get_pdbfile(args.topology_pdb)
+        platform = get_platform(args.platform)
+        integrator_xml, integrator = get_xml(args.integrator_xml)
 
     try:
         simulation = Simulation(
