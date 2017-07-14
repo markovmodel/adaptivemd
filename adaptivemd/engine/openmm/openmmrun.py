@@ -34,6 +34,7 @@ from simtk.openmm import Platform, XmlSerializer
 from simtk.openmm.app import PDBFile, Simulation, DCDReporter, StateDataReporter
 
 import time
+import random
 
 if __name__ == '__main__':
 
@@ -165,21 +166,56 @@ if __name__ == '__main__':
     if args.platform == 'fastest':
         platform = None
     else:
-        platform = Platform.getPlatformByName(args.platform)
+        
+        # TODO file access control
+        attempt = 0
+        retries = 500
+        done = False
+        while not done and attempt < retries:
+            try:
+                platform = Platform.getPlatformByName(args.platform)
+                done = True
+
+            except IndexErrorError:
+                attempt += 1
+                time.sleep(random.random())
 
     print('TIMER OpenMMRun Reading PDB {0:.5f}'.format(time.time()))
 
-    pdb = PDBFile(args.topology_pdb)
+    # TODO file access control
+    attempt = 0
+    retries = 500
+    done = False
+    while not done and attempt < retries:
+        try:
+            pdb = PDBFile(args.topology_pdb)
+            done = True
+
+        except ValueError:
+            attempt += 1
+            time.sleep(random.random())
 
     print('Done')
 
-    with open(args.system_xml) as f:
-        system_xml = f.read()
-        system = XmlSerializer.deserialize(system_xml)
+    # TODO file access control
+    attempt = 0
+    retries = 500
+    done = False
+    while not done and attempt < retries:
+        try:
+            with open(args.system_xml) as f:
+                system_xml = f.read()
+                system = XmlSerializer.deserialize(system_xml)
+        
+            with open(args.integrator_xml) as f:
+                integrator_xml = f.read()
+                integrator = XmlSerializer.deserialize(integrator_xml)
 
-    with open(args.integrator_xml) as f:
-        integrator_xml = f.read()
-        integrator = XmlSerializer.deserialize(integrator_xml)
+            done = True
+
+        except ValueError:
+            attempt += 1
+            time.sleep(random.random())
 
     print('Initialize Simulation')
 
