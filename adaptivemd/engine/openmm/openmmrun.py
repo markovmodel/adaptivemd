@@ -86,7 +86,7 @@ def get_pdbfile(topology_pdb):
             pdb = PDBFile(topology_pdb)
             return pdb
 
-        except ValueError as e:
+        except IndexError as e:
             if attempt < retries:
                 attempt += 1
                 time.sleep(random.random())
