@@ -37,6 +37,8 @@ from .cache import MaxCache, Cache, NoCache, \
     WeakLRUCache
 from .proxy import LoaderProxy
 
+import time
+
 logger = logging.getLogger(__name__)
 
 
