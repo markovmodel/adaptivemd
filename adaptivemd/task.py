@@ -352,12 +352,15 @@ class Task(BaseTask):
             s += ['        cd worker.%s' % hex(task.__uuid__)]
 
         s += ['']
-        s += ['Sources']
+        s += ['Sources\n-- Unstaged']
         s += ['- %s %s' % (x.short, '[exists]' if x.exists else '')
               for x in task.unstaged_input_files]
-        s += ['Targets']
+        s += ['-- Staged']
+        s += ['- %s %s' % (x.short, '[exists]' if x.exists else '')
+              for x in task.sources if x not in task.unstaged_input_files]
+        s += ['\nTargets']
         s += ['- %s' % x.short for x in task.targets]
-        s += ['Modified']
+        s += ['\nModified']
         s += ['- %s' % x.short for x in task.modified_files]
 
         s += ['']

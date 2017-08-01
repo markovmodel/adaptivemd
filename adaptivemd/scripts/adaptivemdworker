@@ -51,11 +51,6 @@ if __name__ == '__main__':
         type=int, default=0, nargs='?',
         help='minutes until the worker shuts down. If 0 (default) it will run indefinitely')
 
-    #del#parser.add_argument(
-    #del#    '-d', '--mongodb', dest='mongo_db_path',
-    #del#    type=str, default='mongodb://ensembletk.imp.fu-berlin.de:27017/adaptivemd', nargs='?',
-    #del#    help='the mongodb url to the db server')
-
     parser.add_argument(
         '-g', '--generators', dest='generators',
         type=str, default=None, nargs='?',
@@ -71,30 +66,12 @@ if __name__ == '__main__':
              'This can be used to add e.g. CUDA support for specific workers. '
              'Example: --wrappers=add_path("something"),add_cuda_module()')
 
-    #del#parser.add_argument(
-    #del#    '-l', '--local',
-    #del#    dest='local', action='store_true',
-    #del#    default=False,
-    #del#    help='if true then the DB is set to the default local port')
-
     parser.add_argument(
         '-v', '--verbose',
         dest='verbose', action='store_true',
         default=False,
         help='if true then stdout and stderr of subprocesses will be rerouted. '
              'Use for debugging.')
-
-    #del#parser.add_argument(
-    #del#    '-a', '--allegro',
-    #del#    dest='allegro', action='store_true',
-    #del#    default=False,
-    #del#    help='if true then the DB is set to the default allegro setting')
-
-    #del#parser.add_argument(
-    #del#    '--sheep',
-    #del#    dest='sheep', action='store_true',
-    #del#    default=False,
-    #del#    help='if true then the DB is set to the default sheep setting')
 
     parser.add_argument(
         '-s', '--sleep', dest='sleep',
@@ -110,7 +87,7 @@ if __name__ == '__main__':
 
     parser.add_argument(
         '-d', '--dbhost', dest='dbhost',
-        type=str, default='localhost', nargs='?',
+        type=str, default='localhost', nargs='?',#TODO nargs='+',
         help='specify the IP or host name and address for remotely hosted MongoDB')
 
     parser.add_argument(
@@ -120,24 +97,15 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    # TODO: replace --local option and all this condition checking
-    #       with the new --host option, defaults to local when
-    #       not specified and otherwise gives a string for ip address
-    #       or hostname
-    #del#if args.allegro:
-    #del#    db_path = "mongodb://ensembletk.imp.fu-berlin.de:27017/"
-    #del#elif args.sheep:
-    #del#    db_path = "mongodb://sheep:27017/"
-    #del#elif args.local:
-    #del#    db_path = "mongodb://localhost:27017/"
-    #del#else:
-    #del#    db_path = args.mongo_db_path
-    #del#MongoDBStorage._db_url = db_path
+    # TODO:
+    # port specification option along with host address
+    # -- incorporate with nargs='+'
+    #    -- then have {hostname, port} as possible
+    #       arguments. try: int(arg)-->port
+    #                  else/except: arg-->hostname
 
     if args.dbhost != 'localhost':
         MongoDBStorage.set_host(args.dbhost)
-
-    db_path = MongoDBStorage._db_url
 
     project = Project(args.project)
 
@@ -188,8 +156,6 @@ if __name__ == '__main__':
 
         print('Using general wrapper:')
         print(wrapper.description)
-
-    print('Worker running @ %s' % db_path)
 
     if args.generators:
         print('[limited to generators `%s`]' % ', '.join(worker.generators))

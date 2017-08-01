@@ -397,11 +397,12 @@ class Project(object):
             # try-except to be python 2 safe
             # cant check if instance type "map"
             # so ignore TypeError
-            try:
-                if isinstance(task, map):
-                    [self.queue(t) for t in task]
-            except TypeError:
-                pass
+            else:
+                try:
+                    if isinstance(task, map):
+                        [self.queue(t) for t in task]
+                except TypeError:
+                    pass
 
             # else:
             #     # if the engines can handle some object we parse these into tasks
@@ -504,7 +505,7 @@ class Project(object):
         else:
             return NModels(self, numbers)
 
-    # todo: move to brain
+    # TODO: move to brain
     def find_ml_next_frame(self, n_pick=10):
         """
         Find initial frames picked by inverse equilibrium distribution
@@ -564,7 +565,8 @@ class Project(object):
             filelist = data['input']['trajectories']
 
             picks = [
-                frame_state_list[state][np.random.randint(0, len(frame_state_list[state]))]
+                frame_state_list[state][np.random.randint(0,
+                len(frame_state_list[state]))]
                 for state in state_picks
                 ]
 
@@ -577,7 +579,7 @@ class Project(object):
         else:
             return []
 
-    def new_ml_trajectory(self, engine, length, number):
+    def new_ml_trajectory(self, engine, length, number=None):
         """
         Find trajectories that have initial points picked by inverse eq dist
 
@@ -601,8 +603,17 @@ class Project(object):
         :meth:`find_ml_next_frame`
 
         """
-        return [self.new_trajectory(frame, length, engine) for frame in
-                self.find_ml_next_frame(number)]
+        # not checking case for len(length<list>) == number<int>
+        # instead ignoring number/ assuming is number<None>
+        if isinstance(length, int):
+            assert(isinstance(number, int))
+            length = [length]*number
+
+        if isinstance(length, list):
+            trajectories = [self.new_trajectory(frame, length[i], engine)
+                for i,frame in enumerate(self.find_ml_next_frame(number))]
+
+            return trajectories
 
     def events_done(self):
         """
@@ -663,7 +674,7 @@ class Project(object):
                 found_new_events = False
                 for event in list(self._events):
                     if event:
-                        new_events = event.trigger(self)
+                        new_events = event.trigger()
 
                         if new_events:
                             found_new_events = True

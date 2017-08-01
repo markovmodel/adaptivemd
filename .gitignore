@@ -1,11 +1,8 @@
-# JRO Ignores
-**/jro*
+# Eclipse IDE files
 adaptivemd/.project
 adaptivemd/.pydevproject
-## ignore tutorials altogether for now
-examples/*
-**/tutorials
-# Swap files and such
+
+# Swap files
 **/*swp
 
 # Byte-compiled / optimized / DLL files
