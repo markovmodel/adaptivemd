@@ -14,7 +14,7 @@ def start_local_worker(proj_name):
     path = os.path.dirname(sys.executable) + ':' + os.environ['PATH']
     env = dict(os.environ)
     env['PATH'] = path
-    p = subprocess.Popen(['adaptivemdworker', '-l', proj_name], env=env)
+    p = subprocess.Popen(['adaptivemdworker', proj_name], env=env)
     print("started worker as subprocess from steering program")
     return p
 
