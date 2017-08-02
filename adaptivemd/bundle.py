@@ -60,7 +60,8 @@ and views will always be kept synced with the DB store content.
 
 >>> p = amd.Project('test-project')
 >>> store = StoredBundle()  # new bundle
->>> store.set_store(p.trajectories)  # attach to DB
+>>> store.set_store(p.trajectories).__len__()  # attach to DB
+0
 >>> print(list(store)) # show all trajectories
 []
 >>> len_store = store.v(lambda x: len(x) > 10)  # all trajs with len > 10
