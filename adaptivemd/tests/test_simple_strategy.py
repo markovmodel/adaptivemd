@@ -66,13 +66,14 @@ class TestSimpleStrategy(unittest.TestCase):
         #   the instance to create trajectories
         # --------------------------------------------------------------------------
 
+        f_base = '../../examples/files/alanine/'
         pdb_file = File(
-            'file://examples/files/alanine/alanine.pdb').named('initial_pdb').load()
+            'file://{0}alanine.pdb'.format(f_base)).named('initial_pdb').load()
 
         engine = OpenMMEngine(
             pdb_file=pdb_file,
-            system_file=File('file://examples/files/alanine/system.xml').load(),
-            integrator_file=File('file://examples/files/alanine/integrator.xml').load(),
+            system_file=File('file://{0}system.xml'.format(f_base)).load(),
+            integrator_file=File('file://{0}integrator.xml'.format(f_base)).load(),
             args='-r --report-interval 1 -p Reference --store-interval 1 -v'
         ).named('openmm')
 
