@@ -61,7 +61,6 @@ class TestSimpleProject(unittest.TestCase):
         #   the instance to create trajectories
         # --------------------------------------------------------------------------
 
-        
         pdb_file = File(
             'file://{0}alanine.pdb'.format(self.f_base)).named('initial_pdb').load()
 

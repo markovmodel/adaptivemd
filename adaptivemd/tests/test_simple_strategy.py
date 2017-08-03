@@ -29,10 +29,10 @@ class TestSimpleStrategy(unittest.TestCase):
         cls.shared_path = tempfile.mkdtemp(prefix="adaptivemd")
         Project.delete(cls.proj_name)
         cls.project = Project(cls.proj_name)
-        # --------------------------------------------------------------------------
+        # ----------------------------------------------------------------------
         # CREATE THE RESOURCE
         #   the instance to know about the place where we run simulations
-        # --------------------------------------------------------------------------
+        # ----------------------------------------------------------------------
         resource = LocalResource(cls.shared_path)
         if os.getenv('CONDA_BUILD', False):
             # activate the conda build test environment for workers
@@ -40,14 +40,16 @@ class TestSimpleStrategy(unittest.TestCase):
             cls.f_base = 'examples/files/alanine/'
             prefix = os.getenv('PREFIX')
             assert os.path.exists(prefix)
-            resource.wrapper.pre.insert(0, 'source activate {prefix}'.format(prefix=prefix))
+            resource.wrapper.pre.insert(0,
+                'source activate {prefix}'.format(prefix=prefix))
         else:
             # set the path for the workers to the path of the test interpreter.
             import sys
 
             cls.f_base = '../../examples/files/alanine/'
             resource.wrapper.pre.insert(0, 'PATH={python_path}:$PATH'
-                                        .format(python_path=os.path.dirname(sys.executable)))
+                .format(python_path=os.path.dirname(sys.executable)))
+
         cls.project.initialize(resource)
 
         cls.worker_process = start_local_worker(cls.proj_name)
@@ -65,25 +67,28 @@ class TestSimpleStrategy(unittest.TestCase):
         os.chdir('/')
 
     def test(self):
-        # --------------------------------------------------------------------------
+        # ----------------------------------------------------------------------
         # CREATE THE ENGINE
         #   the instance to create trajectories
-        # --------------------------------------------------------------------------
+        # ----------------------------------------------------------------------
 
         pdb_file = File(
-            'file://{0}alanine.pdb'.format(self.f_base)).named('initial_pdb').load()
+            'file://{0}alanine.pdb'.format(
+            self.f_base)).named('initial_pdb').load()
 
         engine = OpenMMEngine(
             pdb_file=pdb_file,
-            system_file=File('file://{0}system.xml'.format(self.f_base)).load(),
-            integrator_file=File('file://{0}integrator.xml'.format(self.f_base)).load(),
+            system_file=File('file://{0}system.xml'.format(
+                self.f_base)).load(),
+            integrator_file=File('file://{0}integrator.xml'.format(
+                self.f_base)).load(),
             args='-r --report-interval 1 -p Reference --store-interval 1 -v'
         ).named('openmm')
 
-        # --------------------------------------------------------------------------
+        # ----------------------------------------------------------------------
         # CREATE AN ANALYZER
         #   the instance that knows how to compute a msm from the trajectories
-        # --------------------------------------------------------------------------
+        # ----------------------------------------------------------------------
 
         modeller = PyEMMAAnalysis(
             engine=engine
