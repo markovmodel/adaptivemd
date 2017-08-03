@@ -36,12 +36,16 @@ class TestSimpleStrategy(unittest.TestCase):
         resource = LocalResource(cls.shared_path)
         if os.getenv('CONDA_BUILD', False):
             # activate the conda build test environment for workers
+
+            cls.f_base = 'examples/files/alanine/'
             prefix = os.getenv('PREFIX')
             assert os.path.exists(prefix)
             resource.wrapper.pre.insert(0, 'source activate {prefix}'.format(prefix=prefix))
         else:
             # set the path for the workers to the path of the test interpreter.
             import sys
+
+            cls.f_base = '../../examples/files/alanine/'
             resource.wrapper.pre.insert(0, 'PATH={python_path}:$PATH'
                                         .format(python_path=os.path.dirname(sys.executable)))
         cls.project.initialize(resource)
@@ -66,14 +70,13 @@ class TestSimpleStrategy(unittest.TestCase):
         #   the instance to create trajectories
         # --------------------------------------------------------------------------
 
-        f_base = '../../examples/files/alanine/'
         pdb_file = File(
-            'file://{0}alanine.pdb'.format(f_base)).named('initial_pdb').load()
+            'file://{0}alanine.pdb'.format(self.f_base)).named('initial_pdb').load()
 
         engine = OpenMMEngine(
             pdb_file=pdb_file,
-            system_file=File('file://{0}system.xml'.format(f_base)).load(),
-            integrator_file=File('file://{0}integrator.xml'.format(f_base)).load(),
+            system_file=File('file://{0}system.xml'.format(self.f_base)).load(),
+            integrator_file=File('file://{0}integrator.xml'.format(self.f_base)).load(),
             args='-r --report-interval 1 -p Reference --store-interval 1 -v'
         ).named('openmm')
 

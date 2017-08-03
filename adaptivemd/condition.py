@@ -76,6 +76,9 @@ class Condition(object):
     def __bool__(self):
         return self()
 
+    def __nonzero__(self):
+        return self.__bool__()
+
 
 class InvertCondition(Condition):
     def __init__(self, condition):

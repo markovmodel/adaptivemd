@@ -64,27 +64,43 @@ and views will always be kept synced with the DB store content.
 0
 >>> print(list(store)) # show all trajectories
 []
->>> len_store = store.v(lambda x: len(x) > 10)  # all trajs with len > 10
->>> print(list(len_store))
-[]
 
 Set do not have ordering so some functions do not make sense. As long as
 you are working with storable objects (subclassed from `StorableMixin`)
 you have some time-ordering (accurate to seconds)
 
->>> print(store.first) # get the earlist created object
+#move## Not a ViewBundle method
+#move##>>> print(store.last) # get the last created object
+#move## Not a ViewBundle method
+#move##>>> print(store.first) # get the earlist created object
 >>> print(store.one) # get one (any) single object
->>> print(store.last) # get the last created object
+None
+
+>>> p.workers.first
+>>> print(p.workers.last)
+None
+>>> print(p.workers.one)
+None
+>>> wstore = StoredBundle()
+>>> wstore.set_store(p.workers).__len__()
+0
 
 A bundle is mostly meant to work with storable objects (but does not have to)
 To simplify access to certain attributes or apply function to all members you
 can use the `.all` attribute and get a _delegator_ that will apply and
 attribute or method to all objects
-
+>>> len_store = store.v(lambda x: len(x) > 10)  # all trajs with len > 10
+>>> print(list(len_store))
+[]
 >>> print(len_store.all.length) # print all lengths of all objects in len_store
+None
 >>> print(store.all.path) # print all path of all trajectories
->>> # call `.execute('shutdown') on all workers in the `.workers` bundle
->>> print(p.workers.all.execute('shutdown'))
+None
+
+#move#Since Bundle is empty there is no class or attached methods, thus get
+#move#NoneType not callable TypeError
+#move##>>> # call `.execute('shutdown') on all workers in the `.workers` bundle
+#move##>>> print(p.workers.all.execute('shutdown'))
 
 """
 from __future__ import print_function, absolute_import
