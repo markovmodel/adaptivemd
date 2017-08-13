@@ -22,21 +22,17 @@
 
 """
 Implementation of a single instance stand-alone worker to execute tasks
-
 The main idea is that you want tasks that you created in your project to be
 executed somehow. There can be several ways to do that and this _worker_
 approach will allow you to run a single instance worker somewhere on your
 HPC which will search your project for unfinished tasks that can be run,
 assign one of these tasks to itself and excute it. Once finished will
 continue with the next task
-
 The worker consists of two parts:
-
 1. the single worker scheduler that will interprete a task, convert it to
    a bash script and run it
 2. the worker job instance that runs a loop in the background, checking the DB
    for new tasks and submitting these to the scheduler for execution
-
 """
 from __future__ import print_function, absolute_import
 
@@ -75,7 +71,6 @@ class WorkerScheduler(Scheduler):
     def __init__(self, resource, verbose=False):
         """
         A single instance worker scheduler to interprete `Task` objects
-
         Parameters
         ----------
         resource : `Resource`
@@ -95,7 +90,6 @@ class WorkerScheduler(Scheduler):
         self._cleanup_successful = True
 
         self._std = {}
-
         print("TIMER Scheduler initializing {0:.5f}".format(time.time()))
 
     @property
@@ -109,17 +103,14 @@ class WorkerScheduler(Scheduler):
     def task_to_script(self, task):
         """
         Convert a task to an executable bash script
-
         Parameters
         ----------
         task : `Task`
             the `Task` instance to be converted
-
         Returns
         -------
         list of str
             a list of bash commands
-
         """
 
         # create a task that wraps errands from resource and scheduler
@@ -138,16 +129,13 @@ class WorkerScheduler(Scheduler):
     def submit(self, submission):
         """
         Submit a `Task` or a `Trajectory`
-
         Parameters
         ----------
         submission : (list of) `Task` or `Trajectory`
-
         Returns
         -------
         list of `Task`
             the list of tasks actually executed after looking at all objects
-
         """
         tasks = self._to_tasks(submission)
 
@@ -165,7 +153,6 @@ class WorkerScheduler(Scheduler):
         -------
         str or None
             the path or None if no task is executed at the time
-
         """
         if self._current_unit_dir is not None:
             return self.path + '/workers/' + self._current_unit_dir
@@ -175,18 +162,15 @@ class WorkerScheduler(Scheduler):
     def _start_job(self, task):
         """
         Start execution of a task
-
         Parameters
         ----------
         task : `Task`
             the task to be executed
-
         """
 
         print("TIMER Scheduler Stage Task {0:.5f}".format(time.time()))
 
         self._current_unit_dir = 'worker.%s' % hex(task.__uuid__)
-
         script_location = self.current_task_dir
 
         if os.path.exists(script_location):
@@ -245,13 +229,11 @@ class WorkerScheduler(Scheduler):
     def stop_current(self):
         """
         Stop execution of the current task immediately
-
         Returns
         -------
         bool
             if True the current task was cancelled, False if there
             was no task running
-
         """
         if self._current_sub is not None:
             task = self.current_task
@@ -292,7 +274,6 @@ class WorkerScheduler(Scheduler):
     def _final_std(self):
         """
         Finish capturing of stdout and stderr
-
         """
         task = self.current_task
         try:
@@ -331,14 +312,13 @@ class WorkerScheduler(Scheduler):
     def advance(self):
         """
         Advance checking if tasks are completed or failed
-
         Needs to be called in regular intervals. Usually by the main
         worker instance
-
         """
         if self.current_task is None:
             if len(self.tasks) > 0:
                 print("TIMER Scheduler Set Task {0:.5f}".format(time.time()))
+
                 t = next(iter(self.tasks.values()))
                 self.current_task = t
                 self._start_job(t)
@@ -415,10 +395,8 @@ class WorkerScheduler(Scheduler):
     def release_queued_tasks(self):
         """
         Release captured tasks scheduled for execution (if not started yet)
-
         You can prefetch tasks (although not recommended for single workers)
         and this releases not started jobs back to the queue
-
         """
         for t in list(self.tasks.values()):
             if t.state == 'queued':
@@ -448,7 +426,6 @@ class WorkerScheduler(Scheduler):
     def stage_project(self):
         """
         Create paths necessary for the current project
-
         """
         paths = [
             self.path + '/projects/',
@@ -607,7 +584,6 @@ class Worker(StorableMixin):
         -------
         `WorkerScheduler`
             the currently used scheduler to execute tasks
-
         """
         return self._scheduler
 
@@ -648,28 +624,26 @@ class Worker(StorableMixin):
     def execute(self, command):
         """
         Send and execute a single command to the worker
-
         Note that the worker is registered on the DB but running on your HPC.
         Just loading it does not allow you to call functions like `.shutdown`.
         These would only be called on your local instance. All you can do
         is use `execute` which will store a command in the DB and once the
         real running worker executed it. The command will be cleared from the
         DB.
-
         Parameters
         ----------
         command : str
             the command to be executed
-
         """
         self.command = command
 
     def run(self):
         """
         Start the worker to execute tasks until it is shut down
-
         """
+
         print("TIMER Worker running {0:.5f}".format(time.time()))
+
         scheduler = self._scheduler
         project = self._project
 
@@ -722,15 +696,16 @@ class Worker(StorableMixin):
                         # check the state of the worker
                         if state in self._running_states:
 
-                            print("TIMER Worker Advance {0:.5f}".format(time.time()))
+                            #print("TIMER Worker Advance {0:.5f}".format(time.time()))
 
                             scheduler.advance()
                             if scheduler.is_idle:
                                 for _ in range(self.prefetch):
                                     done = False
                                     attempt = 0
-                                    retries = 5
+                                    retries = 10
                                     while not done:
+
                                         try:
                                             tasklist = scheduler(
                                                 project.storage.tasks.modify_test_one(
@@ -739,15 +714,14 @@ class Worker(StorableMixin):
 
                                         except RuntimeError as e:
                                             if attempt < retries:
+                                                print("Connection Timeout #{0} ignored"
+                                                      .format(attempt))
                                                 attempt += 1
-                                                time.sleep(3)
+                                                time.sleep(2)
                                             else:
                                                 raise e
 
                                     for task in tasklist:
-
-                                        print("TIMER Worker Task Handle {0:.5f}".format(time.time()))
-
                                         task.worker = self
                                         print('queued a task [%s] from generator `%s`' % (
                                             task.__class__.__name__,
@@ -760,8 +734,8 @@ class Worker(StorableMixin):
                         command = self.command
 
                         if command == 'shutdown':
-                            time.sleep(self.sleep)
                             print("TIMER Worker Stopped {0:.5f}".format(time.time()))
+
                             # someone wants us to shutdown
                             scheduler.shut_down()
 
@@ -774,6 +748,7 @@ class Worker(StorableMixin):
 
                         elif command == 'halt':
                             self._stop_current('halted')
+
 
                         elif command == 'cancel':
                             self._stop_current('cancelled')
@@ -790,8 +765,7 @@ class Worker(StorableMixin):
                             self.command = None
 
                         if time.time() - last > self.heartbeat:
-
-                            print("TIMER Worker Heartbeat {0:.5f}".format(time.time()))
+                            #print("TIMER Worker Heartbeat {0:.5f}".format(time.time()))
 
                             # heartbeat
                             last = time.time()
@@ -826,11 +800,9 @@ class Worker(StorableMixin):
     def shutdown(self, gracefully=True):
         """
         Shut down the worker
-
         Parameters
         ----------
         gracefully : bool
             if True the worker is allowed some time to finish running tasks
-
         """
         self._scheduler.shut_down(gracefully)

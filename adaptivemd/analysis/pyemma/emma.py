@@ -109,14 +109,9 @@ class PyEMMAAnalysis(Analysis):
         model = Model(DataDict(data))
         project.models.add(model)
 
-    def execute(
-            self,
-            trajectories,
-            tica_lag=2,
-            tica_dim=2,
-            msm_states=5,
-            msm_lag=2,
-            stride=1):
+    def execute(self, trajectories, tica_lag=10, tica_dim=2,
+                msm_states=100, msm_lag=2, stride=2):
+
         """
         Create a task that computes an msm using a given set of trajectories
 
@@ -167,7 +162,7 @@ class PyEMMAAnalysis(Analysis):
 
         for traj in trajs:
             if outtype not in traj.types:
-                # ups, one of the trajectories does not have the required type!
+                # oops, one of the trajectories does not have the required type!
                 return
 
         ty = trajs[0].types[outtype]

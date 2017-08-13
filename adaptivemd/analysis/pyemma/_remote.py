@@ -47,13 +47,40 @@ def remote_analysis(
         name of the trajectory file with the trajectory directory given
     selection : str
         an atom subset selection string as used in mdtraj .select
-    features : dict or list or None
-        a feature descriptor in the format. A dict has exactly one entry:
-        functionname: [attr1, attr2, ...]. attributes can be results of
-        function calls. All function calls are to the featurizer object!
-        If a list is given each element is considered to be a feature
-        descriptor. If None (default) all coordinates will be added as
-        features (.add_all())
+    features : dict, list<dict>, or None
+        A feature descriptor, or list thereof. Each features dict is
+        used to add exactly one feature to PyEMMA's MDFeaturizer.
+        The features dict may contain only 1 or 2 entries. One entry
+        must be the name of an MDFeaturizer method 'add_xxx'. The
+        contents are either None (implied in 1.), or a list/tuple
+        of explicit positional arguments for 'methodname'.
+
+        1. {methodname: [attr1, attr2, ...]}
+        2. {methodname: {attr1: <contents>}}
+        3. {methodname: [{attr1: <contents>}, {attr2: <contents>}]}
+        4. [{method1: <contents>}, {method2: <contents>}]
+
+
+        The attributes are results of method calls on the MDFeaturizer,
+        such as 'select_Backbone' to provide arguments for the 'methodname'
+        call. All function calls are to the featurizer object! The
+        dicts storing 'attrN' follow the same design as the outer method,
+        since these dicts are used identically to call methods of
+        the MDFeaturizer object!
+        If a list is given as in 4., each element is considered to be
+        a feature descriptor. If None (default) all coordinates will be
+        added as features (.add_all())
+        The optional second entry in a features dict is used to specify
+        keyword arguments to the methods. The key for this entry must
+        be 'kwargs', and its value must be a dict of key-value pairs
+        corresponding to argument names, and the values to pass. Again,
+        this format is used for calling MDFeaturizer methods and so
+        can be used at either level of the features dict.
+
+        5. {methodname: {attr1: [ positionals ],
+                         kwargs: {kwarg1: value1}},
+            kwargs: {kwarg1: value1, kwarg2: value2}}
+
 
         Examples
 
@@ -66,6 +93,36 @@ def remote_analysis(
             {'add_inverse_distances': [
                 { 'select_backbone': None } ]}
             -> feat.add_inverse_distances(select_backbone())
+
+            {'add_residue_mindist': None,
+             'kwargs': {'threshold': 0.6, 'scheme': 'ca'}}
+            -> feat.add_residue_mindist(threshold=0.6, scheme='ca')
+
+            {'add_distances': [ [1,2,3,4] ],
+             'kwargs': {'indices2': [10,11,12,13]}}
+            -> feat.add_distances([1,2,3,4], indices2=[10,11,12,13])
+
+         These two are equivalent:
+
+            {'add_distances': {'select': None,
+                               'kwargs': {'selstring':
+                                          'resname GLN and (mass 11 to 17)'}},
+             'kwargs': {'indices2': [10,11,12,13]}}
+
+            {'add_distances': {'select': [ 'resname GLN and (mass 11 to 17)' ] },
+             'kwargs': {'indices2': [10,11,12,13]}}
+
+            -> feat.add_distances(select('resname GLN and (mass 11 to 17)'),
+                                  indices2=[10,11,12,13])
+
+         Ionic Contacts (Salt Bridges):
+
+            pos = 'rescode K or rescode R or rescode H'
+            neg = 'rescode D or rescode E'
+            {'add_distances': {'select': [ pos ]},
+             'kwargs': {'indices2': {'select': [ neg ] }}}
+
+
 
     topfile : `File`
         a reference to the full topology `.pdb` file using in pyemma
@@ -100,22 +157,61 @@ def remote_analysis(
     feat = pyemma.coordinates.featurizer(topology)
 
     if features:
-        def apply_feat_part(featurizer, parts):
+        # TODO  this function needs more attention/documentation
+        #       - it is super important to make the arguments
+        #         available to the pyemma methods
+        def apply_feat_part(featurizer, parts, prepend=''):
             if isinstance(parts, dict):
-                func, attributes = list(parts.items())[0]
+        
+                items = list(parts.items())
+                if len(items) == 1:
+                    func, attributes = items[0]
+                    kwargs = dict()
+        
+                elif len(items) == 2:
+                    if items[0][0] == 'kwargs':
+                        func, attributes = items[1]
+                        key, kwargs = items[0]
+        
+                    elif items[1][0] == 'kwargs':
+                        func, attributes = items[0]
+                        key, kwargs = items[1]
+        
+                    for k,v in kwargs.items():
+                        if isinstance(v, dict):
+        
+                            _func, _attr = list(v.items())[0]
+                            _f = getattr(featurizer, _func)
+                            if _attr is None:
+                                idc = _f()
+        
+                            elif isinstance(_attr, (list, tuple)):
+                                idc = _f(*apply_feat_part(featurizer,
+                                         _attr))
+        
+                            kwargs[k] = idc
+        
+                assert isinstance(kwargs, dict)
                 f = getattr(featurizer, func)
+        
                 if attributes is None:
-                    return f()
-                if isinstance(attributes, (list, tuple)):
-                    return f(*apply_feat_part(featurizer, attributes))
+                    return f(**kwargs)
+        
+                elif isinstance(attributes, (list, tuple)):
+                    return f(*apply_feat_part(featurizer, attributes),
+                             **kwargs)
                 else:
-                    return f(apply_feat_part(featurizer, attributes))
+                    return f(apply_feat_part(featurizer, attributes),
+                             **kwargs)
+        
             elif isinstance(parts, (list, tuple)):
-                return [apply_feat_part(featurizer, q) for q in parts]
+                return [apply_feat_part(feat, q)
+                        for q in parts]
             else:
                 return parts
 
         apply_feat_part(feat, features)
+
     else:
         feat.add_all()
 
@@ -131,7 +227,9 @@ def remote_analysis(
 
     y = tica_obj.get_output()
 
-    cl = pyemma.coordinates.cluster_kmeans(data=y, k=msm_states, stride=stride)
+    cl = pyemma.coordinates.cluster_kmeans(data=y, k=msm_states,
+             max_iter=50, stride=stride)
+
     m = pyemma.msm.estimate_markov_model(cl.dtrajs, msm_lag)
 
     data = {

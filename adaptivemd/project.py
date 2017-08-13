@@ -504,7 +504,7 @@ class Project(object):
         else:
             return NModels(self, numbers)
 
-    # todo: move to brain
+    # TODO: move to brain
     def find_ml_next_frame(self, n_pick=10):
         """
         Find initial frames picked by inverse equilibrium distribution
@@ -524,13 +524,30 @@ class Project(object):
         list of `Frame`
             the list of trajectories with the selected initial points.
         """
+        print("Finding next Model frames")
         if len(self.models) > 0:
-            model = self.models.last
 
-            assert(isinstance(model, Model))
-            data = model.data
+            def get_model():
+                models = sorted(self.models, reverse=True,
+                                key=lambda m: m.__time__)
 
-            n_states = data['clustering']['k']
+                for model in models:
+                    assert(isinstance(model, Model))
+                    data = model.data
+                    c = data['msm']['C']
+                    s =  np.sum(c, axis=1)
+                    if 0 not in s:
+                        q = 1.0 / s
+                        return data, c, q
+
+            data, c, q = get_model()
+
+            # not a good method to get n_states
+            # populated clusters in
+            # data['msm']['C'] may be less than k
+            #n_states = data['clustering']['k']
+            n_states = len(c)
+
             modeller = data['input']['modeller']
 
             outtype = modeller.outtype
@@ -548,9 +565,6 @@ class Project(object):
                     if any([(mm * used_stride) % stride == 0 for stride in full_strides]):
                         frame_state_list[state].append((nn, mm * used_stride))
 
-            c = data['msm']['C']
-            q = 1.0 / np.sum(c, axis=1)
-
             # remove states that do not have at least one frame
             for k in range(n_states):
                 if len(frame_state_list[k]) == 0:
@@ -558,8 +572,12 @@ class Project(object):
 
             # and normalize the remaining ones
             q /= np.sum(q)
+            print("Probability vector of microstates")
+            print(q)
 
             state_picks = np.random.choice(np.arange(len(q)), size=n_pick, p=q)
+            print("Sampled from following states")
+            print(state_picks)
 
             filelist = data['input']['trajectories']
 
@@ -567,6 +585,7 @@ class Project(object):
                 frame_state_list[state][np.random.randint(0, len(frame_state_list[state]))]
                 for state in state_picks
                 ]
+            print("AdaptiveMD Picks were:\n", picks)
 
             return [filelist[pick[0]][pick[1]] for pick in picks]
 
@@ -601,8 +620,17 @@ class Project(object):
         :meth:`find_ml_next_frame`
 
         """
-        return [self.new_trajectory(frame, length, engine) for frame in
-                self.find_ml_next_frame(number)]
+        if isinstance(length, int):
+            length = [length] * number
+
+        if isinstance(length, list):
+            if len(length) == number:
+                trajectories = [self.new_trajectory(
+                    frame, length[i], engine)
+                    for i,frame in enumerate(
+                    self.find_ml_next_frame(number))]
+
+                return trajectories
 
     def events_done(self):
         """
