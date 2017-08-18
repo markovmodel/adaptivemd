@@ -705,9 +705,25 @@ class Worker(StorableMixin):
                             scheduler.advance()
                             if scheduler.is_idle:
                                 for _ in range(self.prefetch):
-                                    tasklist = scheduler(
-                                        project.storage.tasks.modify_test_one(
-                                            task_test, 'state', 'created', 'queued'))
+                                    done = False
+                                    attempt = 0
+                                    retries = 10
+                                    while not done:
+
+                                        try:
+                                            tasklist = scheduler(
+                                                project.storage.tasks.modify_test_one(
+                                                 task_test, 'state', 'created', 'queued'))
+                                            done = True
+
+                                        except RuntimeError as e:
+                                            if attempt < retries:
+                                                print("Connection Timeout #{0} ignored"
+                                                      .format(attempt))
+                                                attempt += 1
+                                                time.sleep(2)
+                                            else:
+                                                raise e
 
                                     for task in tasklist:
                                         task.worker = self

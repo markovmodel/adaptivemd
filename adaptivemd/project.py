@@ -527,7 +527,6 @@ class Project(object):
         """
         print("Finding next Model frames")
         if len(self.models) > 0:
-            model = self.models.last
 
             def get_model():
                 models = sorted(self.models, reverse=True,
@@ -567,9 +566,6 @@ class Project(object):
                     if any([(mm * used_stride) % stride == 0 for stride in full_strides]):
                         frame_state_list[state].append((nn, mm * used_stride))
 
-            c = data['msm']['C']
-            q = 1.0 / np.sum(c, axis=1)
-
             # remove states that do not have at least one frame
             for k in range(n_states):
                 if len(frame_state_list[k]) == 0:
@@ -591,7 +587,6 @@ class Project(object):
                 len(frame_state_list[state]))]
                 for state in state_picks
                 ]
-            print("AdaptiveMD Picks were:\n", picks)
 
             return [filelist[pick[0]][pick[1]] for pick in picks]
 

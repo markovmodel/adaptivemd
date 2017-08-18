@@ -33,6 +33,94 @@ import simtk.unit as u
 from simtk.openmm import Platform, XmlSerializer
 from simtk.openmm.app import PDBFile, Simulation, DCDReporter, StateDataReporter
 
+
+
+def get_xml(xml_file):
+    # TODO file access control
+    attempt = 0
+    retries = 500
+    while True:
+        try:
+            with open(xml_file) as f:
+                xml = f.read()
+                cereal = XmlSerializer.deserialize(xml)
+            return xml, cereal
+
+        except ValueError as e:
+            if attempt < retries:
+                attempt += 1
+                time.sleep(5*random.random())
+            else:
+                raise e
+
+
+def get_platform(platform_name):
+    if platform_name == 'fastest':
+        platform = None
+    else:
+        # TODO file access control
+        attempt = 0
+        retries = 500
+        while True:
+            try:
+                platform = Platform.getPlatformByName(platform_name)
+                return platform
+
+            except IndexErrorError as e:
+                if attempt < retries:
+                    attempt += 1
+                    time.sleep(5*random.random())
+                else:
+                    raise e
+
+
+def get_pdbfile(topology_pdb):
+    # TODO file access control
+    attempt = 0
+    retries = 500
+    while True:
+        try:
+            pdb = PDBFile(topology_pdb)
+            return pdb
+
+        except IndexError as e:
+            if attempt < retries:
+                attempt += 1
+                time.sleep(5*random.random())
+            else:
+                raise e
+
+def read_input(platform, pdbfile, system, integrator):
+    import time
+    import random
+
+    return_order = ['get_platform', 'get_pdbfile',
+                    'get_system', 'get_integrator']
+
+    funcs = {get_platform: [platform, None],
+             get_pdbfile:  [pdbfile, None],
+             get_xml:      [system, 'system'],
+             get_xml:      [integrator, 'integrator']}
+
+    returns = dict()
+
+    kfuncs = random.shuffle(list(funcs.keys()))
+
+    while kfuncs:
+        func = kfuncs.pop()
+        arg, nm = funcs[func]
+
+        if nm:
+            name_func = '_'.join(func.__name__.split('_')[:-1]+[nm])
+        else:
+            name_func = func.__name__
+
+        returns.update({name_func: func(arg)})
+        
+    return [returns[nxt] for nxt in return_order]
+
+
+
 if __name__ == '__main__':
 
     # add further auto options here
@@ -160,25 +248,14 @@ if __name__ == '__main__':
                     args.platform + '_' + v.replace('_', '')
                 ] = value
 
-    if args.platform == 'fastest':
-        platform = None
-    else:
-        platform = Platform.getPlatformByName(args.platform)
+    # Randomizes the order of file reading to
+    # alleviate traffic from synchronization
+    platform, pdb, (system_xml, system), (integrator_xml, integrator) \
+     = read_inp(args.platform, args.topology_pdb,
+                args.system_xml, args.integrator_xml)
 
-    print('Reading PDB')
-
-    pdb = PDBFile(args.topology_pdb)
 
     print('Done')
-
-    with open(args.system_xml) as f:
-        system_xml = f.read()
-        system = XmlSerializer.deserialize(system_xml)
-
-    with open(args.integrator_xml) as f:
-        integrator_xml = f.read()
-        integrator = XmlSerializer.deserialize(integrator_xml)
-
     print('Initialize Simulation')
 
     try:
