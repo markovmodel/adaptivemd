@@ -97,26 +97,20 @@ def read_input(platform, pdbfile, system, integrator):
     return_order = ['get_platform', 'get_pdbfile',
                     'get_system', 'get_integrator']
 
-    funcs = {get_platform: [platform, None],
-             get_pdbfile:  [pdbfile, None],
-             get_xml:      [system, 'system'],
-             get_xml:      [integrator, 'integrator']}
+    funcs = {'get_platform':   [get_platform, platform],
+             'get_pdbfile':    [get_pdbfile, pdbfile],
+             'get_system':     [get_xml, system],
+             'get_integrator': [get_xml, integrator]}
 
+    kfuncs = list(funcs.keys())
+    random.shuffle(kfuncs)
     returns = dict()
-
-    kfuncs = random.shuffle(list(funcs.keys()))
-
     while kfuncs:
-        func = kfuncs.pop()
-        arg, nm = funcs[func]
+        op_name = kfuncs.pop(0)
+        func, arg = funcs[op_name]
 
-        if nm:
-            name_func = '_'.join(func.__name__.split('_')[:-1]+[nm])
-        else:
-            name_func = func.__name__
+        returns.update({op_name: func(arg)})
 
-        returns.update({name_func: func(arg)})
-        
     return [returns[nxt] for nxt in return_order]
 
 
@@ -251,8 +245,8 @@ if __name__ == '__main__':
     # Randomizes the order of file reading to
     # alleviate traffic from synchronization
     platform, pdb, (system_xml, system), (integrator_xml, integrator) \
-     = read_inp(args.platform, args.topology_pdb,
-                args.system_xml, args.integrator_xml)
+     = read_input(args.platform, args.topology_pdb,
+                  args.system_xml, args.integrator_xml)
 
 
     print('Done')
