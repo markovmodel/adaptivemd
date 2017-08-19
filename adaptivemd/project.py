@@ -19,7 +19,7 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with MDTraj. If not, see <http://www.gnu.org/licenses/>.
 ##############################################################################
-from __future__ import absolute_import, print_function
+from __future__ import absolute_import
 
 
 import threading
@@ -525,7 +525,6 @@ class Project(object):
         list of `Frame`
             the list of trajectories with the selected initial points.
         """
-        print("Finding next Model frames")
         if len(self.models) > 0:
 
             def get_model():
@@ -573,12 +572,8 @@ class Project(object):
 
             # and normalize the remaining ones
             q /= np.sum(q)
-            print("Probability vector of microstates")
-            print(q)
 
             state_picks = np.random.choice(np.arange(len(q)), size=n_pick, p=q)
-            print("Sampled from following states")
-            print(state_picks)
 
             filelist = data['input']['trajectories']
 

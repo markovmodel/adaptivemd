@@ -1,4 +1,4 @@
-# `adaptiveMD`
+# _AdaptiveMD_
 A Python framework to run adaptive MD simulations using Markov state model (MSM)
 analysis on HPC resources.
 
@@ -26,7 +26,7 @@ After installation, you might want to start working with the examples in
 There are a few things we need to install to make this work.
 
 
-### `MongoDB`
+### MongoDB
 
 AdaptiveMD needs access to a MongoDB. If you want to store project data locally
 you need to install MongoDB. Both your user machine and compute resource must
@@ -109,7 +109,7 @@ conda install ujson pyyaml pymongo=3.3 numpy
 conda install pyemma openmm mdtraj
 ```
 
-### Install _adaptiveMD_
+### Install _AdaptiveMD_
 
 Let's get adaptivemd from the github repo now.
 
