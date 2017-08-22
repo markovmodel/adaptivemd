@@ -21,7 +21,7 @@ def start_local_worker(proj_name):
 
 class TestSimpleStrategy(unittest.TestCase):
 
-    cls.f_base = None
+    f_base = None
 
     @classmethod
     def setUpClass(cls):

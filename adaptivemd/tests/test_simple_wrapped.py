@@ -17,7 +17,7 @@ import mdtraj as md
 
 class TestSimpleProject(unittest.TestCase):
 
-    cls.f_base = None
+    f_base = None
 
     @classmethod
     def setUpClass(cls):
