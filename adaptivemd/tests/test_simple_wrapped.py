@@ -34,7 +34,10 @@ class TestSimpleProject(unittest.TestCase):
         if os.getenv('CONDA_BUILD', False):
             # activate the conda build test environment for workers
 
-            cls.f_base = 'examples/files/alanine/'
+            # this path is different for different test,
+            # maybe excluding the worker layer changes
+            # how URL is resolved.
+            cls.f_base = './examples/files/alanine/'
             prefix = os.getenv('PREFIX')
             assert os.path.exists(prefix)
             resource.wrapper.pre.insert(0,
