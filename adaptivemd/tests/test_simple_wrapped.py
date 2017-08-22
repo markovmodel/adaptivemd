@@ -17,6 +17,8 @@ import mdtraj as md
 
 class TestSimpleProject(unittest.TestCase):
 
+    cls.f_base = None
+
     @classmethod
     def setUpClass(cls):
         # init project and resource
@@ -24,12 +26,10 @@ class TestSimpleProject(unittest.TestCase):
         cls.shared_path = tempfile.mkdtemp(prefix="adaptivemd")
         Project.delete('example-simple-1')
         cls.project = Project('example-simple-1')
-        # --------------------------------------------------------------------------
+        # ----------------------------------------------------------------------
         # CREATE THE RESOURCE
         #   the instance to know about the place where we run simulations
-        # --------------------------------------------------------------------------
-        cls.f_base = None
-
+        # ----------------------------------------------------------------------
         resource = LocalResource(cls.shared_path)
         if os.getenv('CONDA_BUILD', False):
             # activate the conda build test environment for workers
@@ -37,14 +37,16 @@ class TestSimpleProject(unittest.TestCase):
             cls.f_base = 'examples/files/alanine/'
             prefix = os.getenv('PREFIX')
             assert os.path.exists(prefix)
-            resource.wrapper.pre.insert(0, 'source activate {prefix}'.format(prefix=prefix))
+            resource.wrapper.pre.insert(0,
+                'source activate {prefix}'.format(prefix=prefix))
         else:
             # set the path for the workers to the path of the test interpreter.
             import sys
 
             cls.f_base = '../../examples/files/alanine/'
             resource.wrapper.pre.insert(0, 'PATH={python_path}:$PATH'
-                                        .format(python_path=os.path.dirname(sys.executable)))
+                .format(python_path=os.path.dirname(sys.executable)))
+
         cls.project.initialize(resource)
         return cls
 
@@ -56,25 +58,28 @@ class TestSimpleProject(unittest.TestCase):
         os.chdir('/')
 
     def test(self):
-        # --------------------------------------------------------------------------
+        # ----------------------------------------------------------------------
         # CREATE THE ENGINE
         #   the instance to create trajectories
-        # --------------------------------------------------------------------------
+        # ----------------------------------------------------------------------
 
         pdb_file = File(
-            'file://{0}alanine.pdb'.format(self.f_base)).named('initial_pdb').load()
+            'file://{0}alanine.pdb'.format(
+            self.f_base)).named('initial_pdb').load()
 
         engine = OpenMMEngine(
             pdb_file=pdb_file,
-            system_file=File('file://{0}system.xml'.format(self.f_base)).load(),
-            integrator_file=File('file://{0}integrator.xml'.format(self.f_base)).load(),
+            system_file=File('file://{0}system.xml'.format(
+                self.f_base)).load(),
+            integrator_file=File('file://{0}integrator.xml'.format(
+                self.f_base)).load(),
             args='-r --report-interval 1 -p Reference --store-interval 1'
         ).named('openmm')
 
-        # --------------------------------------------------------------------------
+        # ----------------------------------------------------------------------
         # CREATE AN ANALYZER
         #   the instance that knows how to compute a msm from the trajectories
-        # --------------------------------------------------------------------------
+        # ----------------------------------------------------------------------
 
         modeller = PyEMMAAnalysis(
             engine=engine
@@ -83,11 +88,11 @@ class TestSimpleProject(unittest.TestCase):
         self.project.generators.add(engine)
         self.project.generators.add(modeller)
 
-        # --------------------------------------------------------------------------
+        # ----------------------------------------------------------------------
         # CREATE THE CLUSTER
         #   the instance that runs the simulations on the resource
-        # --------------------------------------------------------------------------
-        traj_len = 5
+        # ----------------------------------------------------------------------
+        traj_len = 3
         trajectory = self.project.new_trajectory(engine['pdb_file'], traj_len, engine)
         task = engine.run(trajectory)
 

@@ -21,6 +21,8 @@ def start_local_worker(proj_name):
 
 class TestSimpleStrategy(unittest.TestCase):
 
+    cls.f_base = None
+
     @classmethod
     def setUpClass(cls):
         # init project and resource
@@ -97,7 +99,7 @@ class TestSimpleStrategy(unittest.TestCase):
         self.project.generators.add(engine)
         self.project.generators.add(modeller)
 
-        def strategy(loops=2, trajs_per_loop=2, length=5):
+        def strategy(loops=2, trajs_per_loop=2, length=3):
             initial_traj = self.project.new_trajectory(frame=pdb_file, length=length)
             task = engine.run(initial_traj)
             self.project.queue(task)
