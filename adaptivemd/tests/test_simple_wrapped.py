@@ -47,6 +47,8 @@ class TestSimpleProject(unittest.TestCase):
             if os.getcwd() is not prefix:
                 print('changing to conda build path')
                 os.chdir(prefix)
+                print(os.listdir(prefix))
+                print(os.listdir(prefix+'/../'))
         else:
             # set the path for the workers to the path of the test interpreter.
             import sys

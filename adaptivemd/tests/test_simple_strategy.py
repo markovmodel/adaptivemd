@@ -49,7 +49,11 @@ class TestSimpleStrategy(unittest.TestCase):
             print(os.getcwd())
             print(prefix)
             if os.getcwd() is not prefix:
-                os.chdir(prefix)
+                print('not changing to conda build path')
+                #os.chdir(prefix)
+                print(os.listdir(prefix))
+                print(os.getcwd())
+                print(os.listdir(prefix+'/../'))
         else:
             # set the path for the workers to the path of the test interpreter.
             import sys
