@@ -85,7 +85,7 @@ class TestSimpleStrategy(unittest.TestCase):
         print('F.path:', F.path)
         print('F.url:', F.url)
 
-        pdb_file = F.named('initial_pdb').load()
+        pdb_file = F.named('initial_pdb').dumbload()
 
         engine = OpenMMEngine(
             pdb_file=pdb_file,
