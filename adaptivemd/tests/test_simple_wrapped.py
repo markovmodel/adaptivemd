@@ -66,9 +66,16 @@ class TestSimpleProject(unittest.TestCase):
         #   the instance to create trajectories
         # ----------------------------------------------------------------------
 
-        pdb_file = File(
-            'file://{0}alanine.pdb'.format(
-            self.f_base)).named('initial_pdb').load()
+        print('file base path', self.f_base)
+        print('full path', 'file://{0}alanine.pdb'.format(self.f_base))
+        print('cwd:', os.getcwd())
+
+        F = File('file://{0}alanine.pdb'.format(self.f_base))
+        print('F.short:', F.short)
+        print('F.path:', F.path)
+        print('F.url:', F.url)
+
+        pdb_file = F.named('initial_pdb').load()
 
         engine = OpenMMEngine(
             pdb_file=pdb_file,

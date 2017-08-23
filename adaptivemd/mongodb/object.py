@@ -505,7 +505,7 @@ class ObjectStore(StorableMixin):
 
     def _save(self, obj):
         dct = self.storage.simplifier.to_simple_dict(obj)
-        self._document.insert(dct)
+        self._document.insert_one(dct)
         obj.__store__ = self
 
     @property
