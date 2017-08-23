@@ -46,6 +46,10 @@ class TestSimpleStrategy(unittest.TestCase):
                 'source activate {prefix}'.format(prefix=prefix))
             print('prefix:', prefix)
             print('cwd conda build:', os.getcwd())
+            print(os.getcwd())
+            print(prefix)
+            if os.getcwd() is not prefix:
+                os.chdir(prefix)
         else:
             # set the path for the workers to the path of the test interpreter.
             import sys
@@ -133,7 +137,7 @@ class TestSimpleStrategy(unittest.TestCase):
                 # when it is done do next loop
                 yield task.is_done
 
-        # TODO worker running in subprocess thread is horribly slow
+        # TODO worker/MD running in subprocess thread horribly slow
         #      - fix somehow and keep 2,2 for loops, trajs
         n_loops = 1#2
         trajs_per_loop = 1#2

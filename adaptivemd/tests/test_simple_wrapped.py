@@ -44,6 +44,9 @@ class TestSimpleProject(unittest.TestCase):
                 'source activate {prefix}'.format(prefix=prefix))
             print('prefix:', prefix)
             print('cwd conda build:', os.getcwd())
+            if os.getcwd() is not prefix:
+                print('changing to conda build path')
+                os.chdir(prefix)
         else:
             # set the path for the workers to the path of the test interpreter.
             import sys
@@ -78,7 +81,7 @@ class TestSimpleProject(unittest.TestCase):
         print('F.path:', F.path)
         print('F.url:', F.url)
 
-        pdb_file = F.named('initial_pdb').load()
+        pdb_file = F.named('initial_pdb').dumbload()
 
         engine = OpenMMEngine(
             pdb_file=pdb_file,
