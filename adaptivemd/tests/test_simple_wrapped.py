@@ -42,6 +42,7 @@ class TestSimpleProject(unittest.TestCase):
             assert os.path.exists(prefix)
             resource.wrapper.pre.insert(0,
                 'source activate {prefix}'.format(prefix=prefix))
+            print('cwd conda build:', os.getcwd())
         else:
             # set the path for the workers to the path of the test interpreter.
             import sys
@@ -51,6 +52,7 @@ class TestSimpleProject(unittest.TestCase):
                 .format(python_path=os.path.dirname(sys.executable)))
 
         cls.project.initialize(resource)
+        print('cwd start:', os.getcwd())
         return cls
 
     @classmethod
@@ -68,7 +70,7 @@ class TestSimpleProject(unittest.TestCase):
 
         print('file base path', self.f_base)
         print('full path', 'file://{0}alanine.pdb'.format(self.f_base))
-        print('cwd:', os.getcwd())
+        print('cwd test:', os.getcwd())
 
         F = File('file://{0}alanine.pdb'.format(self.f_base))
         print('F.short:', F.short)

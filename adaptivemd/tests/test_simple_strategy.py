@@ -44,6 +44,7 @@ class TestSimpleStrategy(unittest.TestCase):
             assert os.path.exists(prefix)
             resource.wrapper.pre.insert(0,
                 'source activate {prefix}'.format(prefix=prefix))
+            print('cwd conda build:', os.getcwd())
         else:
             # set the path for the workers to the path of the test interpreter.
             import sys
@@ -53,6 +54,7 @@ class TestSimpleStrategy(unittest.TestCase):
                 .format(python_path=os.path.dirname(sys.executable)))
 
         cls.project.initialize(resource)
+        print('cwd start worker:', os.getcwd())
 
         cls.worker_process = start_local_worker(cls.proj_name)
 
@@ -74,9 +76,16 @@ class TestSimpleStrategy(unittest.TestCase):
         #   the instance to create trajectories
         # ----------------------------------------------------------------------
 
-        pdb_file = File(
-            'file://{0}alanine.pdb'.format(
-            self.f_base)).named('initial_pdb').load()
+        print('file base path', self.f_base)
+        print('full path', 'file://{0}alanine.pdb'.format(self.f_base))
+        print('cwd test:', os.getcwd())
+
+        F = File('file://{0}alanine.pdb'.format(self.f_base))
+        print('F.short:', F.short)
+        print('F.path:', F.path)
+        print('F.url:', F.url)
+
+        pdb_file = F.named('initial_pdb').load()
 
         engine = OpenMMEngine(
             pdb_file=pdb_file,
@@ -123,8 +132,10 @@ class TestSimpleStrategy(unittest.TestCase):
                 # when it is done do next loop
                 yield task.is_done
 
-        n_loops = 2
-        trajs_per_loop = 2
+        # TODO worker running in subprocess thread is horribly slow
+        #      - fix somehow and keep 2,2 for loops, trajs
+        n_loops = 1#2
+        trajs_per_loop = 1#2
         self.project.add_event(strategy(loops=n_loops, trajs_per_loop=trajs_per_loop))
         self.project.run()
         self.project.wait_until(self.project.on_ntraj(n_loops*trajs_per_loop))
