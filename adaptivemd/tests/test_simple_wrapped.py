@@ -34,25 +34,17 @@ class TestSimpleProject(unittest.TestCase):
         if os.getenv('CONDA_BUILD', False):
             # activate the conda build test environment for workers
 
-            # this path is different for different test,
-            # maybe excluding the worker layer changes
-            # how URL is resolved.
-            cls.f_base = './examples/files/alanine/'
+            cls.f_base = 'examples/files/alanine/'
             prefix = os.getenv('PREFIX')
             assert os.path.exists(prefix)
             resource.wrapper.pre.insert(0,
                 'source activate {prefix}'.format(prefix=prefix))
 
+            # TODO why does test_simple_wrapper not
+            #      have a chdir to ci test environment?
             test_tmp = prefix + '/../test_tmp/'
-            print('prefix:', prefix)
-            print('cwd conda build:', os.getcwd())
-            if os.getcwd() is not prefix:
-                print('changing to conda build path')
-                os.chdir(prefix)
-                print(os.listdir(prefix))
-                print(os.getcwd())
-                print(os.listdir(prefix+'/../'))
-                print(os.listdir(test_tmp))
+            if os.getcwd() is not test_tmp:
+                os.chdir(test_tmp)
         else:
             # set the path for the workers to the path of the test interpreter.
             import sys
@@ -62,7 +54,6 @@ class TestSimpleProject(unittest.TestCase):
                 .format(python_path=os.path.dirname(sys.executable)))
 
         cls.project.initialize(resource)
-        print('cwd start:', os.getcwd())
         return cls
 
     @classmethod
@@ -78,16 +69,9 @@ class TestSimpleProject(unittest.TestCase):
         #   the instance to create trajectories
         # ----------------------------------------------------------------------
 
-        print('file base path', self.f_base)
-        print('full path', 'file://{0}alanine.pdb'.format(self.f_base))
-        print('cwd test:', os.getcwd())
 
         F = File('file://{0}alanine.pdb'.format(self.f_base))
-        print('F.short:', F.short)
-        print('F.path:', F.path)
-        print('F.url:', F.url)
-
-        pdb_file = F.named('initial_pdb').dumbload()
+        pdb_file = F.named('initial_pdb').load()
 
         engine = OpenMMEngine(
             pdb_file=pdb_file,

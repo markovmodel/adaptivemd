@@ -45,18 +45,11 @@ class TestSimpleStrategy(unittest.TestCase):
             resource.wrapper.pre.insert(0,
                 'source activate {prefix}'.format(prefix=prefix))
 
+            # TODO why does test_simple_wrapper not
+            #      have a chdir to ci test environment?
             test_tmp = prefix + '/../test_tmp/'
-            print('prefix:', prefix)
-            print('cwd conda build:', os.getcwd())
-            print(os.getcwd())
-            print(prefix)
             if os.getcwd() is not test_tmp:
-                print('not changing to conda build path')
-                #os.chdir(prefix)
-                print(os.listdir(prefix))
-                print(os.getcwd())
-                print(os.listdir(prefix+'/../'))
-                print(os.listdir(test_tmp))
+                os.chdir(test_tmp)
         else:
             # set the path for the workers to the path of the test interpreter.
             import sys
@@ -66,10 +59,7 @@ class TestSimpleStrategy(unittest.TestCase):
                 .format(python_path=os.path.dirname(sys.executable)))
 
         cls.project.initialize(resource)
-        print('cwd start worker:', os.getcwd())
-
         cls.worker_process = start_local_worker(cls.proj_name)
-
         return cls
 
     @classmethod
@@ -88,16 +78,8 @@ class TestSimpleStrategy(unittest.TestCase):
         #   the instance to create trajectories
         # ----------------------------------------------------------------------
 
-        print('file base path', self.f_base)
-        print('full path', 'file://{0}alanine.pdb'.format(self.f_base))
-        print('cwd test:', os.getcwd())
-
         F = File('file://{0}alanine.pdb'.format(self.f_base))
-        print('F.short:', F.short)
-        print('F.path:', F.path)
-        print('F.url:', F.url)
-
-        pdb_file = F.named('initial_pdb').dumbload()
+        pdb_file = F.named('initial_pdb').load()
 
         engine = OpenMMEngine(
             pdb_file=pdb_file,
