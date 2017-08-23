@@ -1,4 +1,4 @@
-# _AdaptiveMD_
+# AdaptiveMD
 A Python framework to run adaptive MD simulations using Markov state model (MSM)
 analysis on HPC resources.
 

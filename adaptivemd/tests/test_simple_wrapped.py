@@ -70,8 +70,9 @@ class TestSimpleProject(unittest.TestCase):
         # ----------------------------------------------------------------------
 
 
-        F = File('file://{0}alanine.pdb'.format(self.f_base))
-        pdb_file = F.named('initial_pdb').load()
+
+        pdb_file = File('file://{0}alanine.pdb'.format(
+            self.f_base)).named('initial_pdb').load()
 
         engine = OpenMMEngine(
             pdb_file=pdb_file,
