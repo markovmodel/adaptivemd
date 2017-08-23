@@ -44,16 +44,19 @@ class TestSimpleStrategy(unittest.TestCase):
             assert os.path.exists(prefix)
             resource.wrapper.pre.insert(0,
                 'source activate {prefix}'.format(prefix=prefix))
+
+            test_tmp = prefix + '/../test_tmp/'
             print('prefix:', prefix)
             print('cwd conda build:', os.getcwd())
             print(os.getcwd())
             print(prefix)
-            if os.getcwd() is not prefix:
+            if os.getcwd() is not test_tmp:
                 print('not changing to conda build path')
                 #os.chdir(prefix)
                 print(os.listdir(prefix))
                 print(os.getcwd())
                 print(os.listdir(prefix+'/../'))
+                print(os.listdir(test_tmp))
         else:
             # set the path for the workers to the path of the test interpreter.
             import sys

@@ -42,13 +42,17 @@ class TestSimpleProject(unittest.TestCase):
             assert os.path.exists(prefix)
             resource.wrapper.pre.insert(0,
                 'source activate {prefix}'.format(prefix=prefix))
+
+            test_tmp = prefix + '/../test_tmp/'
             print('prefix:', prefix)
             print('cwd conda build:', os.getcwd())
             if os.getcwd() is not prefix:
                 print('changing to conda build path')
                 os.chdir(prefix)
                 print(os.listdir(prefix))
+                print(os.getcwd())
                 print(os.listdir(prefix+'/../'))
+                print(os.listdir(test_tmp))
         else:
             # set the path for the workers to the path of the test interpreter.
             import sys
