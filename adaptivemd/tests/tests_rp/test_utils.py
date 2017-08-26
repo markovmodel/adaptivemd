@@ -1,5 +1,7 @@
 def test_process_resource_description():
 
+    from adaptivemd.rp.utils import Utils
+
     input_res_desc = {
                         "_id": "1e78cf80-8a96-11e7-af58-000000000062",
                         "_cls": "Resource",
@@ -18,4 +20,5 @@ def test_process_resource_description():
                         'resource': 'ornl.titan',
                         'walltime': 30
                         'cores': 32
+                        'project':
     }

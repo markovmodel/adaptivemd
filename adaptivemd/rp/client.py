@@ -57,6 +57,8 @@ class Client(object):
             self._db = Database(self._dburl, self._project)
             raw_resource_desc = self._db.get_resource_descriptions()
             processed_resource_desc = process_resource_description(raw_resource_desc)
+            raw_configurations = self._db.get_configuration_descriptions()
+            processed_configurations = process_configurations(raw_configurations)
 
             self._rmgr = ResourceManager(resource_desc = processed_resource_desc, database_url= self._dburl + '/rp')
             self._rmgr.submit_resource_request()
