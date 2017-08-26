@@ -62,12 +62,12 @@ class Database():
                 resource_description = resource
                 # Get configuration for this resource
                 config = self.get_configuration_description(
-                    name=resource['_dict']['config_name'])
+                    name=resource['_dict']['configuration'])
                 # If found, put all configuration in the resource,
-                # except for the 'wrapper'
+                # except for the 'wrapper' and 'name'
                 if config:
                     for key, val in config['_dict']:
-                        if key != 'wrapper':
+                        if key not in ['wrapper', 'name']:
                             resource_description['_dict'][key] = val
                 resource_descriptions.append(resource_description)
         finally:
