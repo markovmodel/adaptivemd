@@ -69,9 +69,3 @@ def create_cud_from_task_def(task_def, shared_path):
 
     return cud
 
-
-def update_task_desc_from_cu(cu):
-
-    # use update task method from database.py
-
-
