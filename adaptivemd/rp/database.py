@@ -48,17 +48,8 @@ class Database():
             # col.update_one({'_id': task['_id']}, {"state": "running"})
 
             # Bring '_dict' to higher level
-            task_description = task['_dict']
-            # Add a few nice-sounding fields
-            task_description['name'] = task['_cls']
-            task_description['id'] = task['_id']
-            # Pass the rest of the root fields
-            task_description['_id'] = task['_id']
-            task_description['_time'] = task['_time']
-            task_description['_cls'] = task['_cls']
-            task_description['_obj_uuid'] = task['_obj_uuid']
             # Append task description
-            task_descriptions.append(task_description)
+            task_descriptions.append(task)
         return task_descriptions
 
     def get_resource_descriptions(self):
@@ -72,7 +63,15 @@ class Database():
             for resource in col.find():
                 # pprint(resource)
                 resource_description = resource
-                # TODO: convert resource_description into nice representation
+                # Get configuration for this resource
+                config = self.get_configuration_description(
+                    name=resource['_dict']['config_name'])
+                # If found, put all configuration in the resource,
+                # except for the 'wrapper'
+                if config:
+                    for key, val in config['_dict']:
+                        if key != 'wrapper':
+                            resource_description['_dict'][key] = val
                 resource_descriptions.append(resource_description)
         finally:
             client.close()
@@ -93,28 +92,22 @@ class Database():
             finally:
                 client.close()
 
-    def get_configuration_description(self, id=None):
+    def get_configuration_description(self, name=None):
         """Get a specific configuration description
         :Parameters:
-            - `id`: configuration description 'id'
+            - `name`: configuration description 'name'
         """
         configuration_description = None
         client = MongoClient(self.url)
         try:
             db = client[self.store_name]
             col = db[self.configuration_collection]
-            result = col.find_one({'_id': id})
+            result = col.find_one({'name': name})
             # Convert document into value dictionary,
             # we only really care about what is on '_dict'
             # so we will expand it
-            config = result['_dict']
-            config['id'] = result['_id'],
-            config['config_class_name'] = result['_cls'],
-            config['_id'] = result['_id'],
-            config['_cls'] = result['_cls'],
-            config['_obj_uuid'] = result['_obj_uuid'],
-            config['_time'] = result['_time'],
-            configuration_description = config
+            if result:
+                configuration_description = result
         finally:
             client.close()
         return configuration_description
