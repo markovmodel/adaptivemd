@@ -1,5 +1,4 @@
 from pymongo import MongoClient
-from pprint import pprint
 # Task Status: created, running, fail, halted, success, cancelled
 
 
@@ -37,19 +36,18 @@ class Database():
         Returns an empty list if none is found"""
         task_descriptions = list()
         client = MongoClient(self.url)
-        db = client[self.store_name]
-        col = db[self.tasks_collection]
-
-        for task in col.find({"state": "created"}):
-            # Update the current task, should be 'find_and_update'
-            # but since we are the only one getting these tasks,
-            # we are getting them in bulk
-            # pprint(task)
-            # col.update_one({'_id': task['_id']}, {"state": "running"})
-
-            # Bring '_dict' to higher level
-            # Append task description
-            task_descriptions.append(task)
+        try:
+            db = client[self.store_name]
+            col = db[self.tasks_collection]
+            for task in col.find({"state": "created"}):
+                # Update the current task, should be 'find_and_update'
+                # but since we are the only one getting these tasks,
+                # we are getting them in bulk
+                # col.update_one({'_id': task['_id']}, {"state": "running"})
+                # Append task description
+                task_descriptions.append(task)
+        finally:
+            client.close()
         return task_descriptions
 
     def get_resource_descriptions(self):
@@ -61,7 +59,6 @@ class Database():
             db = client[self.store_name]
             col = db[self.resource_collection]
             for resource in col.find():
-                # pprint(resource)
                 resource_description = resource
                 # Get configuration for this resource
                 config = self.get_configuration_description(
@@ -88,7 +85,12 @@ class Database():
             try:
                 db = client[self.store_name]
                 col = db[self.tasks_collection]
-                col.update_one({'_id': id}, {"state": state})
+                # Updates both places where the 'state' value is on
+                col.update_one({'_id': id},
+                               {
+                    '$set': {'state': state},
+                    '$set': {'_dict.state': state}
+                })
             finally:
                 client.close()
 
