@@ -168,11 +168,11 @@ class Task(BaseTask):
         was used to create this task
     state : str
         a string representing the current state of the execution. One of
-        - 'create' : task has been created and is available for execution
+        - 'created' : task has been created and is available for execution
         - 'running': task is currently executed by a scheduler
         - 'queued' : task has been captured by a worker for execution
         - 'fail' : task has completed but failed. You can restart it
-        - 'succedd` : task has completed and succeeded.
+        - 'success' : task has completed and succeeded.
         - 'halt' : task has been halted by user. You can restart it
         - 'cancelled' : task has been cancelled by user. You CANNOT restart it
     stdout : :class:`~adaptivemd.logentry.LogEntry`
@@ -364,9 +364,12 @@ class Task(BaseTask):
         s += ['- %s' % x.short for x in task.modified_files]
 
         s += ['']
-        s += ['<pretask>']
+        #s += ['<pretask>']
+        #s += list(map(str, task.pretask))
+        #s += ['<main>']
         s += list(map(str, task.script))
-        s += ['<posttask>']
+        #s += ['<posttask>']
+        #s += list(map(str, task.pretask))
 
         return '\n'.join(s)
 
