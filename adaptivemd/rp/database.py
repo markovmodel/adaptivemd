@@ -59,37 +59,24 @@ class Database():
             db = client[self.store_name]
             col = db[self.resource_collection]
             for resource in col.find():
-                resource_description = resource
-                # Get configuration for this resource
-                config = self.get_configuration_description(
-                    name=resource['_dict']['configuration'])
-                # If found, put all configuration in the resource,
-                # except for the 'wrapper' and 'name'
-                if config:
-                    for key, val in config['_dict']:
-                        if key not in ['wrapper', 'name']:
-                            resource_description['_dict'][key] = val
-                resource_descriptions.append(resource_description)
+                resource_descriptions.append(resource)
         finally:
             client.close()
         return resource_descriptions
 
-    def get_configuration_description(self, name=None):
-        """Get a specific configuration description
-        :Parameters:
-            - `name`: configuration description 'name'
+    def get_configuration_descriptions(self):
+        """Get a list of configuration descriptions
         """
-        configuration_description = None
+        configuration_descriptions = list()
         client = MongoClient(self.url)
         try:
             db = client[self.store_name]
             col = db[self.configuration_collection]
-            result = col.find_one({'name': name})
-            if result:
-                configuration_description = result
+            for configuration_description in col.find():
+                configuration_descriptions.append(configuration_description)
         finally:
             client.close()
-        return configuration_description
+        return configuration_descriptions
 
     def update_task_description_status(self, id=None, state='success'):
         """Update a single task with specific id
