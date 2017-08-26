@@ -15,8 +15,8 @@ class TaskManager(object):
 
     def __init__(self, session, db_obj):
 
-        self._uid           = ru.generate_id('radical.entk.task_manager')
-        self._logger        = ru.get_logger('radical.entk.task_manager')
+        self._uid           = ru.generate_id('task_manager.rp')
+        self._logger        = ru.get_logger('task_manager.rp')
 
         self._session = session
         self._db_obj = db_obj

@@ -21,8 +21,8 @@ class ResourceManager(object):
     def __init__(self, resource_desc, database_url=None):
 
 
-        self._uid = ru.generate_id('radical.entk.resource_manager')
-        self._logger = ru.get_logger('radical.entk.resource_manager')
+        self._uid = ru.generate_id('resource_manager.rp')
+        self._logger = ru.get_logger('resource_manager.rp')
 
         if not database_url:
             self._mlab_url = database_url
