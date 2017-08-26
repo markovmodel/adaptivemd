@@ -1,5 +1,4 @@
 from pymongo import MongoClient
-from pprint import pprint
 # Task Status: created, running, fail, halted, success, cancelled
 
 
@@ -37,19 +36,18 @@ class Database():
         Returns an empty list if none is found"""
         task_descriptions = list()
         client = MongoClient(self.url)
-        db = client[self.store_name]
-        col = db[self.tasks_collection]
-
-        for task in col.find({"state": "created"}):
-            # Update the current task, should be 'find_and_update'
-            # but since we are the only one getting these tasks,
-            # we are getting them in bulk
-            # pprint(task)
-            # col.update_one({'_id': task['_id']}, {"state": "running"})
-
-            # Bring '_dict' to higher level
-            # Append task description
-            task_descriptions.append(task)
+        try:
+            db = client[self.store_name]
+            col = db[self.tasks_collection]
+            for task in col.find({"state": "created"}):
+                # Update the current task, should be 'find_and_update'
+                # but since we are the only one getting these tasks,
+                # we are getting them in bulk
+                # col.update_one({'_id': task['_id']}, {"state": "running"})
+                # Append task description
+                task_descriptions.append(task)
+        finally:
+            client.close()
         return task_descriptions
 
     def get_resource_descriptions(self):
@@ -61,21 +59,24 @@ class Database():
             db = client[self.store_name]
             col = db[self.resource_collection]
             for resource in col.find():
-                # pprint(resource)
-                resource_description = resource
-                # Get configuration for this resource
-                config = self.get_configuration_description(
-                    name=resource['_dict']['config_name'])
-                # If found, put all configuration in the resource,
-                # except for the 'wrapper'
-                if config:
-                    for key, val in config['_dict']:
-                        if key != 'wrapper':
-                            resource_description['_dict'][key] = val
-                resource_descriptions.append(resource_description)
+                resource_descriptions.append(resource)
         finally:
             client.close()
         return resource_descriptions
+
+    def get_configuration_descriptions(self):
+        """Get a list of configuration descriptions
+        """
+        configuration_descriptions = list()
+        client = MongoClient(self.url)
+        try:
+            db = client[self.store_name]
+            col = db[self.configuration_collection]
+            for configuration_description in col.find():
+                configuration_descriptions.append(configuration_description)
+        finally:
+            client.close()
+        return configuration_descriptions
 
     def update_task_description_status(self, id=None, state='success'):
         """Update a single task with specific id
@@ -88,26 +89,11 @@ class Database():
             try:
                 db = client[self.store_name]
                 col = db[self.tasks_collection]
-                col.update_one({'_id': id}, {"state": state})
+                # Updates both places where the 'state' value is on
+                col.update_one({'_id': id},
+                               {
+                    '$set': {'state': state},
+                    '$set': {'_dict.state': state}
+                })
             finally:
                 client.close()
-
-    def get_configuration_description(self, name=None):
-        """Get a specific configuration description
-        :Parameters:
-            - `name`: configuration description 'name'
-        """
-        configuration_description = None
-        client = MongoClient(self.url)
-        try:
-            db = client[self.store_name]
-            col = db[self.configuration_collection]
-            result = col.find_one({'name': name})
-            # Convert document into value dictionary,
-            # we only really care about what is on '_dict'
-            # so we will expand it
-            if result:
-                configuration_description = result
-        finally:
-            client.close()
-        return configuration_description
