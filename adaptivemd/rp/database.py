@@ -74,6 +74,23 @@ class Database():
             client.close()
         return resource_descriptions
 
+    def get_configuration_description(self, name=None):
+        """Get a specific configuration description
+        :Parameters:
+            - `name`: configuration description 'name'
+        """
+        configuration_description = None
+        client = MongoClient(self.url)
+        try:
+            db = client[self.store_name]
+            col = db[self.configuration_collection]
+            result = col.find_one({'name': name})
+            if result:
+                configuration_description = result
+        finally:
+            client.close()
+        return configuration_description
+
     def update_task_description_status(self, id=None, state='success'):
         """Update a single task with specific id
         :Parameters:
@@ -93,23 +110,3 @@ class Database():
                 })
             finally:
                 client.close()
-
-    def get_configuration_description(self, name=None):
-        """Get a specific configuration description
-        :Parameters:
-            - `name`: configuration description 'name'
-        """
-        configuration_description = None
-        client = MongoClient(self.url)
-        try:
-            db = client[self.store_name]
-            col = db[self.configuration_collection]
-            result = col.find_one({'name': name})
-            # Convert document into value dictionary,
-            # we only really care about what is on '_dict'
-            # so we will expand it
-            if result:
-                configuration_description = result
-        finally:
-            client.close()
-        return configuration_description
