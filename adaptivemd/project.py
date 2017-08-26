@@ -119,8 +119,17 @@ class Project(object):
     """
 
     @classmethod
-    def set_dbhost(cls, host):
-        MongoDBStorage.set_host(host)
+    def set_dblocation(cls, hostname, portnumber):
+        cls.set_dbhost(hostname)
+        cls.set_dbport(portnumber)
+
+    @classmethod
+    def set_dbhost(cls, hostname):
+        MongoDBStorage.set_host(hostname)
+
+    @classmethod
+    def set_dbport(cls, portnumber):
+        MongoDBStorage.set_port(portnumber)
 
     def __init__(self, name):
         self.name = name

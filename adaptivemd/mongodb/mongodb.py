@@ -48,6 +48,11 @@ class MongoDBStorage(object):
         #cls._db_url = cls._db_url.replace('localhost', host)
         cls._db_url = 'mongodb://' + host + ':27017/'
 
+    @classmethod
+    def set_port(cls, port):
+        portstring = str(port) + '/'
+        cls._db_url = ':'.join(cls._db_url.split(':')[:-1]+[portstring])
+
     @property
     def version(self):
         from . import version

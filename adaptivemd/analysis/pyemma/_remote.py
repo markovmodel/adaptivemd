@@ -163,41 +163,41 @@ def remote_analysis(
         #         available to the pyemma methods
         def apply_feat_part(featurizer, parts, prepend=''):
             if isinstance(parts, dict):
-        
+
                 items = list(parts.items())
                 if len(items) == 1:
                     func, attributes = items[0]
                     kwargs = dict()
-        
+
                 elif len(items) == 2:
                     if items[0][0] == 'kwargs':
                         func, attributes = items[1]
                         key, kwargs = items[0]
-        
+
                     elif items[1][0] == 'kwargs':
                         func, attributes = items[0]
                         key, kwargs = items[1]
-        
+
                     for k,v in kwargs.items():
                         if isinstance(v, dict):
-        
+
                             _func, _attr = list(v.items())[0]
                             _f = getattr(featurizer, _func)
                             if _attr is None:
                                 idc = _f()
-        
+
                             elif isinstance(_attr, (list, tuple)):
                                 idc = _f(*apply_feat_part(featurizer,
                                          _attr))
-        
+
                             kwargs[k] = idc
-        
+
                 assert isinstance(kwargs, dict)
                 f = getattr(featurizer, func)
-        
+
                 if attributes is None:
                     return f(**kwargs)
-        
+
                 elif isinstance(attributes, (list, tuple)):
                     return f(*apply_feat_part(featurizer, attributes),
                              **kwargs)
