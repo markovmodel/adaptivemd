@@ -59,6 +59,7 @@ class Database():
             task_description['_obj_uuid'] = task['_obj_uuid']
             # Append task description
             task_descriptions.append(task_description)
+            
         return task_descriptions
 
     def get_resource_descriptions(self):
