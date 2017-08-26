@@ -30,52 +30,41 @@ class Database():
         self.tasks_collection = 'tasks'
         self.resource_collection = 'resources'
         self.configuration_collection = 'configurations'
+        self.client = MongoClient(self.url)
 
     def get_tasks_descriptions(self):
         """Returns a list of task definitions from Mongo.
         Returns an empty list if none is found"""
         task_descriptions = list()
-        client = MongoClient(self.url)
-        try:
-            db = client[self.store_name]
-            col = db[self.tasks_collection]
-            for task in col.find({"state": "created"}):
-                # Update the current task, should be 'find_and_update'
-                # but since we are the only one getting these tasks,
-                # we are getting them in bulk
-                # col.update_one({'_id': task['_id']}, {"state": "running"})
-                # Append task description
-                task_descriptions.append(task)
-        finally:
-            client.close()
+        db = self.client[self.store_name]
+        col = db[self.tasks_collection]
+        for task in col.find({"state": "created"}):
+            # Update the current task, should be 'find_and_update'
+            # but since we are the only one getting these tasks,
+            # we are getting them in bulk
+            # col.update_one({'_id': task['_id']}, {"state": "running"})
+            # Append task description
+            task_descriptions.append(task)
         return task_descriptions
 
     def get_resource_descriptions(self):
         """Get a list resources
         """
         resource_descriptions = list()
-        client = MongoClient(self.url)
-        try:
-            db = client[self.store_name]
-            col = db[self.resource_collection]
-            for resource in col.find():
-                resource_descriptions.append(resource)
-        finally:
-            client.close()
+        db = self.client[self.store_name]
+        col = db[self.resource_collection]
+        for resource in col.find():
+            resource_descriptions.append(resource)
         return resource_descriptions
 
     def get_configuration_descriptions(self):
         """Get a list of configuration descriptions
         """
         configuration_descriptions = list()
-        client = MongoClient(self.url)
-        try:
-            db = client[self.store_name]
-            col = db[self.configuration_collection]
-            for configuration_description in col.find():
-                configuration_descriptions.append(configuration_description)
-        finally:
-            client.close()
+        db = self.client[self.store_name]
+        col = db[self.configuration_collection]
+        for configuration_description in col.find():
+            configuration_descriptions.append(configuration_description)
         return configuration_descriptions
 
     def update_task_description_status(self, id=None, state='success'):
@@ -85,15 +74,11 @@ class Database():
             - `state`: state desired
         """
         if id:
-            client = MongoClient(self.url)
-            try:
-                db = client[self.store_name]
-                col = db[self.tasks_collection]
-                # Updates both places where the 'state' value is on
-                col.update_one({'_id': id},
-                               {
-                    '$set': {'state': state},
-                    '$set': {'_dict.state': state}
-                })
-            finally:
-                client.close()
+            db = self.client[self.store_name]
+            col = db[self.tasks_collection]
+            # Updates both places where the 'state' value is on
+            col.update_one({'_id': id},
+                           {'$set': {
+                            '_dict.state': state,
+                            'state': state,
+                            }})
