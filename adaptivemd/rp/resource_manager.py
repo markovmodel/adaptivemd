@@ -49,6 +49,82 @@ class ResourceManager(object):
             raise Error(msg='Resource description incorrect')
         
 
+    # ------------------------------------------------------------------------------------------------------------------
+    # Getter methods
+    # ------------------------------------------------------------------------------------------------------------------
+
+    @property
+    def pilot(self):
+
+        """
+        :getter: Return reference to the submitted Pilot
+        """
+        return self._pilot
+
+    @property
+    def session(self):
+
+        """
+        :getter: Return reference to the Radical Pilot session instance currently being used
+        """
+        return self._session
+
+    @property
+    def pmgr(self):
+
+        """
+        :getter: Return reference to the Radical Pilot manager currently being used
+        """
+        return self._pmgr
+
+    @property
+    def resource(self):
+
+        """
+        :getter: Return user specified resource name
+        """
+        return self._resource
+
+    @property
+    def walltime(self):
+
+        """
+        :getter: Return user specified walltime
+        """
+        return self._walltime
+
+    @property
+    def cores(self):
+
+        """
+        :getter: Return user specified number of cores
+        """
+        return self._cores
+
+    @property
+    def project(self):
+
+        """
+        :getter: Return user specified project ID
+        """
+        return self._project
+
+    @property
+    def access_schema(self):
+
+        """
+        :getter: Return user specified access schema -- 'ssh' or 'gsissh' or None
+        """
+        return self._access_schema
+
+    @property
+    def queue(self):
+
+        """
+        :getter: Return user specified resource queue to be used
+        """
+        return self._queue
+    
 
     # ------------------------------------------------------------------------------------------------------------------
     # Private methods
