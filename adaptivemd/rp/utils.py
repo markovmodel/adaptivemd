@@ -69,3 +69,8 @@ def create_cud_from_task_def(task_def, shared_path):
 
     return cud
 
+
+def process_resource_description(raw_res_desc):
+
+    pass
+    
