@@ -4,6 +4,7 @@
 # Copyright 2017 FU Berlin and the Authors
 #
 # Authors: Jan-Hendrik Prinz
+#          John Ossyra
 # Contributors:
 #
 # `adaptiveMD` is free software: you can redistribute it and/or modify
@@ -279,7 +280,7 @@ class Trajectory(File):
         elif isinstance(f, OutputTypeDescription):
             return self.file(f.filename)
 
-    def run(self):
+    def run(self, resource_name=None):
         """
         Return a task to run this engine
 
@@ -289,10 +290,10 @@ class Trajectory(File):
             the task object that can be submitted to the queue
 
         """
-        # todo: check that you can generate one trajectory object only once
+        # TODO check that you can generate one trajectory object only once
         # not just the task for it
         if self.engine:
-            return self.engine.run(self)
+            return self.engine.run(self, resource_name)
         else:
             return None
 
@@ -468,8 +469,12 @@ class TrajectoryGenerationTask(Task):
         #     if isinstance(t, Trajectory):
         #         t.engine = self.generator
 
-    def __init__(self, generator=None, trajectory=None):
-        super(TrajectoryGenerationTask, self).__init__(generator)
+    def __init__(self, generator=None, trajectory=None, est_exec_time=5,
+                 cpu_threads=1, gpu_contexts=0, mpi_rank=0):
+
+        super(TrajectoryGenerationTask, self).__init__(
+            generator, est_exec_time, cpu_threads,
+            gpu_contexts, mpi_rank)
 
         # set this engine to be run by this
         self.trajectory = trajectory
