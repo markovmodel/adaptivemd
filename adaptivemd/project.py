@@ -4,6 +4,7 @@
 # Copyright 2017 FU Berlin and the Authors
 #
 # Authors: Jan-Hendrik Prinz
+#          John Ossyra
 # Contributors:
 #
 # `adaptiveMD` is free software: you can redistribute it and/or modify
@@ -40,6 +41,9 @@ from .worker import Worker
 from .logentry import LogEntry
 from .plan import ExecutionPlan
 
+from .configuration import Configuration
+
+
 from .mongodb import MongoDBStorage, ObjectStore, FileStore, DataDict, WeakValueCache
 
 
@@ -67,13 +71,13 @@ class Project(object):
     name : str
         a short descriptive name for the project. This name will be used in the
         database creation also.
-    resource : `Resource`
-        a resource to run the project on. The resource specifies the memory
-        storage location. Not necessarily which cluster is used. An example is,
-        if at an institute several clusters (CPU, GPU) share the same shared FS.
-        If clusters use the same FS you can run simulations across clusters
-        without problems and so so this resource is the most top-level
-        limitation.
+    #update#resource : `Resource`
+    #update#    a resource to run the project on. The resource specifies the memory
+    #update#    storage location. Not necessarily which cluster is used. An example is,
+    #update#    if at an institute several clusters (CPU, GPU) share the same shared FS.
+    #update#    If clusters use the same FS you can run simulations across clusters
+    #update#    without problems and so so this resource is the most top-level
+    #update#    limitation.
     files : :class:`Bundle`
         a set of file objects that are available in the project and are
         believed to be available within the resource as long as the project
@@ -145,8 +149,10 @@ class Project(object):
         self.workers = StoredBundle()
         self.logs = StoredBundle()
         self.data = StoredBundle()
+        self.configurations = StoredBundle()
         # self.commands = StoredBundle()
-        self.resource = None
+        #del#self.resource = None
+        self.resources = StoredBundle()
 
         self._all_trajectories = self.files.c(Trajectory)
         # TODO: is created different in semantics from exists?
@@ -184,7 +190,8 @@ class Project(object):
         # or do not care. This is fast but not recommended
         # self._set_task_state_from_dead_workers = None
 
-    def initialize(self, resource):
+    #del#def initialize(self, resource):
+    def initialize(self):
         """
         Initialize a project with a specific resource.
 
@@ -193,21 +200,22 @@ class Project(object):
         This should only be called to setup the project and only the very
         first time.
 
-        Parameters
-        ----------
-        resource : `Resource`
-            the resource used in this project
+        #del#Parameters
+        #del#----------
+        #del#resource : `Resource`
+        #del#    the resource used in this project
 
         """
         self.storage.close()
 
-        self.resource = resource
+        #del#self.resource = resource
 
         st = MongoDBStorage(self.name, 'w')
         # st.create_store(ObjectStore('objs', None))
         st.create_store(ObjectStore('generators', TaskGenerator))
         st.create_store(ObjectStore('files', File))
         st.create_store(ObjectStore('resources', Resource))
+        st.create_store(ObjectStore('configurations', Configuration))
         st.create_store(ObjectStore('models', Model))
         st.create_store(ObjectStore('tasks', Task))
         st.create_store(ObjectStore('workers', Worker))
@@ -215,11 +223,24 @@ class Project(object):
         st.create_store(FileStore('data', DataDict))
         # st.create_store(ObjectStore('commands', Command))
 
-        st.save(self.resource)
+        #del#st.save(self.resource)
 
         st.close()
 
         self._open_db()
+
+    def request_resource(self, total_cpus, total_time,
+                         total_gpus=0, destination=''):
+
+        # TODO regularize resource name generation
+        #nm_r = get_nm_r()
+        #name = 'res1'
+        r = Resource(total_cpus, total_time,
+                     total_gpus, destination)
+
+        self.storage.save(r)
+
+        return r
 
     def _open_db(self):
         # open DB and load status
@@ -234,7 +255,8 @@ class Project(object):
             self.logs.set_store(self.storage.logs)
             self.data.set_store(self.storage.data)
             # self.commands.set_store(self.storage.commands)
-            self.resource = self.storage.resources.find_one({})
+            #del#self.resource = self.storage.resources.find_one({})
+            self.resources.set_store(self.storage.resources)
 
             self.storage.files.set_caching(True)
             self.storage.models.set_caching(WeakValueCache())
@@ -242,6 +264,7 @@ class Project(object):
             self.storage.tasks.set_caching(True)
             self.storage.workers.set_caching(True)
             self.storage.resources.set_caching(True)
+            self.storage.configurations.set_caching(True)
             self.storage.data.set_caching(WeakValueCache())
             self.storage.logs.set_caching(WeakValueCache())
 
@@ -311,49 +334,49 @@ class Project(object):
         """
         MongoDBStorage.delete_storage(name)
 
-    def get_scheduler(self, name=None, **kwargs):
-        """
+    #del#def get_scheduler(self, name=None, **kwargs):
+    #del#    """
 
-        Parameters
-        ----------
-        name : str
-            name of the scheduler class provided by the `Resource` used in
-            this project. If None (default) the cluster/queue ``default`` is
-            used that needs to be implemented for every resource
+    #del#    Parameters
+    #del#    ----------
+    #del#    name : str
+    #del#        name of the scheduler class provided by the `Resource` used in
+    #del#        this project. If None (default) the cluster/queue ``default`` is
+    #del#        used that needs to be implemented for every resource
 
-        kwargs : ``**kwargs``
-            Additional arguments to initialize the cluster scheduler provided
-            by the `Resource`
+    #del#    kwargs : ``**kwargs``
+    #del#        Additional arguments to initialize the cluster scheduler provided
+    #del#        by the `Resource`
 
-        Notes
-        -----
-        the scheduler is automatically entered/opened so the pilot jobs is
-        submitted to the queueing system and it counts against your
-        simulation time! If you do not want to do so directly. Create
-        the `Scheduler` by yourself and later call ``scheduler.enter(project)``
-        to start using it. To close the scheduler call ``scheduler.exit()``
+    #del#    Notes
+    #del#    -----
+    #del#    the scheduler is automatically entered/opened so the pilot jobs is
+    #del#    submitted to the queueing system and it counts against your
+    #del#    simulation time! If you do not want to do so directly. Create
+    #del#    the `Scheduler` by yourself and later call ``scheduler.enter(project)``
+    #del#    to start using it. To close the scheduler call ``scheduler.exit()``
 
-        Returns
-        -------
-        `Scheduler`
-            the scheduler object that can be used to execute tasks on that
-            cluster/queue
-        """
-        # get a new scheduler to submit tasks
-        if name is None:
-            scheduler = self.resource.default()
-        else:
-            scheduler = getattr(self.resource, name)(**kwargs)
+    #del#    Returns
+    #del#    -------
+    #del#    `Scheduler`
+    #del#        the scheduler object that can be used to execute tasks on that
+    #del#        cluster/queue
+    #del#    """
+    #del#    # get a new scheduler to submit tasks
+    #del#    if name is None:
+    #del#        scheduler = self.resource.default()
+    #del#    else:
+    #del#        scheduler = getattr(self.resource, name)(**kwargs)
 
-        # and prepare the scheduler
-        scheduler.enter(self)
+    #del#    # and prepare the scheduler
+    #del#    scheduler.enter(self)
 
-        # add the task generating capabilities to the scheduler
-        list(map(scheduler.has, self.generators))
+    #del#    # add the task generating capabilities to the scheduler
+    #del#    list(map(scheduler.has, self.generators))
 
-        scheduler.stage_generators()
+    #del#    scheduler.stage_generators()
 
-        return scheduler
+    #del#    return scheduler
 
     def close(self):
         """
@@ -382,7 +405,7 @@ class Project(object):
 
         return fail
 
-    def queue(self, *tasks):
+    def queue(self, tasks, resource_name=None):
         """
         Submit jobs to the worker queue
 
@@ -392,14 +415,37 @@ class Project(object):
             anything that can be run like a `Task` or a `Trajectory` with engine
 
         """
+
+        # TODO do a direct association with resource
+        #      enable for multiple methods such as:
+        #
+        #      r.queue(tasks)
+        #      p.queue(r, tasks)
+        #
+        #  and delete this horrible method of getting r
+        if isinstance(resource_name, str):
+            resource_name = [resource_name]
+
+        assert isinstance(resource_name, list)
+
         for task in tasks:
+
             if isinstance(task, Task):
+                # TODO maybe include this here:
+                # if task.resource_name != resource_name:
+                #    task.resource_name = resource_name
                 self.tasks.add(task)
+
             elif isinstance(task, (list, tuple)):
-                list(map(self.queue, task))
+                #list(map(self.queue, task))
+                # TODO have it be like this:
+                #      list(map(self.queue, (task, resource_name)))
+                for ta in task:
+                    self.queue(task, resource_name)
+
             elif isinstance(task, Trajectory):
                 if task.engine is not None:
-                    t = task.run()
+                    t = task.run(resource_name)
                     if t is not None:
                         self.tasks.add(t)
 
@@ -409,7 +455,10 @@ class Project(object):
             else:
                 try:
                     if isinstance(task, map):
-                        [self.queue(t) for t in task]
+                        for ta in task:
+                            # TODO this is should be fixed as above
+                            self.queue(ta, resource_name)
+
                 except TypeError:
                     pass
 

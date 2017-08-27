@@ -95,8 +95,14 @@ class OpenMMEngine(Engine):
 
         return '--types="%s"' % ujson.dumps(d).replace('"', "'")
 
-    def run(self, target):
+    def run(self, target, resource_name=None):
         t = TrajectoryGenerationTask(self, target)
+
+        if resource_name is None:
+            resource_name = list()
+
+        assert isinstance(resource_name, list)
+        t.resource_name = resource_name
 
         initial_pdb = t.link(self['pdb_file_stage'], Location('initial.pdb'))
         t.link(self['system_file_stage'])

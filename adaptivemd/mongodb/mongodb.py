@@ -422,6 +422,7 @@ class MongoDBStorage(object):
             needed when loading the object to identify the correct storage
         """
 
+        # TODO isinstance these type checks
         if type(obj) is list:
             # a list of objects will be stored one by one
             return [self.save(part) for part in obj]

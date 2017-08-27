@@ -4,6 +4,7 @@
 # Copyright 2017 FU Berlin and the Authors
 #
 # Authors: Jan-Hendrik Prinz
+#          John Ossyra
 # Contributors:
 #
 # `adaptiveMD` is free software: you can redistribute it and/or modify
@@ -185,7 +186,9 @@ class Task(BaseTask):
 
     _copy_attributes = BaseTask._copy_attributes + [
         'stdout', 'stderr', 'restartable', 'cleanup',
-        'generator', 'dependencies', 'state', 'worker'
+        'generator', 'dependencies', 'state', 'worker',
+        'est_exec_time', 'resource_requirements',
+        'resource_name'
         ]
 
     _find_by = ['state', 'worker', 'stderr', 'stdout']
@@ -196,10 +199,14 @@ class Task(BaseTask):
     stderr = ObjectSyncVariable('stderr', 'logs', lambda x: x is not None)
 
     FINAL_STATES = ['success', 'cancelled']
+    # TODO change halted  to paused
+    #      find where else this needs to change
     RESTARTABLE_STATES = ['fail', 'halted']
     RUNNABLE_STATES = ['created']
 
-    def __init__(self, generator=None):
+    def __init__(self, generator=None, est_exec_time=5,
+                 cpu_threads=1, gpu_contexts=0, mpi_rank=0):
+
         super(Task, self).__init__()
 
         self.generator = generator
@@ -220,6 +227,17 @@ class Task(BaseTask):
         self.state = 'created'
 
         self.worker = None
+
+        assert isinstance(cpu_threads, int)
+        assert isinstance(gpu_contexts, int)
+        assert isinstance(mpi_rank, int)
+
+        self.resource_requirements = {'cpu_threads': cpu_threads,
+                             'gpu_contexts': gpu_contexts,
+                             'mpi_rank': mpi_rank}
+
+        assert isinstance(est_exec_time, int)
+        self.est_exec_time = est_exec_time
 
     def restart(self):
         """
