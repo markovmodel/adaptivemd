@@ -1,4 +1,5 @@
 from pymongo import MongoClient
+from pprint import pprint
 # Task Status: created, running, fail, halted, success, cancelled
 
 
@@ -31,7 +32,8 @@ class Database():
         self.tasks_collection = 'tasks'
         self.resource_collection = 'resources'
         self.configuration_collection = 'configurations'
-        self.file_collection = 'files'
+        self.file_dest_collection = 'files'
+        self.file_src_collection = 'generators'
         self.client = MongoClient(self.url)
 
     def get_task_descriptions(self):
@@ -69,16 +71,38 @@ class Database():
             configuration_descriptions.append(configuration_description)
         return configuration_descriptions
 
-    def get_file_location(self, id=None):
+    def get_file_destination(self, id=None):
         """Get the location information of a specific file"""
         location = None
         if id:
             db = self.client[self.store_name]
-            col = db[self.file_collection]
+            col = db[self.file_dest_collection]
             result = col.find_one({'_id': id})
             if result:
                 location = result['_dict']['location']
         return location
+
+
+    def get_source_files(self, id=None):
+
+        # @MM: Please take a look. Just quickly typed it up.
+
+        location = None
+        db = self.client[self.store_name]
+        col = db[self.file_src_collection]
+        test = list()
+
+        for item in col.find():
+            test.append(item)
+        #result = col.find_one({'_id': id})
+
+
+        files = list()
+        for key, val in test[0]['_dict']['types'].iteritems():
+            files.append(val['_dict']['filename'])
+
+        return files
+
 
     def update_task_description_status(self, id=None, state='success'):
         """Update a single task with specific id
