@@ -1,0 +1,13 @@
+{
+  "_id": "e0c66006-8ad3-11e7-af58-00000000006a",
+  "_cls": "Resource",
+  "_obj_uuid": "e0c66006-8ad3-11e7-af58-00000000006a",
+  "_dict": {
+    "total_gpus": 0,
+    "name": "some_name",
+    "total_time": 30,
+    "total_cpus": 2,
+    "destination": "ornl.titan"
+  },
+  "name": "some_name"
+}
