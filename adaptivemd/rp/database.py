@@ -77,11 +77,14 @@ class Database():
             db = self.client[self.store_name]
             col = db[self.tasks_collection]
             # Updates both places where the 'state' value is on
-            col.update_one({'_id': id},
-                           {'$set': {
-                            '_dict.state': state,
-                            'state': state,
-                            }})
-
-
-            # @MM: Add method to check if update was successful and return a boolean?
+            result = col.update_one({'_id': id},
+                                    {'$set': {
+                                        '_dict.state': state,
+                                        'state': state,
+                                    }})
+            if result.modified_count == 1:
+                return True
+            else:
+                return False
+        else:
+            return False
