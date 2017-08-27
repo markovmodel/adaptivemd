@@ -1,3 +1,4 @@
+import uuid
 from pprint import pprint
 import radical.pilot as rp
 
@@ -172,3 +173,12 @@ def get_matching_configurations(configurations=None, resource_name=''):
         key='resource',
         value=resource_name
     )
+
+
+def hex_to_id(hex_uuid=None):
+    """Convert a hexadecimal string to an ID"""
+    the_id = None
+    if hex_uuid:
+        temp = uuid.UUID(int=int(hex_uuid, 16))
+        the_id = str(temp)
+    return the_id
