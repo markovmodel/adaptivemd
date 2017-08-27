@@ -15,6 +15,7 @@ conf_example = 'example-json/configuration-example.json'
 res_example = 'example-json/resource-example.json'
 task_example = 'example-json/task-example.json'
 file_example = 'example-json/file-example.json'
+gen_example = 'example-json/generator-example.json'
 
 
 def id_generator(size=6, chars=string.ascii_uppercase + string.digits):
@@ -40,6 +41,7 @@ class TestDatabase(unittest.TestCase):
         configs_col = mongo_db[cls.db.configuration_collection]
         resources_col = mongo_db[cls.db.resource_collection]
         files_col = mongo_db[cls.db.file_collection]
+        generators_col = mongo_db[cls.db.generator_collection]
 
         # Insert test documents
         with open('{}/{}'.format(directory, conf_example)) as json_data:
@@ -53,6 +55,10 @@ class TestDatabase(unittest.TestCase):
         with open('{}/{}'.format(directory, file_example)) as json_data:
             data = json.load(json_data)
             files_col.insert_one(data)
+
+        with open('{}/{}'.format(directory, gen_example)) as json_data:
+            data = json.load(json_data)
+            generators_col.insert_one(data)
 
         with open('{}/{}'.format(directory, task_example)) as json_data:
             data = json.load(json_data)
@@ -92,14 +98,26 @@ class TestDatabase(unittest.TestCase):
         self.assertEquals(type(configurations), list)
         self.assertEquals(len(configurations), 1)
 
-    def test_get_file_location(self):
+    def test_get_file_destination(self):
         """Test that the proper location is returned"""
-        location = self.db.get_file_location(
+        location = self.db.get_file_destination(
             id='1e78cf80-8a96-11e7-af58-000000000036')
         self.assertEquals(
             location,
             "file:///home/johnrobot/adaptivemd-pkg/" +
             "adaptivemd/examples/files/alanine/alanine.pdb")
+
+    def test_get_source_files(self):
+        """Test that the proper location list is returned"""
+        locations = self.db.get_source_files(
+            id='65fc2c54-8b44-11e7-8783-00000000004a')
+        self.assertTrue(
+            all(
+                any(
+                    x in y for y in locations
+                ) for x in ['master.dcd', 'protein.dcd']
+            )
+        )
 
     def test_good_update_task_state(self):
         """Test that the task update state method returns
