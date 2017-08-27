@@ -72,13 +72,14 @@ def get_executable_arguments(task_details):
     return exe, args
 
 
-def add_output_staging(cuds, db, shared_path):
+def add_output_staging(db, shared_path):
 
     # TODO
+
     return []
 
 
-def create_cud_from_task_def(task_def, shared_path):
+def create_cud_from_task_def(task_def, db, shared_path):
 
     task_details = task_def['_dict']['_main']
 
@@ -88,7 +89,7 @@ def create_cud_from_task_def(task_def, shared_path):
     cud.executable = [str(exe)]
     cud.arguments = args[:-1]
     cud.input_staging = get_input_staging(task_details, shared_path)
-    cud.output_staging = get_output_staging(task_details, shared_path)
+    cud.output_staging = add_output_staging(db, shared_path)
     cud.cores = 16  # currently overwriting
 
     return cud

@@ -88,18 +88,16 @@ class Database():
         # @MM: Please take a look. Just quickly typed it up.
 
         location = None
-        db = self.client[self.store_name]
-        col = db[self.file_src_collection]
-        test = list()
+        if id:
+            db = self.client[self.store_name]
+            col = db[self.file_src_collection]
+            result = col.find_one({'_id': id})
+    
+            if result:
 
-        for item in col.find():
-            test.append(item)
-        #result = col.find_one({'_id': id})
-
-
-        files = list()
-        for key, val in test[0]['_dict']['types'].iteritems():
-            files.append(val['_dict']['filename'])
+                files = list()
+                for key, val in result['_dict']['types'].iteritems():
+                    files.append(val['_dict']['filename'])
 
         return files
 
