@@ -4,7 +4,7 @@ from utils import create_cud_from_task_def
 
 if __name__ == '__main__':
 
-    db = Database(mongo_url='mongodb://user:user@two.radical-project.org:32769/', project='rp_testing')
+    db = Database(mongo_url='mongodb://user:user@two.radical-project.org:32769/', project='rp_testing_3')
     
     #create_cud_from_task_def(db.get_tasks_definitions()[0])
     task_desc = db.get_tasks_descriptions()

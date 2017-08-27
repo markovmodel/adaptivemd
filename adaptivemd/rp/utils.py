@@ -77,6 +77,7 @@ def process_resource_description(raw_res_descs):
 
     resources = list()
     for res_desc in raw_res_descs:
+        print type(res_desc)
         temp_desc = dict()
         temp_desc['total_cpus'] = res_desc['_dict']['total_cpus']
         temp_desc['total_gpus'] = res_desc['_dict']['total_gpus']
@@ -92,7 +93,17 @@ def process_configurations(conf_descs):
     configurations = list()
     for conf in conf_descs:
 
-        
+        for queue in conf['queues']:
+
+            temp_desc = list()
+            temp_desc['resource'] = conf['resource_mname']
+            temp_desc['project'] = conf['allocation']
+            temp_desc['shared_path'] = conf['shared_path']
+            temp_desc['queue'] = queue
+
+            configurations.append(temp_desc)
+
+    return configurations
 
 
 def generic_matcher(the_list=None, key='', value=''):
