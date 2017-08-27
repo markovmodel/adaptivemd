@@ -99,11 +99,11 @@ class Client(object):
 
                 while self._terminate.is_set():
 
-                    task_desc = self._db.get_tasks_descriptions()
-                    
+                    task_desc = self._db.get_tasks_descriptions()                    
 
                     if task_desc:
                         cuds = create_cud_from_task_def(task_desc)
+                        cuds = add_output_staging(cuds, self._db, )
                         self._tmgr.run_cuds(cuds)
 
                     else:
