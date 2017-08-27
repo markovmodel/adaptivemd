@@ -1,5 +1,5 @@
 from adaptivemd.rp.utils import *
-
+import radical.pilot as rp
 
 def test_process_resource_description():
 
@@ -106,8 +106,8 @@ def test_process_task_descriptions():
                                                     "_obj_uuid": "fc2a421c-89e4-11e7-af58-000000000072",
                                                     "_dict": {
                                                         "location": "staging:///alanine.pdb",
-                                                        "resource": null,
-                                                        "_file": null
+                                                        "resource": None,
+                                                        "_file": None
                                                     }
                                                 },
                                                 "target": {
@@ -115,8 +115,8 @@ def test_process_task_descriptions():
                                                     "_obj_uuid": "fc2a421c-89e4-11e7-af58-0000000000e0",
                                                     "_dict": {
                                                         "location": "initial.pdb",
-                                                        "resource": null,
-                                                        "_file": null
+                                                        "resource": None,
+                                                        "_file": None
                                                     }
                                                 }
                                             }
@@ -130,8 +130,8 @@ def test_process_task_descriptions():
                                                     "_obj_uuid": "fc2a421c-89e4-11e7-af58-000000000078",
                                                     "_dict": {
                                                         "location": "staging:///system.xml",
-                                                        "resource": null,
-                                                        "_file": null
+                                                        "resource": None,
+                                                        "_file": None
                                                     }
                                                 },
                                                 "target": {
@@ -139,8 +139,8 @@ def test_process_task_descriptions():
                                                     "_obj_uuid": "fc2a421c-89e4-11e7-af58-0000000000e6",
                                                     "_dict": {
                                                         "location": "system.xml",
-                                                        "resource": null,
-                                                        "_file": null
+                                                        "resource": None,
+                                                        "_file": None
                                                     }
                                                 }
                                             }
@@ -154,8 +154,8 @@ def test_process_task_descriptions():
                                                     "_obj_uuid": "fc2a421c-89e4-11e7-af58-00000000007e",
                                                     "_dict": {
                                                         "location": "staging:///integrator.xml",
-                                                        "resource": null,
-                                                        "_file": null
+                                                        "resource": None,
+                                                        "_file": None
                                                     }
                                                 },
                                                 "target": {
@@ -163,8 +163,8 @@ def test_process_task_descriptions():
                                                     "_obj_uuid": "fc2a421c-89e4-11e7-af58-0000000000ec",
                                                     "_dict": {
                                                         "location": "integrator.xml",
-                                                        "resource": null,
-                                                        "_file": null
+                                                        "resource": None,
+                                                        "_file": None
                                                     }
                                                 }
                                             }
@@ -178,8 +178,8 @@ def test_process_task_descriptions():
                                                     "_obj_uuid": "fc2a421c-89e4-11e7-af58-000000000084",
                                                     "_dict": {
                                                         "location": "staging:///openmmrun.py",
-                                                        "resource": null,
-                                                        "_file": null
+                                                        "resource": None,
+                                                        "_file": None
                                                     }
                                                 },
                                                 "target": {
@@ -187,8 +187,8 @@ def test_process_task_descriptions():
                                                     "_obj_uuid": "fc2a421c-89e4-11e7-af58-0000000000f2",
                                                     "_dict": {
                                                         "location": "openmmrun.py",
-                                                        "resource": null,
-                                                        "_file": null
+                                                        "resource": None,
+                                                        "_file": None
                                                     }
                                                 }
                                             }
@@ -207,13 +207,13 @@ def test_process_task_descriptions():
                                                             "_hex_uuid": "0xfc2a421c89e411e7af5800000000003a",
                                                             "_store": "files"
                                                         },
-                                                    "resource": null,
-                                                    "_file": null
+                                                    "resource": None,
+                                                    "_file": None
                                                     }
                                                 }
                                             }
                                         },
-                                        "\nj=0\ntries=10\nsleep=1\n\ntrajfile=traj/allatoms.dcd\n\nwhile [ $j -le $tries ]; do if ! [ -s $trajfile ]; then python openmmrun.py -r --report-interval 1 -p CPU --types=\"{'master':{'selection':null,'filename':'master.dcd','stride':10},'protein':{'selection':'protein','filename':'protein.dcd','stride':1}}\" -t worker://initial.pdb --length 100 worker://traj/; fi; sleep 1; j=$((j+1)); done",
+                                        "\nj=0\ntries=10\nsleep=1\n\ntrajfile=traj/allatoms.dcd\n\nwhile [ $j -le $tries ]; do if ! [ -s $trajfile ]; then python openmmrun.py -r --report-interval 1 -p CPU --types=\"{'master':{'selection':None,'filename':'master.dcd','stride':10},'protein':{'selection':'protein','filename':'protein.dcd','stride':1}}\" -t worker://initial.pdb --length 100 worker://traj/; fi; sleep 1; j=$((j+1)); done",
                                         {
                                             "_cls": "Move",
                                             "_obj_uuid": "fc2a421c-89e4-11e7-af58-0000000000f8",
@@ -228,8 +228,8 @@ def test_process_task_descriptions():
                                                             "_hex_uuid": "0xfc2a421c89e411e7af5800000000003a",
                                                             "_store": "files"
                                                         },
-                                                    "resource": null,
-                                                    "_file": null
+                                                    "resource": None,
+                                                    "_file": None
                                                     }
                                                 },
                                                 "target": {
@@ -241,17 +241,24 @@ def test_process_task_descriptions():
                                     ],
                                 "_add_paths": [],
                                 "_environment": {},
-                                "stdout": null,
-                                "stderr": null,
-                                "restartable": null,
-                                "cleanup": null,
+                                "stdout": None,
+                                "stderr": None,
+                                "restartable": None,
+                                "cleanup": None,
+                                'est_exec_time': 5,
+                                'resource_name': ['ornl.titan'],
+                                'resource_requirements': {
+                                                            'cpu_threads': 1,
+                                                            'gpu_contexts': 0,
+                                                            'mpi_rank': 0
+                                                        },
                                 "generator": {
                                   "_hex_uuid": "0xfc2a421c89e411e7af5800000000006a",
                                   "_store": "generators"
                                 },
-                                "dependencies": null,
+                                "dependencies": None,
                                 "state": "created",
-                                "worker": null,
+                                "worker": None,
                                 "trajectory": {
                                   "_hex_uuid": "0xfc2a421c89e411e7af58000000000096",
                                   "_store": "files"
@@ -259,53 +266,60 @@ def test_process_task_descriptions():
                             },
                         "_time": 1503700753,
                         "state": "created",
-                        "worker": null,
-                        "stderr": null,
-                        "stdout": null
+                        "worker": None,
+                        "stderr": None,
+                        "stdout": None
                     }
                 
 
 
-    expected_output_task_desc = ComputUnitDescription()
+    expected_output_task_desc = rp.ComputeUnitDescription()
 
-    expected_output_task_desc.name = task_def['_id']
-    expected_output_task_desc.executable = ["\nj=0\ntries=10\nsleep=1\n\ntrajfile=traj/allatoms.dcd\n\nwhile [ $j -le $tries ]; do if ! [ -s $trajfile ]; then python openmmrun.py -r --report-interval 1 -p CPU --types=\"{'master':{'selection':null,'filename':'master.dcd','stride':10},'protein':{'selection':'protein','filename':'protein.dcd','stride':1}}\" -t worker://initial.pdb --length 100 worker://traj/; fi; sleep 1; j=$((j+1)); done"]
+    expected_output_task_desc.name = input_task_desc['_id']
+    expected_output_task_desc.executable = 'python'
+    expected_output_task_desc.arguments = [ 'openmmrun.py','-r', 
+                                            '--report-interval' ,'1',
+                                            '-p', 'CPU', 
+                                            '--types="{\'master\':{\'selection\':None,\'filename\':\'master.dcd\',\'stride\':10},\'protein\':{\'selection\':\'protein\',\'filename\':\'protein.dcd\',\'stride\':1}}"']
     expected_output_task_desc.input_staging = [
                                                 {
-                                                    'source': 'staging:///alanine.pdb',
-                                                    'action': rp.LINK
+                                                    'source': '$HOME/vivek/workers/staging_area/alanine.pdb',
+                                                    'action': rp.LINK,
                                                     'target': 'initial.pdb'
                                                 },
                                                 {
-                                                    'source': 'staging:///system.xml',
-                                                    'action': rp.LINK
+                                                    'source': '$HOME/vivek/workers/staging_area/system.xml',
+                                                    'action': rp.LINK,
                                                     'target': 'system.xml'
                                                 },
                                                 {
-                                                    'source': 'staging:///integrator.xml',
-                                                    'action': rp.LINK
+                                                    'source': '$HOME/vivek/workers/staging_area/integrator.xml',
+                                                    'action': rp.LINK,
                                                     'target': 'integrator.xml'
                                                 },
                                                 
                                                 {
-                                                    'source': 'staging:///openmmrun.py',
-                                                    'action': rp.LINK
+                                                    'source': '$HOME/vivek/workers/staging_area/openmmrun.py',
+                                                    'action': rp.LINK,
                                                     'target': 'openmmrun.py'
                                                 },
                                             ]
-    expected_output_task_desc.output_staging = [
 
-                                                {
-                                                    'source': '?',
-                                                    'action': rp.MOVE
-                                                    'target': '?'
-                                                }
+    pprint(expected_output_task_desc.input_staging)
 
-
-                                            ]
+    expected_output_task_desc.output_staging = []
     expected_output_task_desc.cores = 16
 
     
 
-    actual_output_task_desc = create_cud_from_task_def(input_task_desc)
+    actual_output_task_desc = create_cud_from_task_def(input_task_desc, '$HOME/vivek')
 
+
+    pprint(actual_output_task_desc.input_staging)
+
+    assert actual_output_task_desc.name == expected_output_task_desc.name
+    assert actual_output_task_desc.executable == expected_output_task_desc.executable
+    assert actual_output_task_desc.arguments == expected_output_task_desc.arguments
+    assert actual_output_task_desc.input_staging == expected_output_task_desc.input_staging
+    assert actual_output_task_desc.output_staging == expected_output_task_desc.output_staging
+    assert actual_output_task_desc.cores == expected_output_task_desc.cores

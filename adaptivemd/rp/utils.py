@@ -45,7 +45,8 @@ def get_input_staging(task_details, shared_path):
             'target': dest
         }
 
-        staging_directives.append(temp_directive)
+        if temp_directive not in staging_directives:
+            staging_directives.append(temp_directive)
 
     return staging_directives
 
@@ -88,7 +89,7 @@ def create_cud_from_task_def(task_def, shared_path):
     cud.arguments = args[:-1]
     cud.input_staging = get_input_staging(task_details, shared_path)
     cud.output_staging = get_output_staging(task_details, shared_path)
-    cud.cores = 16
+    cud.cores = 16  # currently overwriting
 
     return cud
 
