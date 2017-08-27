@@ -72,7 +72,7 @@ def get_executable_arguments(task_details):
     return exe, args
 
 
-def get_output_staging(task_details, shared_path):
+def add_output_staging(cuds, db, shared_path):
 
     # TODO
     return []
