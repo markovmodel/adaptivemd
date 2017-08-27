@@ -72,11 +72,27 @@ def get_executable_arguments(task_details):
     return exe, args
 
 
-def add_output_staging(db, shared_path):
+def add_output_staging(task_def, db, shared_path):
 
-    # TODO
+    hex_id_input = hex_to_id(hex_uuid=task_def['_dict']['generator']['_hex_uuid'])
+    src_files = get_source_files(hex_id_input)
 
-    return []
+    hex_id_output = hex_to_id(hex_uuid=task_def['_dict']['_main'][-1]['_dict']['source']['_dict']['frame']['_hex_uuid'])
+    output_loc = get_file_destination(hex_id_output)
+
+    staging_directives = list()
+
+    for file in src_files:
+
+        temp = {
+                    'source': task_def['_dict']['_main'][-1]['_dict']['source']['_dict']['location'] + file,
+                    'action': rp.COPY,
+                    'target': shared_path + task_def['_dict']['_main'][-1]['_dict']['source']['_dict']['location'] + file
+                }
+
+        staging_directives.append(temp)
+
+    return staging_directives
 
 
 def create_cud_from_task_def(task_def, db, shared_path):
@@ -89,7 +105,7 @@ def create_cud_from_task_def(task_def, db, shared_path):
     cud.executable = [str(exe)]
     cud.arguments = args[:-1]
     cud.input_staging = get_input_staging(task_details, shared_path)
-    cud.output_staging = add_output_staging(db, shared_path)
+    cud.output_staging = add_output_staging(task_def, db, shared_path)
     cud.cores = 16  # currently overwriting
 
     return cud
