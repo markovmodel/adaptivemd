@@ -6,6 +6,7 @@ from multiprocessing import Process, Event
 from utils import *
 from time import sleep
 from exceptions import *
+import traceback
 
 class Client(object):
 
@@ -39,6 +40,22 @@ class Client(object):
     # Private methods
     # ------------------------------------------------------------------------------------------------------------------
 
+    def _get_resource_desc_for_pilot(self, processed_configs, processed_resource_reqs):
+
+        matching_configs = list()
+
+        for resource_reqs in processed_resource_reqs:
+
+            resource_name = resource_reqs['resource']
+            print 'Resource', resource_name
+            matching_configs.extend(get_matching_configurations(configurations=processed_configs, resource_name=resource_name))
+
+
+        # The length of matching_configs is the number of pilots we will launch. Currently, simply return the first 
+        # one.
+
+        return [matching_configs[0]]
+
     def _runme(self):
 
         """
@@ -55,38 +72,53 @@ class Client(object):
         try:
 
             self._db = Database(self._dburl, self._project)
-            raw_resource_desc = self._db.get_resource_requirements()
-            processed_resource_desc = process_resource_requirements(raw_resource_desc)
+            raw_resource_reqs = self._db.get_resource_requirements()
+            processed_resource_reqs = process_resource_requirements(raw_resource_reqs)
+
             raw_configurations = self._db.get_configurations()
             processed_configurations = process_configurations(raw_configurations)
 
-            from pprint import pprint 
+            #pprint(raw_configurations)
+            #print 'Resource reqs'
+            #pprint(processed_resource_reqs)
+            #print 'Configs'
+            #pprint(processed_configurations)
 
-            pprint(processed_resource_desc)
+            resource_desc_for_pilot = self._get_resource_desc_for_pilot(processed_configurations, processed_resource_reqs)
 
-            pprint(processed_configurations)
 
-            '''
-            self._rmgr = ResourceManager(resource_desc = processed_resource_desc, database_url= self._dburl + '/rp')
-            self._rmgr.submit_resource_request()
+            if len(resource_desc_for_pilot) > 0:
+                pprint(resource_desc_for_pilot)
 
-            self._tmgr = TaskManager(session=self._rmgr.session, db_obj=self._db)
+            
+                '''
+                self._rmgr = ResourceManager(resource_desc = processed_resource_desc, database_url= self._dburl + '/rp')
+                self._rmgr.submit_resource_request()
 
-            while self._terminate.is_set():
+                self._tmgr = TaskManager(session=self._rmgr.session, db_obj=self._db)
 
-                task_desc = self._db.get_tasks_descriptions()
+                while self._terminate.is_set():
 
-                if task_desc:
-                    cuds = create_cud_from_task_def(task_desc)
-                    self._tmgr.run_cuds(cuds)
+                    task_desc = self._db.get_tasks_descriptions()
 
-                else:
-                    sleep(3)
-            '''
+                    if task_desc:
+                        cuds = create_cud_from_task_def(task_desc)
+                        self._tmgr.run_cuds(cuds)
+
+                    else:
+                        sleep(3)
+                '''
+
+            else:
+                raise Error(msg="No matching resource found in configuration file. Please check your configuration file and the resource object.")
+
+
+            
 
         except Exception as ex:
 
             self._logger.error('Client process failed, error: %s'%ex)
+            print traceback.format_exc()
             raise Error(msg=ex)
 
         finally:

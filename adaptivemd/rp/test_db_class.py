@@ -9,8 +9,14 @@ if __name__ == '__main__':
     #create_cud_from_task_def(db.get_tasks_definitions()[0])
     task_desc = db.get_task_descriptions()
 
-    pprint(task_desc[0])
-    #create_cud_from_task_def(task_desc[0])
+    #pprint(task_desc[0])
+    cud = create_cud_from_task_def(task_desc[0], '$HOME/vivek')
+    print cud.name
+    print cud.executable
+    print cud.arguments
+    print cud.input_staging
+    print cud.output_staging
+    print cud.cores
 
 
     res_desc = db.get_resource_requirements()
