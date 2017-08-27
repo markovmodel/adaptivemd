@@ -47,8 +47,8 @@ class TaskManager(object):
 
 
         self._umgr = rp.UnitManager(session=self._session)
-        pmgr = self._session.list_pilot_managers()[0]
-        pilot = pmgr.list_pilots()[0]
+        pmgr = self._session.get_pilot_managers(pmgr_uids = self._session.list_pilot_managers()[0])
+        pilot = pmgr.get_pilots(uids=pmgr.list_pilots()[0])
 
         self._umgr.add_pilots(pilot)    
         self._umgr.register_callback(unit_state_cb)    

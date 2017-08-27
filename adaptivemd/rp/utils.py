@@ -9,7 +9,6 @@ def resolve_pathholders(path, shared_path):
         return path
 
     schema, relative_path = path.split(':///')
-    print path, schema, relative_path
 
     if schema == 'staging':
         resolved_path = path.replace(schema + ':///', '%s/workers/staging_area/' % shared_path)
@@ -78,12 +77,15 @@ def get_executable_arguments(task_details):
     return exe, args
 
 
-def add_output_staging(task_def, db, shared_path):
+def add_output_staging(task_desc, db, shared_path):
 
-    hex_id_input = hex_to_id(hex_uuid=task_def['_dict']['generator']['_hex_uuid'])
+    print task_desc['_dict']['generator']['_hex_uuid']
+
+    hex_id_input = hex_to_id(hex_uuid=task_desc['_dict']['generator']['_hex_uuid'])
+
     src_files = db.get_source_files(hex_id_input)
 
-    hex_id_output = hex_to_id(hex_uuid=task_def['_dict']['_main'][-1]['_dict']['target']['_hex_uuid'])
+    hex_id_output = hex_to_id(hex_uuid=task_desc['_dict']['_main'][-1]['_dict']['target']['_hex_uuid'])
     output_loc = db.get_file_destination(hex_id_output)
 
     staging_directives = list()
@@ -91,7 +93,7 @@ def add_output_staging(task_def, db, shared_path):
     for file in src_files:
 
         temp = {
-                    'source': task_def['_dict']['_main'][-1]['_dict']['source']['_dict']['location'] + '/' + file,
+                    'source': task_desc['_dict']['_main'][-1]['_dict']['source']['_dict']['location'] + '/' + file,
                     'action': rp.COPY,
                     'target': resolve_pathholders(output_loc, shared_path) + '/' + file
                 }
@@ -101,20 +103,26 @@ def add_output_staging(task_def, db, shared_path):
     return staging_directives
 
 
-def create_cud_from_task_def(task_def, db, shared_path):
+def create_cud_from_task_def(task_descs, db, shared_path):
 
-    task_details = task_def['_dict']['_main']
+    cuds = list()
 
-    cud = rp.ComputeUnitDescription()
-    cud.name = task_def['_id']
-    exe, args = get_executable_arguments(task_details)
-    cud.executable = [str(exe)]
-    cud.arguments = args[:-1]
-    cud.input_staging = get_input_staging(task_details, shared_path)
-    cud.output_staging = add_output_staging(task_def, db, shared_path)
-    cud.cores = 16  # currently overwriting
+    for task_desc in task_descs:
 
-    return cud
+        task_details = task_desc['_dict']['_main']
+
+        cud = rp.ComputeUnitDescription()
+        cud.name = task_desc['_id']
+        exe, args = get_executable_arguments(task_details)
+        cud.executable = [str(exe)]
+        cud.arguments = args[:-1]
+        cud.input_staging = get_input_staging(task_details, shared_path)
+        cud.output_staging = add_output_staging(task_desc, db, shared_path)
+        cud.cores = 16  # currently overwriting
+
+        cuds.append(cud)
+        
+    return cuds
 
 
 def process_resource_requirements(raw_res_descs):
@@ -143,7 +151,7 @@ def process_configurations(conf_descs):
             temp_desc['resource']       = conf['_dict']['resource_name']
             temp_desc['project']        = conf['_dict']['allocation']
             temp_desc['shared_path']    = conf['_dict']['shared_path']
-            temp_desc['queue']          = []
+            temp_desc['queue']          = ''
 
             configurations.append(temp_desc)
 

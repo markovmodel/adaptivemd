@@ -42,19 +42,31 @@ class Client(object):
 
     def _get_resource_desc_for_pilot(self, processed_configs, processed_resource_reqs):
 
-        matching_configs = list()
+        selected_resources = list()
 
         for resource_reqs in processed_resource_reqs:
 
             resource_name = resource_reqs['resource']
             print 'Resource', resource_name
-            matching_configs.extend(get_matching_configurations(configurations=processed_configs, resource_name=resource_name))
+            
+            matching_configs = get_matching_configurations(configurations=processed_configs, resource_name=resource_name)
+
+            for matched_configs in matching_configs:
+                selected_resource = dict()
+                selected_resource['resource']   = str(matched_configs['resource'])
+                selected_resource['walltime']   = resource_reqs['total_time']
+                selected_resource['cores']      = resource_reqs['total_cpus']
+                selected_resource['project']    = str(matched_configs['project'])
+                selected_resource['queue']      = str(matched_configs['queue'])
+                selected_resource['shared_path']    = str(matched_configs['shared_path'])
+
+            selected_resources.append(selected_resource)
 
 
         # The length of matching_configs is the number of pilots we will launch. Currently, simply return the first 
         # one.
 
-        return [matching_configs[0]]
+        return selected_resources[0]
 
     def _runme(self):
 
@@ -88,27 +100,27 @@ class Client(object):
 
 
             if len(resource_desc_for_pilot) > 0:
-                pprint(resource_desc_for_pilot)
+                #pprint(resource_desc_for_pilot)
 
-            
-                '''
-                self._rmgr = ResourceManager(resource_desc = processed_resource_desc, database_url= self._dburl + '/rp')
+                            
+                self._rmgr = ResourceManager(resource_desc = resource_desc_for_pilot, database_url= self._dburl + '/rp')
                 self._rmgr.submit_resource_request()
-
+                
                 self._tmgr = TaskManager(session=self._rmgr.session, db_obj=self._db)
 
-                while self._terminate.is_set():
+                while not self._terminate.is_set():
 
-                    task_desc = self._db.get_tasks_descriptions()                    
-
-                    if task_desc:
-                        cuds = create_cud_from_task_def(task_desc)
+                    task_descs = self._db.get_task_descriptions()
+                    
+                    if task_descs:
+                        cuds = create_cud_from_task_def(task_descs, self._db, '/home/vivek')
                         cuds = add_output_staging(cuds, self._db, )
                         self._tmgr.run_cuds(cuds)
 
                     else:
                         sleep(3)
-                '''
+                
+                
 
             else:
                 raise Error(msg="No matching resource found in configuration file. Please check your configuration file and the resource object.")
@@ -124,9 +136,8 @@ class Client(object):
 
         finally:
 
-            #self._rmgr.pilot.cancel()
-            #self._rmgr.session.close(cleanup=False)
-            print 1
+            self._rmgr.pilot.cancel()
+            self._rmgr.session.close(cleanup=False)
 
 
 
