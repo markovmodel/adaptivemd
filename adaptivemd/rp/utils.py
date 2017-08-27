@@ -179,6 +179,8 @@ def hex_to_id(hex_uuid=None):
     """Convert a hexadecimal string to an ID"""
     the_id = None
     if hex_uuid:
+        if hex_uuid.endswith('L'):
+            hex_uuid = hex_uuid[:-1]
         temp = uuid.UUID(int=int(hex_uuid, 16))
         the_id = str(temp)
     return the_id
