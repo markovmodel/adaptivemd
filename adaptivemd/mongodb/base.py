@@ -79,6 +79,7 @@ class StorableMixin(object):
         # set the creation time
         self.__time__ = int(time.time())
         self.__store__ = None
+        self.name = None
 
     def __eq__(self, other):
         if isinstance(other, StorableMixin):
@@ -279,6 +280,7 @@ class StorableMixin(object):
                 not (key.startswith('_') and self._exclude_private_attr)
             )
         }
+
         return {
             key: self.__dict__[key] for key in keys_to_store
         }

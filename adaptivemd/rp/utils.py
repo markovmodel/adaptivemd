@@ -7,12 +7,12 @@ def resolve_pathholders(path, shared_path):
     if '///' not in path:
         return path
 
-    # schema, relative_path = path.split('///')
+    schema, relative_path = path.split(':///')
 
     if schema == 'staging':
-        path.replace(schema + ':///', '%s/workers/staging_area/' % shared_path)
+        resolved_path = path.replace(schema + ':///', '%s/workers/staging_area/' % shared_path)
 
-    return path
+    return resolved_path
 
 
 def get_input_staging(task_details, shared_path):
@@ -29,34 +29,52 @@ def get_input_staging(task_details, shared_path):
         if staging_type in ['Link', 'Copy']:
 
             src = resolve_pathholders(
-                entity['_dict']['source']['_dict']['location'])
+                entity['_dict']['source']['_dict']['location'], shared_path)
             dest = resolve_pathholders(
-                entity['_dict']['target']['_dict']['location'])
+                entity['_dict']['target']['_dict']['location'], shared_path)
+
+            if staging_type == 'Link':
+                rp_staging_type = rp.LINK
+
+            elif staging_type == 'Copy':
+                rp_staging_type = rp.COPY
 
         temp_directive = {
             'source': src,
-            'action': staging_type,
+            'action': rp_staging_type,
             'target': dest
         }
 
         staging_directives.append(temp_directive)
 
-    return staging_directive
+    return staging_directives
 
 
-def get_executable(task_details):
+def get_executable_arguments(task_details):
+
+    raw_exec = None
+    proc_exec = None
 
     for entity in task_details:
         if not isinstance(entity, dict):
-            return [str(entity)]
+            raw_exec = [str(entity)]
+            break
 
-    return None
+    #print raw_exec[0]
+
+    proc_exec = raw_exec[0][107:]
+    proc_exec = proc_exec[:-82]
+
+    exe = proc_exec.split(' ')[0]
+    args = proc_exec.split(' ')[1:]
+
+    return exe, args
 
 
 def get_output_staging(task_details, shared_path):
 
     # TODO
-    pass
+    return []
 
 
 def create_cud_from_task_def(task_def, shared_path):
@@ -65,7 +83,9 @@ def create_cud_from_task_def(task_def, shared_path):
 
     cud = rp.ComputeUnitDescription()
     cud.name = task_def['_id']
-    cud.executable = get_executable(task_details)
+    exe, args = get_executable_arguments(task_details)
+    cud.executable = [str(exe)]
+    cud.arguments = args[:-1]
     cud.input_staging = get_input_staging(task_details, shared_path)
     cud.output_staging = get_output_staging(task_details, shared_path)
     cud.cores = 16
@@ -93,18 +113,27 @@ def process_configurations(conf_descs):
     configurations = list()
     for conf in conf_descs:
 
-        if not isinstance(conf['_dict']['queues'], list):
-            conf['_dict']['queues'] = [conf['_dict']['queues']]
-
-        for queue in conf['_dict']['queues']:
+        if not conf['_dict']['queues']:
 
             temp_desc = dict()
             temp_desc['resource']       = conf['_dict']['resource_name']
             temp_desc['project']        = conf['_dict']['allocation']
             temp_desc['shared_path']    = conf['_dict']['shared_path']
-            temp_desc['queue']          = queue
+            temp_desc['queue']          = []
 
             configurations.append(temp_desc)
+
+        else:
+
+            for queue in conf['_dict']['queues']:
+
+                temp_desc = dict()
+                temp_desc['resource']       = conf['_dict']['resource_name']
+                temp_desc['project']        = conf['_dict']['allocation']
+                temp_desc['shared_path']    = conf['_dict']['shared_path']
+                temp_desc['queue']          = queue
+
+                configurations.append(temp_desc)
 
     return configurations
 
@@ -117,10 +146,14 @@ def generic_matcher(the_list=None, key='', value=''):
     - `key`: key of the item to match
     - `value`: value of the item to match
     """
+
+    if not value:
+        return the_list
+
     matching = list()
     if the_list:
         for item in the_list:
-            matching_value = item['_dict'][key]
+            matching_value = item[key]
             if matching_value.lower() in [value.lower()]:
                 matching.append(item)
     return matching
@@ -135,6 +168,6 @@ def get_matching_configurations(configurations=None, resource_name=''):
     """
     return generic_matcher(
         the_list=configurations,
-        key='resource_name',
+        key='resource',
         value=resource_name
     )
