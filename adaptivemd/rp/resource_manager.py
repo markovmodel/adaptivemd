@@ -1,7 +1,7 @@
 import radical.pilot as rp
 import radical.utils as ru
 import os
-from excpetions import *
+from exceptions import *
 
 class ResourceManager(object):
 

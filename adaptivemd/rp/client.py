@@ -3,7 +3,7 @@ from database import Database
 from resource_manager import ResourceManager
 from task_manager import TaskManager
 from multiprocessing import Process, Event
-from utils import process_resource_description, create_cud_from_task_def
+from utils import *
 from time import sleep
 from exceptions import *
 
@@ -55,11 +55,18 @@ class Client(object):
         try:
 
             self._db = Database(self._dburl, self._project)
-            raw_resource_desc = self._db.get_resource_descriptions()
-            processed_resource_desc = process_resource_description(raw_resource_desc)
-            raw_configurations = self._db.get_configuration_descriptions()
+            raw_resource_desc = self._db.get_resource_requirements()
+            processed_resource_desc = process_resource_requirements(raw_resource_desc)
+            raw_configurations = self._db.get_configurations()
             processed_configurations = process_configurations(raw_configurations)
 
+            from pprint import pprint 
+
+            pprint(processed_resource_desc)
+
+            pprint(processed_configurations)
+
+            '''
             self._rmgr = ResourceManager(resource_desc = processed_resource_desc, database_url= self._dburl + '/rp')
             self._rmgr.submit_resource_request()
 
@@ -75,6 +82,7 @@ class Client(object):
 
                 else:
                     sleep(3)
+            '''
 
         except Exception as ex:
 
@@ -83,8 +91,9 @@ class Client(object):
 
         finally:
 
-            self._rmgr.pilot.cancel()
-            self._rmgr.session.close(cleanup=False)
+            #self._rmgr.pilot.cancel()
+            #self._rmgr.session.close(cleanup=False)
+            print 1
 
 
 
@@ -99,7 +108,7 @@ class Client(object):
         """
 
         try:
-            self._proc = Process(target=self._runme, args=(,))
+            self._proc = Process(target=self._runme, args=())
             self._terminate = Event()
             self._proc.start()
 

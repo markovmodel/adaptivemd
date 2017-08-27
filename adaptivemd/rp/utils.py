@@ -73,16 +73,16 @@ def create_cud_from_task_def(task_def, shared_path):
     return cud
 
 
-def process_resource_description(raw_res_descs):
+def process_resource_requirements(raw_res_descs):
 
     resources = list()
     for res_desc in raw_res_descs:
-        print type(res_desc)
+
         temp_desc = dict()
         temp_desc['total_cpus'] = res_desc['_dict']['total_cpus']
         temp_desc['total_gpus'] = res_desc['_dict']['total_gpus']
         temp_desc['total_time'] = res_desc['_dict']['total_time']
-        temp_desc['resource'] = res_desc['_dict']['destination']
+        temp_desc['resource']   = res_desc['_dict']['destination']
         resources.append(temp_desc)
 
     return resources
@@ -93,13 +93,16 @@ def process_configurations(conf_descs):
     configurations = list()
     for conf in conf_descs:
 
-        for queue in conf['queues']:
+        if not isinstance(conf['_dict']['queues'], list):
+            conf['_dict']['queues'] = [conf['_dict']['queues']]
 
-            temp_desc = list()
-            temp_desc['resource'] = conf['resource_mname']
-            temp_desc['project'] = conf['allocation']
-            temp_desc['shared_path'] = conf['shared_path']
-            temp_desc['queue'] = queue
+        for queue in conf['_dict']['queues']:
+
+            temp_desc = dict()
+            temp_desc['resource']       = conf['_dict']['resource_name']
+            temp_desc['project']        = conf['_dict']['allocation']
+            temp_desc['shared_path']    = conf['_dict']['shared_path']
+            temp_desc['queue']          = queue
 
             configurations.append(temp_desc)
 

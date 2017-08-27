@@ -32,7 +32,7 @@ class Database():
         self.configuration_collection = 'configurations'
         self.client = MongoClient(self.url)
 
-    def get_tasks_descriptions(self):
+    def get_task_descriptions(self):
         """Returns a list of task definitions from Mongo.
         Returns an empty list if none is found"""
         task_descriptions = list()
@@ -47,7 +47,7 @@ class Database():
             task_descriptions.append(task)
         return task_descriptions
 
-    def get_resource_descriptions(self):
+    def get_resource_requirements(self):
         """Get a list resources
         """
         resource_descriptions = list()
@@ -57,7 +57,7 @@ class Database():
             resource_descriptions.append(resource)
         return resource_descriptions
 
-    def get_configuration_descriptions(self):
+    def get_configurations(self):
         """Get a list of configuration descriptions
         """
         configuration_descriptions = list()
@@ -82,3 +82,6 @@ class Database():
                             '_dict.state': state,
                             'state': state,
                             }})
+
+
+            # @MM: Add method to check if update was successful and return a boolean?

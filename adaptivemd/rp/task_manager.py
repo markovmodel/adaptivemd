@@ -1,7 +1,7 @@
 import radical.pilot as rp
 import radical.utils as ru
 import traceback
-from utils import create_cud_from_task_def, create_task_desc_from_cu
+from utils import create_cud_from_task_def
 
 
 class TaskManager(object):
