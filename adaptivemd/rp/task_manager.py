@@ -38,11 +38,11 @@ class TaskManager(object):
         def unit_state_cb(unit, state):
 
             if state == rp.DONE:
-                self._db_obj.update_task(unit.name, 'success')
+                self._db_obj.update_task_description_status(unit.name, 'success')
                 self._running_tasks.remove(unit.uid)
 
             elif state == rp.FAILED:
-                self._db_obj.update_task(unit.name, 'cancelled')
+                self._db_obj.update_task_description_status(unit.name, 'cancelled')
                 self._running_tasks.remove(unit.uid)
 
 

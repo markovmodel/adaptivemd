@@ -32,16 +32,16 @@ class Database():
         self.tasks_collection = 'tasks'
         self.resource_collection = 'resources'
         self.configuration_collection = 'configurations'
-        self.file_dest_collection = 'files'
-        self.file_src_collection = 'generators'
+        self.file_collection = 'files'
+        self.generator_collection = 'generators'
         self.client = MongoClient(self.url)
+        self.db = self.client[self.store_name]
 
     def get_task_descriptions(self):
         """Returns a list of task definitions from Mongo.
         Returns an empty list if none is found"""
         task_descriptions = list()
-        db = self.client[self.store_name]
-        col = db[self.tasks_collection]
+        col = self.db[self.tasks_collection]
         for task in col.find({"state": "created"}):
             # Update the current task, should be 'find_and_update'
             # but since we are the only one getting these tasks,
@@ -55,8 +55,7 @@ class Database():
         """Get a list resources
         """
         resource_descriptions = list()
-        db = self.client[self.store_name]
-        col = db[self.resource_collection]
+        col = self.db[self.resource_collection]
         for resource in col.find():
             resource_descriptions.append(resource)
         return resource_descriptions
@@ -75,32 +74,22 @@ class Database():
         """Get the location information of a specific file"""
         location = None
         if id:
-            db = self.client[self.store_name]
-            col = db[self.file_dest_collection]
+            col = self.db[self.file_collection]
             result = col.find_one({'_id': id})
             if result:
                 location = result['_dict']['location']
         return location
 
-
     def get_source_files(self, id=None):
 
-        # @MM: Please take a look. Just quickly typed it up.
-
-        location = None
-        if id:
-            db = self.client[self.store_name]
-            col = db[self.file_src_collection]
-            result = col.find_one({'_id': id})
-    
-            if result:
-
-                files = list()
-                for key, val in result['_dict']['types'].iteritems():
-                    files.append(val['_dict']['filename'])
-
-        return files
-
+        """Get the generator file locations for all types"""
+        generator_files = list()
+        col = self.db[self.generator_collection]
+        generator = col.find_one({'_id': id})
+        if generator:
+            for key, val in generator['_dict']['types'].iteritems():
+                generator_files.append(val['_dict']['filename'])
+        return generator_files
 
     def update_task_description_status(self, id=None, state='success'):
         """Update a single task with specific id
@@ -109,8 +98,7 @@ class Database():
             - `state`: state desired
         """
         if id:
-            db = self.client[self.store_name]
-            col = db[self.tasks_collection]
+            col = self.db[self.tasks_collection]
             # Updates both places where the 'state' value is on
             result = col.update_one({'_id': id},
                                     {'$set': {
