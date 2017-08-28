@@ -119,7 +119,7 @@ git clone https://github.com:markovmodel/adaptivemd.git
 
 # go to adativemd and install it
 cd adaptivemd/
-python setup.py develop
+python install .
 
 # see if it works
 python -c "import adaptivemd" || echo 'FAILED'
