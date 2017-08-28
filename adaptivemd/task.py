@@ -973,8 +973,8 @@ class PythonTask(PrePostTask):
 
     then_func = None
 
-    def __init__(self, generator=None):
-        super(PythonTask, self).__init__(generator)
+    def __init__(self, generator=None, resource_name=None):
+        super(PythonTask, self).__init__(generator, resource_name)
 
         self._python_import = None
         self._python_source_files = None
