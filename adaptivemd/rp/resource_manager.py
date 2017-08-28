@@ -2,6 +2,8 @@ import radical.pilot as rp
 import radical.utils as ru
 import os
 from exceptions import *
+import traceback
+
 
 class ResourceManager(object):
 
@@ -24,13 +26,13 @@ class ResourceManager(object):
         self._uid = ru.generate_id('resource_manager.rp')
         self._logger = ru.get_logger('resource_manager.rp')
 
+        self._mlab_url = os.environ.get('RADICAL_PILOT_DBURL',None)
+
         if not database_url:
             self._mlab_url = database_url
-
-
-        self._mlab_url = os.environ.get('RADICAL_PILOT_DBURL',None)
+        
         if not self._mlab_url:
-            raise Error(text='RADICAL_PILOT_DBURL not defined. Please assign a valid mlab url')
+            raise Error(msg='RADICAL_PILOT_DBURL not defined. Please assign a valid mlab url')
 
         self._session       = None    
         self._pmgr          = None
@@ -280,6 +282,7 @@ class ResourceManager(object):
 
         except Exception, ex:
             self._logger.error('Resource request submission failed')
+            print traceback.format_exc()
             raise Error(msg='Resource request submission failed')
 
 

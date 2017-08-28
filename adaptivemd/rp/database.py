@@ -37,12 +37,12 @@ class Database():
         self.client = MongoClient(self.url)
         self.db = self.client[self.store_name]
 
-    def get_task_descriptions(self):
+    def get_task_descriptions(self, state='created'):
         """Returns a list of task definitions from Mongo.
         Returns an empty list if none is found"""
         task_descriptions = list()
         col = self.db[self.tasks_collection]
-        for task in col.find({"state": "created"}):
+        for task in col.find({"state": state}):
             # Update the current task, should be 'find_and_update'
             # but since we are the only one getting these tasks,
             # we are getting them in bulk
@@ -71,7 +71,10 @@ class Database():
         return configuration_descriptions
 
     def get_file_destination(self, id=None):
-        """Get the location information of a specific file"""
+        """Get the location information of a specific file
+        :Parameters:
+            - `id`: file object 'id' to lookup
+        """
         location = None
         if id:
             col = self.db[self.file_collection]
@@ -81,7 +84,10 @@ class Database():
         return location
 
     def get_source_files(self, id=None):
-        """Get the generator file locations for all types"""
+        """Get the generator file locations for all types
+        :Parameters:
+            - `id`: generator object 'id' to lookup
+        """
         generator_files = list()
         col = self.db[self.generator_collection]
         generator = col.find_one({'_id': id})

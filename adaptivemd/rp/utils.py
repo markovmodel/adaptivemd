@@ -1,6 +1,8 @@
 import uuid
 from pprint import pprint
 import radical.pilot as rp
+import os
+from exceptions import *
 
 
 def resolve_pathholders(path, shared_path):
@@ -11,9 +13,15 @@ def resolve_pathholders(path, shared_path):
     schema, relative_path = path.split(':///')
 
     if schema == 'staging':
-        resolved_path = path.replace(schema + ':///', '%s/workers/staging_area/' % shared_path)
+        resolved_path = path.replace(schema + '://', '%s/workers/staging_area/' % shared_path)
 
-    return resolved_path
+    elif schema == 'sandbox':
+        resolved_path = path.replace(schema + '://', shared_path + '/')
+
+    elif schema == 'file':
+        resolved_path = path.replace(schema + '://', relative_path)
+
+    return os.path.abspath(resolved_path)
 
 
 def get_input_staging(task_details, shared_path):
@@ -73,26 +81,59 @@ def get_executable_arguments(task_details):
     return exe, args
 
 
-def add_output_staging(cuds, db, shared_path):
+def add_output_staging(task_desc, db, shared_path):
 
-    # TODO
-    return []
+    hex_id_input = hex_to_id(hex_uuid=task_desc['_dict']['generator']['_hex_uuid'])
+
+    src_files = db.get_source_files(hex_id_input)
+
+    hex_id_output = hex_to_id(hex_uuid=task_desc['_dict']['_main'][-1]['_dict']['target']['_hex_uuid'])
+    output_loc = db.get_file_destination(hex_id_output)
+
+    staging_directives = list()
+
+    for file in src_files:
+
+        temp = {
+                    'source': os.path.abspath(task_desc['_dict']['_main'][-1]['_dict']['source']['_dict']['location'] + '/' + file),
+                    'action': rp.COPY,
+                    'target': resolve_pathholders(output_loc, shared_path) + '/' + file
+                }
+
+        staging_directives.append(temp)
+
+    return staging_directives
 
 
-def create_cud_from_task_def(task_def, shared_path):
+def create_cud_from_task_def(task_descs, db, shared_path):
 
-    task_details = task_def['_dict']['_main']
 
-    cud = rp.ComputeUnitDescription()
-    cud.name = task_def['_id']
-    exe, args = get_executable_arguments(task_details)
-    cud.executable = [str(exe)]
-    cud.arguments = args[:-1]
-    cud.input_staging = get_input_staging(task_details, shared_path)
-    cud.output_staging = get_output_staging(task_details, shared_path)
-    cud.cores = 16  # currently overwriting
+    try:
+        cuds = list()
 
-    return cud
+        for task_desc in task_descs:
+
+            task_details = task_desc['_dict']['_main']
+
+            cud = rp.ComputeUnitDescription()
+            cud.name = task_desc['_id']
+            exe, args = get_executable_arguments(task_details)
+            cud.executable = [str(exe)]
+            cud.arguments = args[:-1]
+            cud.input_staging = get_input_staging(task_details, shared_path)
+            cud.output_staging = add_output_staging(task_desc, db, shared_path)
+            cud.cores = 16  # currently overwriting
+
+            db.update_task_description_status(task_desc['_id'], 'running')
+
+            cuds.append(cud)
+        
+        return cuds
+
+    except Exception as ex:
+
+        print traceback.format_exc()
+        raise Error(msg=ex)
 
 
 def process_resource_requirements(raw_res_descs):
@@ -121,7 +162,7 @@ def process_configurations(conf_descs):
             temp_desc['resource']       = conf['_dict']['resource_name']
             temp_desc['project']        = conf['_dict']['allocation']
             temp_desc['shared_path']    = conf['_dict']['shared_path']
-            temp_desc['queue']          = []
+            temp_desc['queue']          = ''
 
             configurations.append(temp_desc)
 
@@ -179,6 +220,8 @@ def hex_to_id(hex_uuid=None):
     """Convert a hexadecimal string to an ID"""
     the_id = None
     if hex_uuid:
+        if hex_uuid.endswith('L'):
+            hex_uuid = hex_uuid[:-1]
         temp = uuid.UUID(int=int(hex_uuid, 16))
         the_id = str(temp)
     return the_id
