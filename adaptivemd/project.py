@@ -56,9 +56,6 @@ class Project(object):
     """
     A simulation project
 
-    Attributes
-    ----------
-
     Notes
     -----
 
@@ -95,6 +92,9 @@ class Project(object):
         lives
     models : `Bundle`
         a set of stored models in the DB
+    configurations : `Bundle`
+        a set of the configurations availabe for executing tasks using the
+        Radical Pilot execution manager
     tasks : `Bundle`
         a set of all queued `Task`s in the project
     logs : `Bundle`
