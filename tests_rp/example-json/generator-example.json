@@ -1,176 +1,176 @@
 {
-  "_id": "65fc2c54-8b44-11e7-8783-00000000004a",
-  "_cls": "OpenMMEngine",
-  "_time": 1503851183,
+  "_id": "1126d076-8b9e-11e7-b37f-000000000044",
   "name": "openmm",
-  "_obj_uuid": "65fc2c54-8b44-11e7-8783-00000000004a",
+  "_time": 1503889679,
+  "_cls": "OpenMMEngine",
+  "_obj_uuid": "1126d076-8b9e-11e7-b37f-000000000044",
   "_dict": {
-    "_items": {
-      "integrator_file": {
-        "_hex_uuid": "0x65fc2c548b4411e78783000000000046",
-        "_store": "files"
-      },
-      "pdb_file": {
-        "_hex_uuid": "0x65fc2c548b4411e7878300000000003e",
-        "_store": "files"
-      },
-      "integrator_file_stage": {
-        "_cls": "File",
-        "_obj_uuid": "65fc2c54-8b44-11e7-8783-000000000064",
-        "_dict": {
-          "location": "staging:///integrator.xml",
-          "name": null,
-          "_file": null,
-          "resource": null
-        }
-      },
-      "_executable_file": {
-        "_hex_uuid": "0x65fc2c548b4411e78783000000000006",
-        "_store": "files"
-      },
-      "system_file": {
-        "_hex_uuid": "0x65fc2c548b4411e78783000000000042",
-        "_store": "files"
-      },
-      "pdb_file_stage": {
-        "_cls": "File",
-        "_obj_uuid": "65fc2c54-8b44-11e7-8783-000000000052",
-        "_dict": {
-          "location": "staging:///alanine.pdb",
-          "name": null,
-          "_file": null,
-          "resource": null
-        }
-      },
-      "_executable_file_stage": {
-        "_cls": "File",
-        "_obj_uuid": "65fc2c54-8b44-11e7-8783-00000000005e",
-        "_dict": {
-          "location": "staging:///openmmrun.py",
-          "name": null,
-          "_file": null,
-          "resource": null
-        }
-      },
-      "system_file_stage": {
-        "_cls": "File",
-        "_obj_uuid": "65fc2c54-8b44-11e7-8783-000000000058",
-        "_dict": {
-          "location": "staging:///system.xml",
-          "name": null,
-          "_file": null,
-          "resource": null
-        }
-      }
-    },
-    "types": {
-      "master": {
-        "_cls": "OutputTypeDescription",
-        "_obj_uuid": "65fc2c54-8b44-11e7-8783-000000000066",
-        "_dict": {
-          "name": null,
-          "filename": "master.dcd",
-          "stride": 10,
-          "selection": null
-        }
-      },
-      "protein": {
-        "_cls": "OutputTypeDescription",
-        "_obj_uuid": "65fc2c54-8b44-11e7-8783-000000000068",
-        "_dict": {
-          "name": null,
-          "filename": "protein.dcd",
-          "stride": 1,
-          "selection": "protein"
-        }
-      }
-    },
-    "args": "-r --report-interval 1 -p CPU",
     "initial_staging": [
       {
         "_cls": "Transfer",
-        "_obj_uuid": "65fc2c54-8b44-11e7-8783-000000000050",
         "_dict": {
-          "target": {
-            "_cls": "File",
-            "_obj_uuid": "65fc2c54-8b44-11e7-8783-000000000052",
-            "_dict": {
-              "location": "staging:///alanine.pdb",
-              "name": null,
-              "_file": null,
-              "resource": null
-            }
+          "source": {
+            "_store": "files",
+            "_hex_uuid": "0x1126d0768b9e11e7b37f000000000006L"
           },
           "name": null,
-          "source": {
-            "_hex_uuid": "0x65fc2c548b4411e7878300000000003e",
-            "_store": "files"
+          "target": {
+            "_cls": "File",
+            "_dict": {
+              "resource": null,
+              "_file": null,
+              "name": null,
+              "location": "staging:///openmmrun.py"
+            },
+            "_obj_uuid": "1126d076-8b9e-11e7-b37f-00000000004c"
           }
-        }
+        },
+        "_obj_uuid": "1126d076-8b9e-11e7-b37f-00000000004a"
       },
       {
         "_cls": "Transfer",
-        "_obj_uuid": "65fc2c54-8b44-11e7-8783-000000000056",
         "_dict": {
-          "target": {
-            "_cls": "File",
-            "_obj_uuid": "65fc2c54-8b44-11e7-8783-000000000058",
-            "_dict": {
-              "location": "staging:///system.xml",
-              "name": null,
-              "_file": null,
-              "resource": null
-            }
+          "source": {
+            "_store": "files",
+            "_hex_uuid": "0x1126d0768b9e11e7b37f00000000003eL"
           },
           "name": null,
-          "source": {
-            "_hex_uuid": "0x65fc2c548b4411e78783000000000042",
-            "_store": "files"
+          "target": {
+            "_cls": "File",
+            "_dict": {
+              "resource": null,
+              "_file": null,
+              "name": null,
+              "location": "staging:///alanine.pdb"
+            },
+            "_obj_uuid": "1126d076-8b9e-11e7-b37f-000000000052"
           }
-        }
+        },
+        "_obj_uuid": "1126d076-8b9e-11e7-b37f-000000000050"
       },
       {
         "_cls": "Transfer",
-        "_obj_uuid": "65fc2c54-8b44-11e7-8783-00000000005c",
         "_dict": {
-          "target": {
-            "_cls": "File",
-            "_obj_uuid": "65fc2c54-8b44-11e7-8783-00000000005e",
-            "_dict": {
-              "location": "staging:///openmmrun.py",
-              "name": null,
-              "_file": null,
-              "resource": null
-            }
+          "source": {
+            "_store": "files",
+            "_hex_uuid": "0x1126d0768b9e11e7b37f000000000042L"
           },
           "name": null,
-          "source": {
-            "_hex_uuid": "0x65fc2c548b4411e78783000000000006",
-            "_store": "files"
+          "target": {
+            "_cls": "File",
+            "_dict": {
+              "resource": null,
+              "_file": null,
+              "name": null,
+              "location": "staging:///integrator.xml"
+            },
+            "_obj_uuid": "1126d076-8b9e-11e7-b37f-000000000058"
           }
-        }
+        },
+        "_obj_uuid": "1126d076-8b9e-11e7-b37f-000000000056"
       },
       {
         "_cls": "Transfer",
-        "_obj_uuid": "65fc2c54-8b44-11e7-8783-000000000062",
         "_dict": {
-          "target": {
-            "_cls": "File",
-            "_obj_uuid": "65fc2c54-8b44-11e7-8783-000000000064",
-            "_dict": {
-              "location": "staging:///integrator.xml",
-              "name": null,
-              "_file": null,
-              "resource": null
-            }
+          "source": {
+            "_store": "files",
+            "_hex_uuid": "0x1126d0768b9e11e7b37f000000000040L"
           },
           "name": null,
-          "source": {
-            "_hex_uuid": "0x65fc2c548b4411e78783000000000046",
-            "_store": "files"
+          "target": {
+            "_cls": "File",
+            "_dict": {
+              "resource": null,
+              "_file": null,
+              "name": null,
+              "location": "staging:///system.xml"
+            },
+            "_obj_uuid": "1126d076-8b9e-11e7-b37f-00000000005e"
           }
-        }
+        },
+        "_obj_uuid": "1126d076-8b9e-11e7-b37f-00000000005c"
       }
-    ]
+    ],
+    "_items": {
+      "pdb_file_stage": {
+        "_cls": "File",
+        "_dict": {
+          "resource": null,
+          "_file": null,
+          "name": null,
+          "location": "staging:///alanine.pdb"
+        },
+        "_obj_uuid": "1126d076-8b9e-11e7-b37f-000000000052"
+      },
+      "pdb_file": {
+        "_store": "files",
+        "_hex_uuid": "0x1126d0768b9e11e7b37f00000000003eL"
+      },
+      "_executable_file": {
+        "_store": "files",
+        "_hex_uuid": "0x1126d0768b9e11e7b37f000000000006L"
+      },
+      "system_file_stage": {
+        "_cls": "File",
+        "_dict": {
+          "resource": null,
+          "_file": null,
+          "name": null,
+          "location": "staging:///system.xml"
+        },
+        "_obj_uuid": "1126d076-8b9e-11e7-b37f-00000000005e"
+      },
+      "integrator_file": {
+        "_store": "files",
+        "_hex_uuid": "0x1126d0768b9e11e7b37f000000000042L"
+      },
+      "integrator_file_stage": {
+        "_cls": "File",
+        "_dict": {
+          "resource": null,
+          "_file": null,
+          "name": null,
+          "location": "staging:///integrator.xml"
+        },
+        "_obj_uuid": "1126d076-8b9e-11e7-b37f-000000000058"
+      },
+      "_executable_file_stage": {
+        "_cls": "File",
+        "_dict": {
+          "resource": null,
+          "_file": null,
+          "name": null,
+          "location": "staging:///openmmrun.py"
+        },
+        "_obj_uuid": "1126d076-8b9e-11e7-b37f-00000000004c"
+      },
+      "system_file": {
+        "_store": "files",
+        "_hex_uuid": "0x1126d0768b9e11e7b37f000000000040L"
+      }
+    },
+    "types": {
+      "protein": {
+        "_cls": "OutputTypeDescription",
+        "_dict": {
+          "stride": 1,
+          "selection": "protein",
+          "name": null,
+          "filename": "protein.dcd"
+        },
+        "_obj_uuid": "1126d076-8b9e-11e7-b37f-000000000062"
+      },
+      "master": {
+        "_cls": "OutputTypeDescription",
+        "_dict": {
+          "stride": 10,
+          "selection": null,
+          "name": null,
+          "filename": "master.dcd"
+        },
+        "_obj_uuid": "1126d076-8b9e-11e7-b37f-000000000060"
+      }
+    },
+    "args": "-r --report-interval 1 -p CPU"
   }
 }
