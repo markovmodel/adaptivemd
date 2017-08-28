@@ -40,6 +40,7 @@ from .task import Task
 from .worker import Worker
 from .logentry import LogEntry
 from .plan import ExecutionPlan
+#from .rp import client
 
 from .configuration import Configuration
 
@@ -101,8 +102,8 @@ class Project(object):
     data : `Bundle`
         a set of `DataDict` objects that represent completely stored files in
         the database of arbitrary size
-    schedulers : set of `Scheduler`
-        a set of attached schedulers with controlled shutdown and reference
+    #del#schedulers : set of `Scheduler`
+    #del#    a set of attached schedulers with controlled shutdown and reference
     storage : `MongoDBStorage`
         the mongodb storage wrapper to access the database of the project
     _worker_dead_time : int
@@ -139,8 +140,11 @@ class Project(object):
         self.name = name
 
         self.session = None
-        self.pilot_manager = None
-        self.schedulers = set()
+
+        #del#self.pilot_manager = None
+        #del#self.schedulers = set()
+
+        #self.execution_manager = client()
 
         self.models = StoredBundle()
         self.generators = StoredBundle()
@@ -291,17 +295,17 @@ class Project(object):
         """
         self._close_rp()
 
-    def _close_rp(self):
-        for r in set(self.schedulers):
-            r.shut_down(False)
+    #del#def _close_rp(self):
+    #del#    for r in set(self.schedulers):
+    #del#        r.shut_down(False)
 
-        # self.report.header('finalize')
-        if self.session is not None and not self.session.closed:
-            self.session.close()
+    #del#    # self.report.header('finalize')
+    #del#    if self.session is not None and not self.session.closed:
+    #del#        self.session.close()
 
-        self.files.close()
-        self.generators.close()
-        self.models.close()
+    #del#    self.files.close()
+    #del#    self.generators.close()
+    #del#    self.models.close()
 
     @classmethod
     def list(cls):
@@ -823,9 +827,15 @@ class Project(object):
             True the function returns
 
         """
-        while not condition():
-            self.trigger()
-            time.sleep(5.0)
+        def check_condition(c):
+            while not c():
+                self.trigger()
+                time.sleep(5.0)
+
+        if not isinstance(condition, list):
+            condition = [condition]
+
+        [check_condition(c) for c in condition]
 
     class EventTriggerTimer(threading.Thread):
         """
