@@ -38,7 +38,7 @@ def build_keyword_dictionary(prefs):
         'name', 'license', 'url', 'download_url', 'packages',
         'package_dir', 'platforms', 'description', 'install_requires',
         'long_description', 'package_data', 'include_package_data', 'scripts']:
-        
+
         if key in prefs:
             keywords[key] = prefs[key]
 
@@ -76,3 +76,4 @@ setup_args = build_keyword_dictionary(preferences)
 setup (**setup_args)
 
 os.system('rm -rf adaptivemd.egg-info')
+os.system('export RP_ENABLE_OLD_DEFINES=True')
