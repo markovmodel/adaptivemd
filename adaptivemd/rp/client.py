@@ -108,20 +108,34 @@ class Client(object):
                 
                 self._tmgr = TaskManager(session=self._rmgr.session, db_obj=self._db)
 
+                #print self._tmgr
+
                 while not self._terminate.is_set():
 
                     task_descs = self._db.get_task_descriptions()
+
+                    #print task_descs, 'while loop'
                     
                     if task_descs:
                         cuds = create_cud_from_task_def(task_descs, self._db, '/home/vivek')
-                        cuds = add_output_staging(cuds, self._db, )
                         self._tmgr.run_cuds(cuds)
+
+                        '''
+                        #for cud in cuds:
+
+                            #print cud.name
+                            #print cud.executable
+                            #print cud.arguments
+                            #print cud.input_staging
+                            #print cud.output_staging
+                            #print cud.cores
+                        
+                            #sleep(3)
+                        '''
 
                     else:
                         sleep(3)
-                
-                
-
+                                
             else:
                 raise Error(msg="No matching resource found in configuration file. Please check your configuration file and the resource object.")
 

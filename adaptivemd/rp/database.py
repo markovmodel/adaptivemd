@@ -71,7 +71,10 @@ class Database():
         return configuration_descriptions
 
     def get_file_destination(self, id=None):
-        """Get the location information of a specific file"""
+        """Get the location information of a specific file
+        :Parameters:
+            - `id`: file object 'id' to lookup
+        """
         location = None
         if id:
             col = self.db[self.file_collection]
@@ -81,8 +84,10 @@ class Database():
         return location
 
     def get_source_files(self, id=None):
-
-        """Get the generator file locations for all types"""
+        """Get the generator file locations for all types
+        :Parameters:
+            - `id`: generator object 'id' to lookup
+        """
         generator_files = list()
         col = self.db[self.generator_collection]
         generator = col.find_one({'_id': id})

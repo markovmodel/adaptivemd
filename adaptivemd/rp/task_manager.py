@@ -37,6 +37,9 @@ class TaskManager(object):
 
         def unit_state_cb(unit, state):
 
+            #if state == rp.NEW:
+            #    self._db_obj.update_task_description_status(unit.name, 'running')
+
             if state == rp.DONE:
                 self._db_obj.update_task_description_status(unit.name, 'success')
                 self._running_tasks.remove(unit.uid)
@@ -51,7 +54,7 @@ class TaskManager(object):
         pilot = pmgr.get_pilots(uids=pmgr.list_pilots()[0])
 
         self._umgr.add_pilots(pilot)    
-        self._umgr.register_callback(unit_state_cb)    
+        self._umgr.register_callback(unit_state_cb)
 
 
     # ------------------------------------------------------------------------------------------------------------------
@@ -59,13 +62,7 @@ class TaskManager(object):
     # ------------------------------------------------------------------------------------------------------------------
 
 
-    def run_cuds(self, task_desc):
-
-        cuds = list()
-        for task in task_desc:
-
-            cud = create_cud_from_task_def(task)
-            cuds.append(cud)
+    def run_cuds(self, cuds):
 
         cus = self._umgr.submit_units(cuds)
         self._running_tasks.extend([cu.uid for cu in cus])
