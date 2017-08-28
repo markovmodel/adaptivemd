@@ -37,12 +37,12 @@ class Database():
         self.client = MongoClient(self.url)
         self.db = self.client[self.store_name]
 
-    def get_task_descriptions(self):
+    def get_task_descriptions(self, state='created'):
         """Returns a list of task definitions from Mongo.
         Returns an empty list if none is found"""
         task_descriptions = list()
         col = self.db[self.tasks_collection]
-        for task in col.find({"state": "created"}):
+        for task in col.find({"state": state}):
             # Update the current task, should be 'find_and_update'
             # but since we are the only one getting these tasks,
             # we are getting them in bulk
