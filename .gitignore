@@ -1,3 +1,6 @@
+# RP working directories
+examples/rp/rp.session*
+
 # Eclipse IDE files
 adaptivemd/.project
 adaptivemd/.pydevproject
