@@ -16,11 +16,11 @@ if __name__ == '__main__':
     task_desc = db.get_task_descriptions(state='running')
 
     pprint(task_desc[0])
-    #cud = create_cud_from_task_def(task_desc[0], db, '/home/vivek')
+    cud = create_cud_from_task_def(task_desc[0], db, '/home/vivek')
     #print cud.name
     #print cud.executable
     #print cud.arguments
-    #print cud.input_staging
+    print cud.input_staging
     #print cud.output_staging
     #print cud.cores
 

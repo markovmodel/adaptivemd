@@ -3,7 +3,7 @@ from pprint import pprint
 import radical.pilot as rp
 import os
 from exceptions import *
-
+import traceback
 
 def resolve_pathholders(path, shared_path):
 
@@ -124,7 +124,7 @@ def create_cud_from_task_def(task_descs, db, shared_path):
             cud.output_staging = add_output_staging(task_desc, db, shared_path)
             cud.cores = 16  # currently overwriting
 
-            db.update_task_description_status(task_desc['_id'], 'running')
+            db.update_task_description_status(task_desc['_id'], 'done')
 
             cuds.append(cud)
         
