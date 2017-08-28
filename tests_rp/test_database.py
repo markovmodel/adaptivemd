@@ -54,7 +54,7 @@ class TestDatabase(unittest.TestCase):
 
         with open('{}/{}'.format(directory, file_example)) as json_data:
             data = json.load(json_data)
-            for file_entry in data['files']:
+            for file_entry in data:
                 files_col.insert_one(file_entry)
 
         with open('{}/{}'.format(directory, gen_example)) as json_data:
@@ -64,7 +64,7 @@ class TestDatabase(unittest.TestCase):
         with open('{}/{}'.format(directory, task_example)) as json_data:
             # insert tasks
             data = json.load(json_data)
-            for task_entry in data['tasks']:
+            for task_entry in data:
                 tasks_col.insert_one(task_entry)
 
     @classmethod
@@ -118,8 +118,7 @@ class TestDatabase(unittest.TestCase):
 
     def test_get_shared_files(self):
         """Test that the proper shared location list is returned"""
-        locations = self.db.get_shared_files(
-            id='1126d076-8b9e-11e7-b37f-000000000044')
+        locations = self.db.get_shared_files()
         expected_data = [
             'file:///home/vivek/ves/admd/local/lib/python2.7/' +
             'site-packages/adaptivemd/engine/openmm/openmmrun.py',
