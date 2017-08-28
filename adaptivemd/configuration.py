@@ -92,7 +92,8 @@ class Configuration(StorableMixin):
         pass
 
     def __init__(self, name, shared_path='',
-                 queue='', allocation='',
+                 queues=[], allocation='',
+                 #queue='', allocation='',
                  cores_per_node=1, resource_name=''):
 
         if resource_name not in resource_names:
@@ -102,8 +103,10 @@ class Configuration(StorableMixin):
             assert isinstance(name, str)
             self.name = name
 
-            assert isinstance(queue, str)
-            self.queue = queue
+            # change this to str
+            self.queues = queues
+            #assert isinstance(queue, str)
+            #self.queue = queue
 
             if not shared_path:
                 shared_path = '$HOME/adaptivemd/'
