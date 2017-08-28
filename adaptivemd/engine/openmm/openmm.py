@@ -148,6 +148,7 @@ class OpenMMEngine(Engine):
         # create the directory
         t.touch(output)
 
+        #condapy = '\nexport PATH="/home/johnrobot/miniconda3/bin:$PATH"\n'
         retry = '\nj=0\ntries=10\nsleep=1\n'
         retry += '\ntrajfile=traj/allatoms.dcd\n\n'
         retry += 'while [ $j -le $tries ]; do if ! [ -s $trajfile ]; then {0}; fi; sleep 1; j=$((j+1)); done'
@@ -160,6 +161,7 @@ class OpenMMEngine(Engine):
             args=self.args,
         )
         cmd = retry.format(cmd)
+        #cmd = condapy + retry.format(cmd)
         t.append(cmd)
 
         t.put(output, target)
