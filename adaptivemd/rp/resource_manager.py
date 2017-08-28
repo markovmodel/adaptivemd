@@ -20,16 +20,13 @@ class ResourceManager(object):
     """
 
 
-    def __init__(self, resource_desc, database_url=None):
+    def __init__(self, resource_desc, db):
 
 
         self._uid = ru.generate_id('resource_manager.rp')
         self._logger = ru.get_logger('resource_manager.rp')
 
         self._mlab_url = os.environ.get('RADICAL_PILOT_DBURL',None)
-
-        if not database_url:
-            self._mlab_url = database_url
         
         if not self._mlab_url:
             raise Error(msg='RADICAL_PILOT_DBURL not defined. Please assign a valid mlab url')
@@ -44,6 +41,8 @@ class ResourceManager(object):
         self._access_schema = None
         self._queue         = None
 
+
+        self._db = db
 
         if self._validate_resource_desc(resource_desc):
             self._populate(resource_desc)
@@ -213,6 +212,23 @@ class ResourceManager(object):
             raise Error(msg='Resource manager population unsuccessful')
 
 
+    def _get_shared_data(self):
+
+        shared_files = self._db.get_shared_files()
+
+        shared_files_list = list()
+
+        for file in shared_files:
+
+            temp = {
+                        'source': file,
+                        'action': rp.TRANSFER,
+                        'target': 'pilot:///%s'%os.path.basename(file)}
+
+            shared_files_list.append(temp)
+
+        return shared_files_list
+
 
     # ------------------------------------------------------------------------------------------------------------------
     # Public methods
@@ -258,6 +274,7 @@ class ResourceManager(object):
    
             # Launch the pilot
             self._pilot = self._pmgr.submit_pilots(pdesc)
+            self._pilot.stage_in(self._get_shared_data())
 
             self._logger.info('Resource request submission successful.. waiting for pilot to go Active')
     
