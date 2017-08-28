@@ -103,7 +103,7 @@ class Client(object):
                 #pprint(resource_desc_for_pilot)
 
                             
-                self._rmgr = ResourceManager(resource_desc = resource_desc_for_pilot, database_url= self._dburl + '/rp')
+                self._rmgr = ResourceManager(resource_desc = resource_desc_for_pilot, db_obj=self._db)
                 self._rmgr.submit_resource_request()
                 
                 self._tmgr = TaskManager(session=self._rmgr.session, db_obj=self._db)
@@ -117,7 +117,7 @@ class Client(object):
                     #print task_descs, 'while loop'
                     
                     if task_descs:
-                        cuds = create_cud_from_task_def(task_descs, self._db, '/home/vivek')
+                        cuds = create_cud_from_task_def(task_descs, self._db, resource_desc_for_pilot['shared_path'])
                         self._tmgr.run_cuds(cuds)
 
                         '''
