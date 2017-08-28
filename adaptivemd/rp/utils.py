@@ -8,12 +8,12 @@ import traceback
 def resolve_pathholders(path, shared_path):
 
     if '///' not in path:
-        return path
+        return os.path.expandvars(path)
 
     schema, relative_path = path.split(':///')
 
     if schema == 'staging':
-        resolved_path = path.replace(schema + '://', '%s/workers/staging_area/' % shared_path)
+        resolved_path = 'pilot:///' + os.path.basename(relative_path)
 
     elif schema == 'sandbox':
         resolved_path = path.replace(schema + '://', shared_path + '/')
@@ -21,7 +21,7 @@ def resolve_pathholders(path, shared_path):
     elif schema == 'file':
         resolved_path = path.replace(schema + '://', relative_path)
 
-    return os.path.abspath(resolved_path)
+    return os.path.expandvars(resolved_path)
 
 
 def get_input_staging(task_details, shared_path):
@@ -39,8 +39,8 @@ def get_input_staging(task_details, shared_path):
 
             src = resolve_pathholders(
                 entity['_dict']['source']['_dict']['location'], shared_path)
-            dest = resolve_pathholders(
-                entity['_dict']['target']['_dict']['location'], shared_path)
+            dest = os.path.basename(
+                resolve_pathholders(entity['_dict']['target']['_dict']['location'], shared_path))
 
             if staging_type == 'Link':
                 rp_staging_type = rp.LINK
@@ -51,11 +51,14 @@ def get_input_staging(task_details, shared_path):
         temp_directive = {
             'source': src,
             'action': rp_staging_type,
-            'target': dest
+            'target': 'unit:///' + dest
         }
 
         if temp_directive not in staging_directives:
             staging_directives.append(temp_directive)
+
+
+    print staging_directives
 
     return staging_directives
 
@@ -73,10 +76,16 @@ def get_executable_arguments(task_details):
     #print raw_exec[0]
 
     proc_exec = raw_exec[0][107:]
-    proc_exec = proc_exec[:-82]
+    proc_exec = proc_exec[:-31]
+
+    #print raw_exec[0]
+    proc_exec = raw_exec[0].split(';')[2].replace('then','').replace('worker://','').replace('=', ' ').replace('"','').strip()
+    #print proc_exec
 
     exe = proc_exec.split(' ')[0]
     args = proc_exec.split(' ')[1:]
+
+    #print exe, args
 
     return exe, args
 
@@ -95,12 +104,14 @@ def add_output_staging(task_desc, db, shared_path):
     for file in src_files:
 
         temp = {
-                    'source': os.path.abspath(task_desc['_dict']['_main'][-1]['_dict']['source']['_dict']['location'] + '/' + file),
+                    'source': os.path.basename(os.path.abspath(task_desc['_dict']['_main'][-1]['_dict']['source']['_dict']['location'])) + '/' + file,
                     'action': rp.COPY,
                     'target': resolve_pathholders(output_loc, shared_path) + '/' + file
                 }
 
         staging_directives.append(temp)
+
+    #print staging_directives
 
     return staging_directives
 
@@ -117,14 +128,17 @@ def create_cud_from_task_def(task_descs, db, shared_path):
 
             cud = rp.ComputeUnitDescription()
             cud.name = task_desc['_id']
+            cud.pre_exec = ['export PATH=/home/vivek/Research/tools/miniconda2/bin:$PATH','mkdir -p traj']
             exe, args = get_executable_arguments(task_details)
             cud.executable = [str(exe)]
-            cud.arguments = args[:-1]
+            cud.arguments = args
             cud.input_staging = get_input_staging(task_details, shared_path)
             cud.output_staging = add_output_staging(task_desc, db, shared_path)
-            cud.cores = 16  # currently overwriting
+            cud.cores = 1  # currently overwriting
 
             db.update_task_description_status(task_desc['_id'], 'done')
+
+            #print cud.executable, cud.arguments
 
             cuds.append(cud)
         

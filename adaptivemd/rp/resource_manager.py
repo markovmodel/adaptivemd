@@ -223,8 +223,7 @@ class ResourceManager(object):
             temp = {
                         'source': file,
                         'action': rp.TRANSFER,
-                        'target': 'staging:///%s', os.path.basename(file)
-            }
+                        'target': 'pilot:///%s'%os.path.basename(file)}
 
             shared_files_list.append(temp)
 

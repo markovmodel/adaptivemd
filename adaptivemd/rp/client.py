@@ -103,10 +103,10 @@ class Client(object):
                 #pprint(resource_desc_for_pilot)
 
                             
-                self._rmgr = ResourceManager(resource_desc = resource_desc_for_pilot, db_obj=self._db)
+                self._rmgr = ResourceManager(resource_desc = resource_desc_for_pilot, db=self._db)
                 self._rmgr.submit_resource_request()
                 
-                '''
+                
                 self._tmgr = TaskManager(session=self._rmgr.session, db_obj=self._db)
 
                 #print self._tmgr
@@ -121,7 +121,6 @@ class Client(object):
                         cuds = create_cud_from_task_def(task_descs, self._db, resource_desc_for_pilot['shared_path'])
                         self._tmgr.run_cuds(cuds)
 
-                        '''
                         #for cud in cuds:
 
                             #print cud.name
@@ -132,12 +131,10 @@ class Client(object):
                             #print cud.cores
                         
                             #sleep(3)
-                        '''
 
                     else:
-                        sleep(3)
-                   
-                '''             
+                        sleep(3)                   
+
             else:
                 raise Error(msg="No matching resource found in configuration file. Please check your configuration file and the resource object.")
 
