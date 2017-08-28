@@ -54,21 +54,18 @@ class TestDatabase(unittest.TestCase):
 
         with open('{}/{}'.format(directory, file_example)) as json_data:
             data = json.load(json_data)
-            files_col.insert_one(data)
+            for file_entry in data['files']:
+                files_col.insert_one(file_entry)
 
         with open('{}/{}'.format(directory, gen_example)) as json_data:
             data = json.load(json_data)
             generators_col.insert_one(data)
 
         with open('{}/{}'.format(directory, task_example)) as json_data:
+            # insert tasks
             data = json.load(json_data)
-            # insert two tasks
-            data['_id'] = '{}{}'.format(data['_id'], 'a')
-            data['_obj_uuid'] = '{}{}'.format(data['_obj_uuid'], 'a')
-            tasks_col.insert_one(data)
-            data['_id'] = '{}{}'.format(data['_id'], 'a')
-            data['_obj_uuid'] = '{}{}'.format(data['_obj_uuid'], 'b')
-            tasks_col.insert_one(data)
+            for task_entry in data['tasks']:
+                tasks_col.insert_one(task_entry)
 
     @classmethod
     def tearDownClass(cls):
@@ -101,21 +98,43 @@ class TestDatabase(unittest.TestCase):
     def test_get_file_destination(self):
         """Test that the proper location is returned"""
         location = self.db.get_file_destination(
-            id='1e78cf80-8a96-11e7-af58-000000000036')
+            id='1126d076-8b9e-11e7-b37f-000000000006')
         self.assertEquals(
             location,
-            "file:///home/johnrobot/adaptivemd-pkg/" +
-            "adaptivemd/examples/files/alanine/alanine.pdb")
+            "file:///home/vivek/ves/admd/local/lib/python2.7/" +
+            "site-packages/adaptivemd/engine/openmm/openmmrun.py")
 
     def test_get_source_files(self):
         """Test that the proper location list is returned"""
         locations = self.db.get_source_files(
-            id='65fc2c54-8b44-11e7-8783-00000000004a')
+            id='1126d076-8b9e-11e7-b37f-000000000044')
         self.assertTrue(
             all(
                 any(
                     x in y for y in locations
                 ) for x in ['master.dcd', 'protein.dcd']
+            )
+        )
+
+    def test_get_shared_files(self):
+        """Test that the proper shared location list is returned"""
+        locations = self.db.get_shared_files(
+            id='1126d076-8b9e-11e7-b37f-000000000044')
+        expected_data = [
+            'file:///home/vivek/ves/admd/local/lib/python2.7/' +
+            'site-packages/adaptivemd/engine/openmm/openmmrun.py',
+            'file:///home/vivek/Research/repos/adaptivemd/' +
+            'examples/files/alanine/alanine.pdb',
+            'file:///home/vivek/Research/repos/adaptivemd/' +
+            'examples/files/alanine/integrator.xml',
+            'file:///home/vivek/Research/repos/adaptivemd/' +
+            'examples/files/alanine/system.xml'
+        ]
+        self.assertTrue(
+            all(
+                any(
+                    x in y for y in locations
+                ) for x in expected_data
             )
         )
 
