@@ -37,8 +37,8 @@ def build_keyword_dictionary(prefs):
     for key in [
         'name', 'license', 'url', 'download_url', 'packages',
         'package_dir', 'platforms', 'description', 'install_requires',
-        'long_description', 'package_data', 'include_package_data', 'scripts'
-    ]:
+        'long_description', 'package_data', 'include_package_data', 'scripts']:
+        
         if key in prefs:
             keywords[key] = prefs[key]
 

@@ -58,7 +58,7 @@ scripts:
   - adaptivemd/scripts/adaptivemdworker
 
 
-requires:
+install_requires:
   - python
   - pyyaml
   - six
