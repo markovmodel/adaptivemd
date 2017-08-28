@@ -106,6 +106,7 @@ class Client(object):
                 self._rmgr = ResourceManager(resource_desc = resource_desc_for_pilot, db_obj=self._db)
                 self._rmgr.submit_resource_request()
                 
+                '''
                 self._tmgr = TaskManager(session=self._rmgr.session, db_obj=self._db)
 
                 #print self._tmgr
@@ -135,7 +136,8 @@ class Client(object):
 
                     else:
                         sleep(3)
-                                
+                   
+                '''             
             else:
                 raise Error(msg="No matching resource found in configuration file. Please check your configuration file and the resource object.")
 

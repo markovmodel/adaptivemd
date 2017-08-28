@@ -84,24 +84,19 @@ class Database():
                 location = result['_dict']['location']
         return location
 
-    def get_shared_files(self, id=None):
-        """Get the source file locations from the
-        generator collection
-        :Parameters:
-            - `id`: generator object 'id' to lookup
-        """
-        shared_files = list()
+    def get_shared_files(self):
+        """Get the source file locations from all generators"""
+        shared_files = set()
         col = self.db[self.generator_collection]
-        generator = col.find_one({'_id': id})
-        if generator:
+        for generator in col.find():
             for staging in generator['_dict']['initial_staging']:
                 if staging['_cls'] == 'Transfer':
                     if staging['_dict']['source']['_store'] == 'files':
                         file = self.get_file_destination(
                             hex_to_id(staging['_dict']['source']['_hex_uuid']))
                         if file:
-                            shared_files.append(file)
-        return shared_files
+                            shared_files.add(file)
+        return list(shared_files)
 
     def get_source_files(self, id=None):
         """Get the generator file locations for all types
