@@ -137,6 +137,20 @@ class TestDatabase(unittest.TestCase):
             )
         )
 
+    def test_file_created(self):
+        """Test that the configurations method returns a list
+        and that the list is of size '1'"""
+        task_id = '1126d076-8b9e-11e7-b37f-0000000000ce'
+        file_id = '1126d076-8b9e-11e7-b37f-00000000006c'
+        self.assertTrue(
+            self.db.file_created(id=task_id))
+        mongo_db = self.db.client[self.store_name]
+        files_col = mongo_db[self.db.file_collection]
+        file = files_col.find_one({'_id': file_id})
+        self.assertIsNotNone(file)
+        self.assertIsNotNone(file['created'])
+        self.assertIsNotNone(file['created'] > 0)
+
     def test_good_update_task_state(self):
         """Test that the task update state method returns
         true for a good update"""
