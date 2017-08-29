@@ -204,7 +204,7 @@ class Task(BaseTask):
     RESTARTABLE_STATES = ['fail', 'halted']
     RUNNABLE_STATES = ['created']
 
-    def __init__(self, generator=None, est_exec_time=5,
+    def __init__(self, generator=None, resource_name=None, est_exec_time=5,
                  cpu_threads=1, gpu_contexts=0, mpi_rank=0):
 
         super(Task, self).__init__()
@@ -231,6 +231,9 @@ class Task(BaseTask):
         assert isinstance(cpu_threads, int)
         assert isinstance(gpu_contexts, int)
         assert isinstance(mpi_rank, int)
+
+        if isinstance(resource_name, str):
+            self.resource_name = [resource_name]
 
         self.resource_requirements = {'cpu_threads': cpu_threads,
                              'gpu_contexts': gpu_contexts,
