@@ -143,8 +143,6 @@ class BaseTask(StorableMixin):
             return EnclosedTask(self, other)
 
     def to_dict(self):
-        print("self.__class__:", self.__class__)
-        print("self._copy_attributes:", self._copy_attributes)
         dct = {c: getattr(self, c) for c in self._copy_attributes}
         return dct
 
@@ -235,7 +233,8 @@ class Task(BaseTask):
         assert isinstance(mpi_rank, int)
 
         if isinstance(resource_name, str):
-            self.resource_name = [resource_name]
+            resource_name = [resource_name]
+        self.resource_name = resource_name
 
         self.resource_requirements = {'cpu_threads': cpu_threads,
                              'gpu_contexts': gpu_contexts,
