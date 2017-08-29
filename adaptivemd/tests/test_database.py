@@ -17,6 +17,7 @@ res_example = 'example-json/resource-example.json'
 task_example = 'example-json/task-example.json'
 file_example = 'example-json/file-example.json'
 gen_example = 'example-json/generator-example.json'
+ptask_in_example = 'example-json/pythontask-input-example.json'
 
 
 def id_generator(size=6, chars=string.ascii_uppercase + string.digits):
@@ -149,10 +150,10 @@ class TestDatabase(unittest.TestCase):
         )
 
     def test_file_created(self):
-        """Test that the configurations method returns a list
-        and that the list is of size '1'"""
-        task_id = '1126d076-8b9e-11e7-b37f-0000000000ce'
-        file_id = '1126d076-8b9e-11e7-b37f-00000000006c'
+        """Test that the output file was marked
+        as created for a specific task"""
+        task_id = '04f01b52-8c69-11e7-9eb2-000000000164'
+        file_id = '04f01b52-8c69-11e7-9eb2-0000000000fc'
         self.assertTrue(
             self.db.file_created(id=task_id))
         mongo_db = self.db.client[self.store_name]
@@ -182,13 +183,18 @@ class TestDatabase(unittest.TestCase):
 
     def test_utils_generate_pythontask_input(self):
         """Test that the input file is properly generated"""
+        d1 = None
+        with open('{}/{}'.format(directory, ptask_in_example)) as json_data:
+            d1 = json.load(json_data)
         task = None
         task_descriptions = self.db.get_task_descriptions()
         for t in task_descriptions:
             if t['_cls'] == 'PythonTask':
                 task = t
                 break
-        print(json.dumps(generate_pythontask_input(db=self.db, shared_path='/', task=task)))
+        d2 = generate_pythontask_input(
+            db=self.db, shared_path='/home/example', task=task)
+        self.assertDictEqual(d1, d2)
 
 
 if __name__ == '__main__':
