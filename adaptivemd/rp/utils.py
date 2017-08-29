@@ -136,7 +136,7 @@ def create_cud_from_task_def(task_descs, db, shared_path):
             cud.output_staging = add_output_staging(task_desc, db, shared_path)
             cud.cores = 1  # currently overwriting
 
-            db.update_task_description_status(task_desc['_id'], 'done')
+            db.update_task_description_status(task_desc['_id'], 'running')
 
             #print cud.executable, cud.arguments
 
