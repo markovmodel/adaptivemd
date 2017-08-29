@@ -79,7 +79,12 @@ def get_executable_arguments(task_details):
     proc_exec = proc_exec[:-31]
 
     #print raw_exec[0]
-    proc_exec = raw_exec[0].split(';')[2].replace('then','').replace('worker://','').replace('=', ' ').replace('"','').strip()
+    if raw_exec[0].find(';') > -1:
+        # for the regular trajectory tasks
+        proc_exec = raw_exec[0].split(';')[2].replace('then','').replace('worker://','').replace('=', ' ').replace('"','').strip()
+    else:
+        # for the modeler task
+        proc_exec = raw_exec[0].strip()
     #print proc_exec
 
     exe = proc_exec.split(' ')[0]
