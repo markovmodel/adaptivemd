@@ -58,7 +58,7 @@ def get_input_staging(task_details, shared_path):
             staging_directives.append(temp_directive)
 
 
-    print staging_directives
+    #print staging_directives
 
     return staging_directives
 
@@ -136,6 +136,7 @@ def create_cud_from_task_def(task_descs, db, shared_path):
             cud.output_staging = add_output_staging(task_desc, db, shared_path)
             cud.cores = 1  # currently overwriting
 
+            #print task_desc['_id'], cud.name
             db.update_task_description_status(task_desc['_id'], 'running')
 
             #print cud.executable, cud.arguments

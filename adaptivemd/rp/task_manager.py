@@ -41,10 +41,12 @@ class TaskManager(object):
             #    self._db_obj.update_task_description_status(unit.name, 'running')
 
             if state == rp.DONE:
+                
                 done = self._db_obj.update_task_description_status(unit.name, 'success')
+                print done, unit.name
                 if done:
                     self._db_obj.file_created(unit.name)
-                    
+
                 self._running_tasks.remove(unit.uid)
 
             elif state == rp.FAILED:
