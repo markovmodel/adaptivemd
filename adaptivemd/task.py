@@ -143,6 +143,8 @@ class BaseTask(StorableMixin):
             return EnclosedTask(self, other)
 
     def to_dict(self):
+        print("self.__class__:", self.__class__)
+        print("self._copy_attributes:", self._copy_attributes)
         dct = {c: getattr(self, c) for c in self._copy_attributes}
         return dct
 
