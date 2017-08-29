@@ -814,6 +814,7 @@ class PrePostTask(Task):
                                           est_exec_time, cpu_threads,
                                           gpu_contexts, mpi_rank)
 
+        print("making preposttask")
         self.pre = []
         self.post = []
 
@@ -986,7 +987,8 @@ class PythonTask(PrePostTask):
                  est_exec_time=5, cpu_threads=1, 
                  gpu_contexts=0, mpi_rank=0):
 
-        super(PrePostTask, self).__init__(generator, resource_name,
+        print("supering from pythontask")
+        super(PythonTask, self).__init__(generator, resource_name,
                                           est_exec_time, cpu_threads,
                                           gpu_contexts, mpi_rank)
 
