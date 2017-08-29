@@ -79,7 +79,7 @@ def get_executable_arguments(task_details):
     proc_exec = proc_exec[:-31]
 
     #print raw_exec[0]
-    if raw_exec[0].find(';') > -1:
+    if ';' in raw_exec[0]:
         # for the regular trajectory tasks
         proc_exec = raw_exec[0].split(';')[2].replace('then','').replace('worker://','').replace('=', ' ').replace('"','').strip()
     else:
