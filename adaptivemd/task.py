@@ -803,8 +803,8 @@ class PrePostTask(Task):
         'pre', 'post'
     ]
 
-    def __init__(self, generator=None):
-        super(PrePostTask, self).__init__(generator)
+    def __init__(self, generator=None, resource_name=None):
+        super(PrePostTask, self).__init__(generator, resource_name)
         self.pre = []
         self.post = []
 
@@ -862,11 +862,11 @@ class MPITask(PrePostTask):
         parts = [part.format(*args, **kwargs) for part in parts]
         self.executable = parts[0]
         self.arguments = parts[1:]
-        
+
     @property
     def main(self):
         return self.pre + [self.command] + self.post
-    
+
     def append(self, cmd):
         raise RuntimeWarning(
             'append does nothing for MPITasks. Use .pre.append or .post.append')
