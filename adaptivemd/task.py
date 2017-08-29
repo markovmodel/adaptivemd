@@ -803,8 +803,14 @@ class PrePostTask(Task):
         'pre', 'post'
     ]
 
-    def __init__(self, generator=None, resource_name=None):
-        super(PrePostTask, self).__init__(generator, resource_name)
+    def __init__(self, generator=None, resource_name=None,
+                 est_exec_time=None, cpu_threads=None, 
+                 gpu_contexts=None, mpi_rank=None):
+
+        super(PrePostTask, self).__init__(generator, resource_name,
+                                          est_exec_time, cpu_threads,
+                                          gpu_contexts, mpi_rank)
+
         self.pre = []
         self.post = []
 
@@ -973,8 +979,13 @@ class PythonTask(PrePostTask):
 
     then_func = None
 
-    def __init__(self, generator=None, resource_name=None):
-        super(PythonTask, self).__init__(generator, resource_name)
+    def __init__(self, generator=None, resource_name=None,
+                 est_exec_time=5, cpu_threads=1, 
+                 gpu_contexts=0, mpi_rank=0):
+
+        super(PrePostTask, self).__init__(generator, resource_name,
+                                          est_exec_time, cpu_threads,
+                                          gpu_contexts, mpi_rank)
 
         self._python_import = None
         self._python_source_files = None
