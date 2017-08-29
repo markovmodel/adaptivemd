@@ -5,7 +5,7 @@ from resource_manager import ResourceManager
 
 if __name__ == '__main__':
 
-    db = Database(mongo_url='mongodb://user:user@two.radical-project.org:32769/', project='rp_testing_3')
+    db = Database(mongo_url='mongodb://user:user@two.radical-project.org:32769/', project='rp_testing_modeller_1')
 
     #print db.get_shared_files()
 
@@ -26,17 +26,23 @@ if __name__ == '__main__':
 
     #create_cud_from_task_def(db.get_tasks_definitions()[0])
     task_desc = db.get_task_descriptions(state='running')
+    print len(task_desc)
+
 
     #pprint(task_desc[0])
-    cuds = create_cud_from_task_def(task_desc, db, '/home/vivek')
+    #cuds = create_cud_from_task_def(task_desc, db, '/home/vivek')
 
-    cud = cuds[0]
+    #cud = cuds[0]
+    #print cud
 
-    print db.update_task_description_status(cud.name, 'running')
-    task_desc = db.get_task_descriptions(state='running')
+    #for cud in cuds:
+    #    print db.update_task_description_status(cud.name, 'cancelled')
+
+    #task_desc = db.get_task_descriptions(state='cancelled')
+    #print len(task_desc)
     #print task_desc
-    print db.update_task_description_status(cud.name, 'cancelled')
-    task_desc = db.get_task_descriptions(state='cancelled')
+    #print db.update_task_description_status(cud.name, 'cancelled')
+    #task_desc = db.get_task_descriptions(state='cancelled')
     #print task_desc
 
 

@@ -90,7 +90,7 @@ def get_executable_arguments(task_details):
     return exe, args
 
 
-def add_output_staging(task_desc, db, shared_path):
+def get_output_staging(task_desc, db, shared_path):
 
     hex_id_input = hex_to_id(hex_uuid=task_desc['_dict']['generator']['_hex_uuid'])
 
@@ -118,7 +118,6 @@ def add_output_staging(task_desc, db, shared_path):
 
 def create_cud_from_task_def(task_descs, db, shared_path):
 
-
     try:
         cuds = list()
 
@@ -133,7 +132,7 @@ def create_cud_from_task_def(task_descs, db, shared_path):
             cud.executable = [str(exe)]
             cud.arguments = args
             cud.input_staging = get_input_staging(task_details, shared_path)
-            cud.output_staging = add_output_staging(task_desc, db, shared_path)
+            cud.output_staging = get_output_staging(task_desc, db, shared_path)
             cud.cores = 1  # currently overwriting
 
             #print task_desc['_id'], cud.name
