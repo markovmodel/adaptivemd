@@ -15,10 +15,11 @@ local.1 {
 }
 
 titan.1 {
-  shared_path
-  queues
-  allocation
-  cores_per_node
+  shared_path      $ADMD_DATA
+  queues           batch
+  allocation       bip149
+  cores_per_node   16
+  #gpu_per_node     1
   resource_name    ornl.titan
 }
 

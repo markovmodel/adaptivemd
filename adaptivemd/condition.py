@@ -4,6 +4,7 @@
 # Copyright 2017 FU Berlin and the Authors
 #
 # Authors: Jan-Hendrik Prinz
+#          John Ossyra
 # Contributors:
 #
 # `adaptiveMD` is free software: you can redistribute it and/or modify
@@ -24,12 +25,9 @@ from __future__ import print_function, absolute_import
 
 class Condition(object):
     """
-    A function that returns a bool
-
+    A function that returns a bool.
     It uses some caching to keep checking fast and allows basic bool operations
-
     This is really just to replace some simple lambda functions, nothing more.
-    It is kind of deprecated and raraly used.
 
     Examples
     --------
@@ -74,9 +72,19 @@ class Condition(object):
         return InvertCondition(self)
 
     def __bool__(self):
+        '''
+        Statements evaluating boolean values and the bool
+        function in Python 3 use this special method to
+        resolve a value.
+        '''
         return self()
 
     def __nonzero__(self):
+        '''
+        Statements evaluating boolean values and the bool
+        function in Python 2 use this special method to
+        resolve a value. It calls self.__bool__ internally.
+        '''
         return self.__bool__()
 
 

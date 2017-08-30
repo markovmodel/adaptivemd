@@ -125,15 +125,39 @@ class Project(object):
 
     @classmethod
     def set_dblocation(cls, hostname, portnumber):
+        '''
+        Use this method to set the full address of the MongoDB
+        used by the project.
+        '''
         cls.set_dbhost(hostname)
         cls.set_dbport(portnumber)
 
     @classmethod
     def set_dbhost(cls, hostname):
+        '''
+        Set the hostname of MongoDB used by the project
+        '''
         MongoDBStorage.set_host(hostname)
+
+    def read_configurations(self, configuration_file=None):
+        '''
+        Read in a configurations file to define supported resources.
+        If no argument is given, this method will try to read a
+        file with the given project name in the current working
+        directory, followed by the adaptivemd package directory
+        adaptivemd/configurations/.
+        '''
+        configurations = Configuration.read_configurations(
+            configuration_file, self.name)
+
+        [self.configurations.add(c) for c in configurations]
+
 
     @classmethod
     def set_dbport(cls, portnumber):
+        '''
+        Set the port number used by the MongoDB host
+        '''
         MongoDBStorage.set_port(portnumber)
 
     def __init__(self, name):
