@@ -150,8 +150,7 @@ class Project(object):
         configurations = Configuration.read_configurations(
             configuration_file, self.name)
 
-        [self.configurations.add(c) for c in configurations]
-
+        [self.storage.configurations.save(c) for c in configurations]
 
     @classmethod
     def set_dbport(cls, portnumber):
@@ -218,10 +217,9 @@ class Project(object):
         # or do not care. This is fast but not recommended
         # self._set_task_state_from_dead_workers = None
 
-    #del#def initialize(self, resource):
-    def initialize(self):
+    def initialize(self, configuration_file=None):
         """
-        Initialize a project with a specific resource.
+        Initialize a project
 
         Notes
         -----
@@ -236,13 +234,18 @@ class Project(object):
         """
         self.storage.close()
 
-        #del#self.resource = resource
-
         st = MongoDBStorage(self.name, 'w')
         # st.create_store(ObjectStore('objs', None))
         st.create_store(ObjectStore('generators', TaskGenerator))
         st.create_store(ObjectStore('files', File))
         st.create_store(ObjectStore('resources', Resource))
+        # TODO configurations is behaving different than all other stores
+        #      probably to do with Configuration objects and how they
+        #      are constructed. Fix:
+        #       - Configuration class
+        #       - storage insertion method (p.configurations.add)
+        #       - StoredBundle access mechanism (p.configurations)
+        #       - yep
         st.create_store(ObjectStore('configurations', Configuration))
         st.create_store(ObjectStore('models', Model))
         st.create_store(ObjectStore('tasks', Task))
@@ -251,11 +254,13 @@ class Project(object):
         st.create_store(FileStore('data', DataDict))
         # st.create_store(ObjectStore('commands', Command))
 
-        #del#st.save(self.resource)
-
         st.close()
 
         self._open_db()
+
+        # this method will save configurations to the storage
+        # if a valid configuration file is found
+        self.read_configurations(configuration_file)
 
     def request_resource(self, total_cpus, total_time,
                          total_gpus=0, destination=''):
@@ -297,6 +302,7 @@ class Project(object):
             self.storage.logs.set_caching(WeakValueCache())
 
             # make sure that the file number will be new
+            # TODO This may note work...
             self.traj_name.initialize_from_files(self.trajectories)
 
     def reconnect(self):

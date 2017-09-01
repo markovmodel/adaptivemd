@@ -36,24 +36,17 @@ from .mongodb import StorableMixin
 # to instantiate session
 #from .rp import rp_resource_list
 
+# TODO
+# **** Want to add ability to grab specific nodes that aren't caught
+#      by specifying the queue name!!
+#
+# on Rhea:
+#           #PBS -lpartition=gpu
+
 # Where it came from now:
 #from radical.pilot import Session
 #s = Session()
 #resource_names = [k.split('_')[0] for k in s._resource_configs.keys()]
-_resource_names = set(['fub.allegro', 'xsede.supermic',
-    'das4.fs2', 'osg.connect', 'xsede.stampede',
-    'radical.tutorial', 'lumc.gb-ui', 'chameleon.cloud',
-    'xsede.trestles', 'osg.xsede-virt-clust',
-    'futuregrid.echo', 'nersc.edison', 'xsede.greenfield',
-    'xsede.bridges', 'xsede.lonestar', 'futuregrid.bravo',
-    'xsede.gordon', 'radical.one', 'xsede.wrangler',
-    'stfc.joule', 'futuregrid.delta', 'lumc.shark',
-    'ornl.titan', 'ncar.yellowstone', 'xsede.comet',
-    'local.localhost', 'xsede.blacklight', 'yale.grace',
-    'rice.davinci', 'lrz.supermuc', 'nersc.hopper',
-    'futuregrid.xray', 'iu.bigred2', 'rice.biou',
-    'futuregrid.india', 'das5.fs1', 'epsrc.archer',
-    'ncsa.bw', 'radical.two', 'xsede.stampede2'])
 
 
 
@@ -106,17 +99,30 @@ class Configuration(StorableMixin):
         Radical Pilot
 
     """
-
-    # **** Want to add ability to grab specific nodes that aren't caught
-    #      by specifying the queue name!!
-    #
-    # on Rhea:
-    #           #PBS -lpartition=gpu
-
-
     _fields = [('shared_path',str), ('queues',str),
                ('allocation',str), ('cores_per_node',int),
                ('resource_name',str)]
+
+    _resource_names = set(['fub.allegro', 'xsede.supermic',
+        'das4.fs2', 'osg.connect', 'xsede.stampede',
+        'radical.tutorial', 'lumc.gb-ui', 'chameleon.cloud',
+        'xsede.trestles', 'osg.xsede-virt-clust',
+        'futuregrid.echo', 'nersc.edison', 'xsede.greenfield',
+        'xsede.bridges', 'xsede.lonestar', 'futuregrid.bravo',
+        'xsede.gordon', 'radical.one', 'xsede.wrangler',
+        'stfc.joule', 'futuregrid.delta', 'lumc.shark',
+        'ornl.titan', 'ncar.yellowstone', 'xsede.comet',
+        'local.localhost', 'xsede.blacklight', 'yale.grace',
+        'rice.davinci', 'lrz.supermuc', 'nersc.hopper',
+        'futuregrid.xray', 'iu.bigred2', 'rice.biou',
+        'futuregrid.india', 'das5.fs1', 'epsrc.archer',
+        'ncsa.bw', 'radical.two', 'xsede.stampede2'])
+
+    def update_list(self):
+        '''
+        TODO Use this method to update list
+        '''
+        pass
 
     @staticmethod
     def parse_configurations_file(configuration_file):
@@ -153,7 +159,7 @@ class Configuration(StorableMixin):
         return configurations_fields
 
     @classmethod
-    def read_configuration(cls, configuration_file=None, project_name=None):
+    def read_configurations(cls, configuration_file=None, project_name=None):
         '''
         This method will read a given configuration file or one
         in a default location. The method returns a dict of
@@ -166,28 +172,34 @@ class Configuration(StorableMixin):
         of the format.
         '''
 
+        f_cfg = None
         configurations = list()
+        _ext = '.cfg'
 
         if configuration_file is None:
-            locs = ['./' + project_name,
-                    '/'.join(adaptivemd.__file__
-                             .split('/')[:-2]+[''])+project_name,
-                   ]
+            locs = ['./' + project_name + _ext,]
 
             if os.path.isfile(locs[0]):
                 f_cfg = locs[0]
-            elif os.path.isfile(locs[1]):
-                f_cfg = locs[1]
 
         elif os.path.isfile(configuration_file):
             f_cfg = configuration_file
 
-        configurations_fields = cls.parse_configurations_file(f_cfg)
+        if f_cfg:
+            configurations_fields = cls.parse_configurations_file(f_cfg)
 
-        for configuration, fields in configurations_fields.items():
-            configurations.append(cls(configuration, **fields))
+            for configuration, fields in configurations_fields.items():
+                configurations.append(cls(configuration, **fields))
 
-        return configurations
+            return configurations
+
+        elif configuration_file and f_cfg is None:
+            print("Could not locate the given configuration file: {0}"
+                  .format(configuration_file))
+            return []
+
+        else:
+            return []
 
     def __init__(self, name, **fields):
         '''
@@ -217,12 +229,18 @@ class Configuration(StorableMixin):
                 print("Listed field {0} is not the required type {1}"
                       .format(field, _type))
 
+        unused = set(_fields).difference(set(_dict.keys()))
+        [_dict.update({uu: None}) for uu in unused]
 
         if 'shared_path' not in _dict:
             _dict['shared_path'] = '$HOME/adaptivemd/'
 
-        if fields['resource_name'] in _resource_names:
-            [setattr(self, field, val) for field, val in _dict.items()]
-
-            self.name = name
+        if fields['resource_name'] in Configuration._resource_names:
             super(Configuration, self).__init__()
+
+            [setattr(self, field, val) for field, val in _dict.items()]
+            self.name = name
+
+            # TODO fix this ugliness with queue unroll
+            self.queues = [ self.queues ]
+
