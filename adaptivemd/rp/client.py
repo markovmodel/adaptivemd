@@ -14,12 +14,12 @@ class Client(object):
     """
     The Client object is instantiated by the AdaptiveMD master in order to invoke components
     on the runtime system (RTS) side. These components then interact with the MongoDB to extract
-    task, resource and configuration descriptions. Using these descriptions, RTS specific 
+    task, resource and configuration descriptions. Using these descriptions, RTS specific
     components are created and executed.
 
     :arguments:
         :dburl: MongoDB URL to be used for RADICAL Pilot
-        :project: Store name to be used on MongoDB. This is the store where all the configurations, resources and task 
+        :project: Store name to be used on MongoDB. This is the store where all the configurations, resources and task
                     descriptions are present.
     """
 
@@ -35,7 +35,6 @@ class Client(object):
         # Process related data
         self._proc = None
         self._terminate = None
-
 
     # ------------------------------------------------------------------------------------------------------------------
     # Private methods
@@ -145,8 +144,6 @@ class Client(object):
             self._rmgr.pilot.cancel()
             self._rmgr.session.close(cleanup=False)
 
-
-
     # ------------------------------------------------------------------------------------------------------------------
     # Public methods
     # ------------------------------------------------------------------------------------------------------------------
@@ -167,7 +164,6 @@ class Client(object):
             self._logger.error("Error starting RP process, error: %s"%ex)
             self.end()
             raise Error(msg=ex)
-
 
     def stop(self):
 

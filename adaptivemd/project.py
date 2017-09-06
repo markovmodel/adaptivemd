@@ -150,7 +150,7 @@ class Project(object):
         configurations = Configuration.read_configurations(
             configuration_file, self.name)
 
-        [self.storage.configurations.save(c) for c in configurations]
+        [self.configurations.add(c) for c in configurations]
 
     @classmethod
     def set_dbport(cls, portnumber):
@@ -163,9 +163,6 @@ class Project(object):
         self.name = name
 
         self.session = None
-
-        #del#self.pilot_manager = None
-        #del#self.schedulers = set()
 
         #self.execution_manager = client()
 
@@ -282,13 +279,13 @@ class Project(object):
         if hasattr(self.storage, 'tasks'):
             self.files.set_store(self.storage.files)
             self.generators.set_store(self.storage.generators)
+            self.configurations.set_store(self.storage.generators)
             self.models.set_store(self.storage.models)
             self.tasks.set_store(self.storage.tasks)
             self.workers.set_store(self.storage.workers)
             self.logs.set_store(self.storage.logs)
             self.data.set_store(self.storage.data)
             # self.commands.set_store(self.storage.commands)
-            #del#self.resource = self.storage.resources.find_one({})
             self.resources.set_store(self.storage.resources)
 
             self.storage.files.set_caching(True)
@@ -325,18 +322,6 @@ class Project(object):
         """
         self._close_rp()
 
-    #del#def _close_rp(self):
-    #del#    for r in set(self.schedulers):
-    #del#        r.shut_down(False)
-
-    #del#    # self.report.header('finalize')
-    #del#    if self.session is not None and not self.session.closed:
-    #del#        self.session.close()
-
-    #del#    self.files.close()
-    #del#    self.generators.close()
-    #del#    self.models.close()
-
     @classmethod
     def list(cls):
         """
@@ -367,50 +352,6 @@ class Project(object):
 
         """
         MongoDBStorage.delete_storage(name)
-
-    #del#def get_scheduler(self, name=None, **kwargs):
-    #del#    """
-
-    #del#    Parameters
-    #del#    ----------
-    #del#    name : str
-    #del#        name of the scheduler class provided by the `Resource` used in
-    #del#        this project. If None (default) the cluster/queue ``default`` is
-    #del#        used that needs to be implemented for every resource
-
-    #del#    kwargs : ``**kwargs``
-    #del#        Additional arguments to initialize the cluster scheduler provided
-    #del#        by the `Resource`
-
-    #del#    Notes
-    #del#    -----
-    #del#    the scheduler is automatically entered/opened so the pilot jobs is
-    #del#    submitted to the queueing system and it counts against your
-    #del#    simulation time! If you do not want to do so directly. Create
-    #del#    the `Scheduler` by yourself and later call ``scheduler.enter(project)``
-    #del#    to start using it. To close the scheduler call ``scheduler.exit()``
-
-    #del#    Returns
-    #del#    -------
-    #del#    `Scheduler`
-    #del#        the scheduler object that can be used to execute tasks on that
-    #del#        cluster/queue
-    #del#    """
-    #del#    # get a new scheduler to submit tasks
-    #del#    if name is None:
-    #del#        scheduler = self.resource.default()
-    #del#    else:
-    #del#        scheduler = getattr(self.resource, name)(**kwargs)
-
-    #del#    # and prepare the scheduler
-    #del#    scheduler.enter(self)
-
-    #del#    # add the task generating capabilities to the scheduler
-    #del#    list(map(scheduler.has, self.generators))
-
-    #del#    scheduler.stage_generators()
-
-    #del#    return scheduler
 
     def close(self):
         """

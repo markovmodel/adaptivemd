@@ -4,6 +4,8 @@
 # Copyright 2017 FU Berlin and the Authors
 #
 # Authors: Jan-Hendrik Prinz
+#          John Ossyra
+#
 # Contributors:
 #
 # `adaptiveMD` is free software: you can redistribute it and/or modify
