@@ -234,6 +234,7 @@ class Task(BaseTask):
 
         if isinstance(resource_name, str):
             resource_name = [resource_name]
+
         self.resource_name = resource_name
 
         self.resource_requirements = {'cpu_threads': cpu_threads,
@@ -987,7 +988,6 @@ class PythonTask(PrePostTask):
                  est_exec_time=5, cpu_threads=1, 
                  gpu_contexts=0, mpi_rank=0):
 
-        print("supering from pythontask")
         super(PythonTask, self).__init__(generator, resource_name,
                                           est_exec_time, cpu_threads,
                                           gpu_contexts, mpi_rank)

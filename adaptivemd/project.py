@@ -457,6 +457,9 @@ class Project(object):
         if isinstance(resource_name, str):
             resource_name = [resource_name]
 
+        elif resource_name is None:
+            resource_name = [resource_name]
+
         assert isinstance(resource_name, list)
 
         for task in tasks:

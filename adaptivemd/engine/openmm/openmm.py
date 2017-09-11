@@ -148,11 +148,6 @@ class OpenMMEngine(Engine):
         # create the directory
         t.touch(output)
 
-        #condapy = '\nexport PATH="/home/johnrobot/miniconda3/bin:$PATH"\n'
-        retry = '\nj=0\ntries=10\nsleep=1\n'
-        retry += '\ntrajfile=traj/allatoms.dcd\n\n'
-        retry += 'while [ $j -le $tries ]; do if ! [ -s $trajfile ]; then {0}; fi; sleep 1; j=$((j+1)); done'
-
         cmd = 'python openmmrun.py {args} {types} -t {pdb} --length {length} {output}'.format(
             pdb=input_pdb,
             types=self._create_output_str(),
@@ -160,8 +155,6 @@ class OpenMMEngine(Engine):
             output=output,
             args=self.args,
         )
-        cmd = retry.format(cmd)
-        #cmd = condapy + retry.format(cmd)
         t.append(cmd)
 
         t.put(output, target)
@@ -194,10 +187,6 @@ class OpenMMEngine(Engine):
 
         t.touch(extension)
 
-        retry = '\nj=0\ntries=10\nsleep=1\n'
-        retry += '\ntrajfile=extension/allatoms.dcd\n\n'
-        retry += 'while [ $j -le $tries ]; do if ! [ -s $trajfile ]; then {0}; fi; sleep 1; j=$((j+1)); done'
-
         cmd = ('python openmmrun.py {args} {types} --restart {restart} -t {pdb} '
                '--length {length} {output}').format(
             pdb=initial_pdb,
@@ -207,7 +196,6 @@ class OpenMMEngine(Engine):
             args=self.args,
             types=self._create_output_str()
         )
-        cmd = retry.format(cmd)
         t.append(cmd)
 
         # join both trajectories for all outputs
