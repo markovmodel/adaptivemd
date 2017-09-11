@@ -24,7 +24,7 @@ from __future__ import absolute_import
 
 
 from .mongodb import StorableMixin
-from .task import DummyTask
+#from .task import DummyTask
 from .configuration import Configuration
 
 

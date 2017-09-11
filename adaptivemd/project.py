@@ -139,7 +139,50 @@ class Project(object):
         '''
         MongoDBStorage.set_host(hostname)
 
-    def read_configurations(self, configuration_file=None):
+    def set_current_configuration(self, configuration=None):
+
+        cfg = None
+
+        # need cfg<Bundle> --> cfg<list>
+        # or   cfg<Object> --> cfg<list>
+        # to do some indexing below
+        if configuration is None:
+            cfg = list(self.configurations.m('current', True))
+
+            if len(cfg) == 0:
+                cfg = list(self.configurations.a('resource_name', 'local.localhost'))
+
+        elif isinstance(configuration, Configuration):
+            cfg = [ configuration ]
+
+        elif isinstance(configuration, str):
+            cfg = list(self.configurations.a('resource_name', configuration))
+
+            if len(cfg) == 0:
+                cfg = list(self.configuration.a('name', configuration))
+
+        # TODO switch off last current?/always exactly 1 airtight?
+        #      also - no rule for when reading from file and multiple
+        #             configs try to set current to True
+        #             - last one wins?
+        # cfg had better be a list
+        if cfg:
+            if len(cfg) == 1:
+                [setattr(c, 'current', False) for c in self.configurations]
+
+                cur = cfg[0]
+                cur.current = True
+                self._current_configuration = cur
+
+            else:
+                print("Current configuration pattern must match a single item\n"
+                      "Arbitrarily selecting the last matching entry: Configuration.name=={0}".format(cfg[-1].name))
+                self.set_current_configuration(cfg[-1])
+
+        else:
+            print("Did not set a new current configuration")
+
+    def read_configurations(self, configuration_file=None, default_configuration=None):
         '''
         Read in a configurations file to define supported resources.
         If no argument is given, this method will try to read a
@@ -150,7 +193,11 @@ class Project(object):
         configurations = Configuration.read_configurations(
             configuration_file, self.name)
 
-        [self.configurations.add(c) for c in configurations]
+        for c in configurations:
+            if not self.configurations or c.name not in self.configurations.all.name:
+                self.configurations.add(c) 
+
+        self.set_current_configuration(default_configuration)
 
     @classmethod
     def set_dbport(cls, portnumber):
@@ -162,7 +209,8 @@ class Project(object):
     def __init__(self, name):
         self.name = name
 
-        self.session = None
+        #del#self.session = None
+        self.schedulers = set()
 
         #self.execution_manager = client()
 
@@ -214,7 +262,12 @@ class Project(object):
         # or do not care. This is fast but not recommended
         # self._set_task_state_from_dead_workers = None
 
-    def initialize(self, configuration_file=None):
+        self._current_configuration = None
+        if len(self.configurations) > 0:
+            self.set_current_configuration()
+
+    def initialize(self, configuration_file=None,
+                   default_configuration=None):
         """
         Initialize a project
 
@@ -257,10 +310,14 @@ class Project(object):
 
         # this method will save configurations to the storage
         # if a valid configuration file is found
-        self.read_configurations(configuration_file)
+        self.read_configurations(configuration_file,
+                                 default_configuration)
 
     def request_resource(self, total_cpus, total_time,
                          total_gpus=0, destination=''):
+
+        if destination == 'current':
+            destination = self._current_configuration.resource_name
 
         # TODO regularize resource name generation
         #nm_r = get_nm_r()
@@ -269,8 +326,7 @@ class Project(object):
                      total_gpus, destination)
 
         self.storage.save(r)
-
-        return r
+        #return r
 
     def _open_db(self):
         # open DB and load status
@@ -279,7 +335,7 @@ class Project(object):
         if hasattr(self.storage, 'tasks'):
             self.files.set_store(self.storage.files)
             self.generators.set_store(self.storage.generators)
-            self.configurations.set_store(self.storage.generators)
+            self.configurations.set_store(self.storage.configurations)
             self.models.set_store(self.storage.models)
             self.tasks.set_store(self.storage.tasks)
             self.workers.set_store(self.storage.workers)
@@ -312,15 +368,15 @@ class Project(object):
     def _close_db(self):
         self.storage.close()
 
-    def close_rp(self):
-        """
-        Close the RP session
+    #del#def close_rp(self):
+    #del#    """
+    #del#    Close the RP session
 
-        Before using RP you need to re-open and then you will run in a
-        new session.
+    #del#    Before using RP you need to re-open and then you will run in a
+    #del#    new session.
 
-        """
-        self._close_rp()
+    #del#    """
+    #del#    self._close_rp()
 
     @classmethod
     def list(cls):
@@ -359,7 +415,7 @@ class Project(object):
 
         """
         self.stop()
-        self._close_rp()
+        #self._close_rp()
         self._close_db()
 
     def __enter__(self):

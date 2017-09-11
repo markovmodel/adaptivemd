@@ -154,6 +154,39 @@ class BaseBundle(object):
             if hasattr(f, 'name') and f.name == item:
                 return f
 
+    def a(self, name_attr, pattern, match=False):
+        '''
+        Return a Bundle of all entries with a string attribute containing pattern.
+        Set match to True to return entries matching pattern.
+
+        Parameters
+        ----------
+        name_attr : `str`
+            An attribute name of the Bundle content class.
+            The attribute value must be of type `str`.
+
+        pattern : `str`
+            The string pattern for matching.
+
+        match : `bool`
+            Only return Bundle elements who match pattern exactly
+
+        '''
+        if match:
+            hits = self.m(name_attr, value)
+        else:
+            hits = filter(lambda x: getattr(x, name_attr)
+                          .find(pattern) >= 0, self)
+
+        return Bundle(hits)
+
+    def m(self, name_attr, value):
+        '''
+        Return Bundle of the matching elements
+        '''
+        hits = filter(lambda x: getattr(x, name_attr) == value, list(self))
+        return Bundle(hits)
+
     def c(self, cls):
         """
         Return a view bundle on all entries that are instances of a class

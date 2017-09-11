@@ -23,6 +23,7 @@ from __future__ import absolute_import, print_function
 
 import os
 from .mongodb import StorableMixin
+from .task import DummyTask
 
 
 # TODO
@@ -52,7 +53,7 @@ class Configuration(StorableMixin):
     """
     Configuration of the execution resource used to run an AdaptiveMD
     workflow. This class is used to pass information about the resource
-    to Radical Pilot, so the field "resource_name" must have a
+    when using Radical Pilot, so the field "resource_name" must have a
     matching entry in the Radical Pilot resource configurations. If
     the "shared_path" is not defined, it is set to $HOME/adaptivemd,
     which is likely not a good working a data directory on an HPC.
@@ -99,7 +100,7 @@ class Configuration(StorableMixin):
     """
     _fields = [('shared_path',str), ('queues',str),
                ('allocation',str), ('cores_per_node',int),
-               ('resource_name',str)]
+               ('resource_name',str), ('current', bool)]
 
     _resource_names = set(['fub.allegro', 'xsede.supermic',
         'das4.fs2', 'osg.connect', 'xsede.stampede',
@@ -189,17 +190,19 @@ class Configuration(StorableMixin):
             for configuration, fields in configurations_fields.items():
                 configurations.append(cls(configuration, **fields))
 
-            return configurations
-
         elif configuration_file and f_cfg is None:
-            print("Could not locate the given configuration file: {0}"
-                  .format(configuration_file))
-            return []
+            print("Could not locate the given configuration file: {0}\n"
+                  .format(configuration_file,
+                  "Going to use default local configuration"))
+
+            configurations.append(cls('local', **dict(resource_name='local.localhost')))
 
         else:
-            return []
+            configurations.append(cls('local', **dict(resource_name='local.localhost')))
 
-    def __init__(self, name, **fields):
+        return configurations
+
+    def __init__(self, name, wrapper=None, **fields):
         '''
         Configuration initialization will only complete if all
         entries read from the configuration file entry correspond
@@ -207,38 +210,53 @@ class Configuration(StorableMixin):
         resource configured in Radical Pilot.
         '''
 
-        _fields, _types = zip(*Configuration._fields)
-        _dict = dict()
+        # Construction from file
+        if fields:
+            _fields, _types = zip(*Configuration._fields)
+            _dict = dict()
 
-        for field, val in fields.items():
-            try:
-                idx = _fields.index(field)
-                _type = _types[idx]
-                _val = _type(val)
+            for field, val in fields.items():
+                try:
+                    idx = _fields.index(field)
+                    _type = _types[idx]
+                    _val = _type(val)
 
-                assert isinstance(_val, _type)
-                _dict[field] = _val
+                    assert isinstance(_val, _type)
+                    _dict[field] = _val
 
-            except ValueError:
-                print("Listed field {0} is not a valid configuration field"
-                      .format(field))
+                except ValueError:
+                    print("Listed field {0} is not a valid configuration field"
+                          .format(field))
 
-            except AssertionError:
-                print("Listed field {0} is not the required type {1}"
-                      .format(field, _type))
+                except AssertionError:
+                    print("Listed field {0} is not the required type {1}"
+                          .format(field, _type))
 
-        unused = set(_fields).difference(set(_dict.keys()))
-        [_dict.update({uu: None}) for uu in unused]
+            # TODO add default val to _fields tuples above
+            #      and set them here
+            if 'shared_path' not in _dict:
+                _dict['shared_path'] = '$HOME/adaptivemd/'
 
-        if 'shared_path' not in _dict:
-            _dict['shared_path'] = '$HOME/adaptivemd/'
+            if 'current' not in _dict:
+                _dict['current'] = False
 
-        if fields['resource_name'] in Configuration._resource_names:
+            unused = set(_fields).difference(set(_dict.keys()))
+            [_dict.update({uu: None}) for uu in unused]
+
+            if fields['resource_name'] in Configuration._resource_names:
+                super(Configuration, self).__init__()
+
+                [setattr(self, field, val) for field, val in _dict.items()]
+                self.name = name
+
+                # TODO fix this ugliness with queue unroll
+                self.queues = [ self.queues ]
+
+        # Construction via from_dict
+        else:
             super(Configuration, self).__init__()
 
-            [setattr(self, field, val) for field, val in _dict.items()]
-            self.name = name
+        if wrapper is None:
+            wrapper = DummyTask()
 
-            # TODO fix this ugliness with queue unroll
-            self.queues = [ self.queues ]
-
+        self.wrapper = wrapper

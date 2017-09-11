@@ -808,14 +808,13 @@ class PrePostTask(Task):
     ]
 
     def __init__(self, generator=None, resource_name=None,
-                 est_exec_time=None, cpu_threads=None, 
-                 gpu_contexts=None, mpi_rank=None):
+                 est_exec_time=5, cpu_threads=1,
+                 gpu_contexts=0, mpi_rank=0):
 
         super(PrePostTask, self).__init__(generator, resource_name,
                                           est_exec_time, cpu_threads,
                                           gpu_contexts, mpi_rank)
 
-        print("making preposttask")
         self.pre = []
         self.post = []
 

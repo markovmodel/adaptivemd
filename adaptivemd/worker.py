@@ -81,7 +81,7 @@ class WorkerScheduler(Scheduler):
         Parameters
         ----------
         resource : `Resource`
-            the resourse this scheduler should use.
+            the resource this scheduler should use.
         verbose : bool
             if True the worker will report lots of stuff
         """
@@ -123,7 +123,8 @@ class WorkerScheduler(Scheduler):
         """
 
         # create a task that wraps errands from resource and scheduler
-        wrapped_task = task >> self.wrapper >> self.project.resource.wrapper
+        #wrapped_task = task >> self.wrapper >> self.project.resource.wrapper
+        wrapped_task = task >> self.wrapper >> self.resource.wrapper
 
         # call the reducer that interpretes task actions
         reducer = StrFilterParser() >> PrefixParser() >> WorkerParser() >> BashParser()
@@ -575,7 +576,7 @@ class Worker(StorableMixin):
         return obj
 
     def create(self, project):
-        scheduler = WorkerScheduler(project.resource, self.verbose)
+        scheduler = WorkerScheduler(project._current_configuration, self.verbose)
         scheduler._state_cb = self._state_cb
         self._scheduler = scheduler
         self._project = project
