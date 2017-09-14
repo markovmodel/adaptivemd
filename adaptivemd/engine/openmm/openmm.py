@@ -148,10 +148,12 @@ class OpenMMEngine(Engine):
         # create the directory
         t.touch(output)
 
-        cmd = 'python openmmrun.py {args} {types} -t {pdb} --length {length} {output}'.format(
+        cmd = 'python openmmrun.py {args} {types} -s {system} -i {integrator} -t {pdb} --length {length} {output}'.format(
             pdb=input_pdb,
             types=self._create_output_str(),
             length=target.length,
+            system=self['system_file'].basename,
+            integrator=self['integrator_file'].basename,
             output=output,
             args=self.args,
         )
@@ -187,11 +189,13 @@ class OpenMMEngine(Engine):
 
         t.touch(extension)
 
-        cmd = ('python openmmrun.py {args} {types} --restart {restart} -t {pdb} '
+        cmd = ('python openmmrun.py {args} {types} -s {system} -i {integrator} --restart {restart} -t {pdb} '
                '--length {length} {output}').format(
             pdb=initial_pdb,
             restart=source.file('restart.npz'),  # todo: this is engine specific!
             length=target.length - source.length,
+            system=self['system_file'].basename,
+            integrator=self['integrator_file'].basename,
             output=extension,
             args=self.args,
             types=self._create_output_str()
