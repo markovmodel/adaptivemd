@@ -142,17 +142,16 @@ class Project(object):
     def set_current_configuration(self, configuration=None):
 
         cfg = None
+        #print("N confogs: ", len(self.configurations))
+        #print("something")
+        #print("this confog: ", len(configuration))
 
         # need cfg<Bundle> --> cfg<list>
         # or   cfg<Object> --> cfg<list>
         # to do some indexing below
-        if configuration is None:
-            cfg = list(self.configurations.m('current', True))
 
-            if len(cfg) == 0:
-                cfg = list(self.configurations.a('resource_name', 'local.localhost'))
-
-        elif isinstance(configuration, Configuration):
+        # ORDER matters in conditions here!
+        if isinstance(configuration, Configuration):
             cfg = [ configuration ]
 
         elif isinstance(configuration, str):
@@ -160,6 +159,16 @@ class Project(object):
 
             if len(cfg) == 0:
                 cfg = list(self.configuration.a('name', configuration))
+
+        elif len(self.configurations) == 1:
+            cfg = [ self.configurations.one ]
+            print("cfg is: ", cfg)
+
+        elif configuration is None:
+            cfg = list(self.configurations.m('current', True))
+
+            if len(cfg) == 0:
+                cfg = list(self.configurations.a('resource_name', 'local.localhost'))
 
         # TODO switch off last current?/always exactly 1 airtight?
         #      also - no rule for when reading from file and multiple
@@ -176,7 +185,9 @@ class Project(object):
 
             else:
                 print("Current configuration pattern must match a single item\n"
-                      "Arbitrarily selecting the last matching entry: Configuration.name=={0}".format(cfg[-1].name))
+                      "Arbitrarily selecting the last matching entry: Configuration.name=={0}"
+                      .format(cfg[-1].name))
+
                 self.set_current_configuration(cfg[-1])
 
         else:
@@ -197,6 +208,7 @@ class Project(object):
             if not self.configurations or c.name not in self.configurations.all.name:
                 self.configurations.add(c) 
 
+        print("calling set current config from project.read_configuratoins")
         self.set_current_configuration(default_configuration)
 
     @classmethod
@@ -264,6 +276,7 @@ class Project(object):
 
         self._current_configuration = None
         if len(self.configurations) > 0:
+            print("calling set current configuration from project.__init_")
             self.set_current_configuration()
 
     def initialize(self, configuration_file=None,
@@ -436,7 +449,7 @@ class Project(object):
 
         return fail
 
-    def queue(self, tasks, resource_name=None):
+    def queue(self, *tasks, **kwargs):#tasks, resource_name=None):
         """
         Submit jobs to the worker queue
 
@@ -453,7 +466,11 @@ class Project(object):
         #      r.queue(tasks)
         #      p.queue(r, tasks)
         #
-        #  and delete this horrible method of getting r
+        if 'resource_name' in kwargs:
+            resource_name = kwargs['resource_name']
+        else:
+            resource_name = None
+
         if isinstance(resource_name, str):
             resource_name = [resource_name]
 

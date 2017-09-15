@@ -117,9 +117,9 @@ class Configuration(StorableMixin):
         'futuregrid.india', 'das5.fs1', 'epsrc.archer',
         'ncsa.bw', 'radical.two', 'xsede.stampede2'])
 
-    def update_list(self):
+    def update_resource_list(self):
         '''
-        TODO Use this method to update list
+        TODO Use this method to update list of resource names
         '''
         pass
 
@@ -208,6 +208,8 @@ class Configuration(StorableMixin):
         entries read from the configuration file entry correspond
         to valid fields, and the resource name is a known
         resource configured in Radical Pilot.
+        ^^^ maybe this is not true, if it is...
+             - need a conditional system that checks rp compatibility of a resource
         '''
 
         # Construction from file

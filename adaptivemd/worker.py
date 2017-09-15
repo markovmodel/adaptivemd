@@ -100,7 +100,7 @@ class WorkerScheduler(Scheduler):
 
     @property
     def path(self):
-        return self.resource.shared_path.replace('$HOME', self.home_path)
+        return os.path.expandvars(self.resource.shared_path)
 
     @property
     def staging_area_location(self):
