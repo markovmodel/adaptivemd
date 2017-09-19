@@ -20,7 +20,7 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with MDTraj. If not, see <http://www.gnu.org/licenses/>.
 ##############################################################################
-from __future__ import absolute_import
+from __future__ import absolute_import, print_function
 
 
 import threading
@@ -142,9 +142,6 @@ class Project(object):
     def set_current_configuration(self, configuration=None):
 
         cfg = None
-        #print("N confogs: ", len(self.configurations))
-        #print("something")
-        #print("this confog: ", len(configuration))
 
         # need cfg<Bundle> --> cfg<list>
         # or   cfg<Object> --> cfg<list>
@@ -162,7 +159,6 @@ class Project(object):
 
         elif len(self.configurations) == 1:
             cfg = [ self.configurations.one ]
-            print("cfg is: ", cfg)
 
         elif configuration is None:
             cfg = list(self.configurations.m('current', True))
@@ -208,7 +204,6 @@ class Project(object):
             if not self.configurations or c.name not in self.configurations.all.name:
                 self.configurations.add(c) 
 
-        print("calling set current config from project.read_configuratoins")
         self.set_current_configuration(default_configuration)
 
     @classmethod
@@ -276,7 +271,6 @@ class Project(object):
 
         self._current_configuration = None
         if len(self.configurations) > 0:
-            print("calling set current configuration from project.__init_")
             self.set_current_configuration()
 
     def initialize(self, configuration_file=None,
@@ -492,7 +486,7 @@ class Project(object):
                 # TODO have it be like this:
                 #      list(map(self.queue, (task, resource_name)))
                 for ta in task:
-                    self.queue(task, resource_name)
+                    self.queue(ta, resource_name=resource_name)
 
             elif isinstance(task, Trajectory):
                 if task.engine is not None:
@@ -614,8 +608,8 @@ class Project(object):
         else:
             return NModels(self, numbers)
 
-    # TODO: move to brain
-    def find_ml_next_frame(self, n_pick=10):
+    # TODO: move to brain.sample_method
+    def find_ml_next_frame(self, n_pick=10, randomly=False):
         """
         Find initial frames picked by inverse equilibrium distribution
 
@@ -634,7 +628,7 @@ class Project(object):
         list of `Frame`
             the list of trajectories with the selected initial points.
         """
-        if len(self.models) > 0:
+        if not randomly and len(self.models) > 0:
 
             def get_model():
                 models = sorted(self.models, reverse=True,
@@ -684,6 +678,9 @@ class Project(object):
 
             state_picks = np.random.choice(np.arange(len(q)), size=n_pick, p=q)
 
+            print("Using probability vector for states q:\n", q)
+            print("...we have chosen these states:\n", [(s, q[s]) for s in state_picks])
+
             filelist = data['input']['trajectories']
 
             picks = [
@@ -692,16 +689,20 @@ class Project(object):
                 for state in state_picks
                 ]
 
-            return [filelist[pick[0]][pick[1]] for pick in picks]
+            trajlist = [filelist[pick[0]][pick[1]] for pick in picks]
 
         elif len(self.trajectories) > 0:
             # otherwise pick random
-            return [
+            print("Using random vector to select new frames")
+            trajlist = [
                 self.trajectories.pick().pick() for _ in range(n_pick)]
         else:
-            return []
+            trajlist = []
 
-    def new_ml_trajectory(self, engine, length, number=None):
+        print("Trajectory picks list:\n", trajlist)
+        return trajlist
+
+    def new_ml_trajectory(self, engine, length, number=None, randomly=False):
         """
         Find trajectories that have initial points picked by inverse eq dist
 
@@ -735,9 +736,9 @@ class Project(object):
             if number is None:
                 number = len(length)
             trajectories = [self.new_trajectory(
-                frame, length[i], engine)
-                for i,frame in enumerate(
-                self.find_ml_next_frame(number))]
+                            frame, length[i], engine)
+                            for i,frame in enumerate(
+                            self.find_ml_next_frame(number, randomly))]
 
             return trajectories
 
