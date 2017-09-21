@@ -49,6 +49,10 @@ class MongoDBStorage(object):
         cls._db_url = 'mongodb://' + host + ':27017/'
 
     @classmethod
+    def set_location(cls, location):
+        cls._db_url = 'mongodb://' + location
+
+    @classmethod
     def set_port(cls, port):
         portstring = str(port) + '/'
         cls._db_url = ':'.join(cls._db_url.split(':')[:-1]+[portstring])
