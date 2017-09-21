@@ -1,3 +1,4 @@
+from __future__ import print_function
 import radical.utils as ru
 from database import Database
 from resource_manager import ResourceManager
@@ -13,12 +14,12 @@ class Client(object):
     """
     The Client object is instantiated by the AdaptiveMD master in order to invoke components
     on the runtime system (RTS) side. These components then interact with the MongoDB to extract
-    task, resource and configuration descriptions. Using these descriptions, RTS specific 
+    task, resource and configuration descriptions. Using these descriptions, RTS specific
     components are created and executed.
 
     :arguments:
         :dburl: MongoDB URL to be used for RADICAL Pilot
-        :project: Store name to be used on MongoDB. This is the store where all the configurations, resources and task 
+        :project: Store name to be used on MongoDB. This is the store where all the configurations, resources and task
                     descriptions are present.
     """
 
@@ -35,7 +36,6 @@ class Client(object):
         self._proc = None
         self._terminate = None
 
-
     # ------------------------------------------------------------------------------------------------------------------
     # Private methods
     # ------------------------------------------------------------------------------------------------------------------
@@ -47,8 +47,8 @@ class Client(object):
         for resource_reqs in processed_resource_reqs:
 
             resource_name = resource_reqs['resource']
-            print 'Resource', resource_name
-            
+            print('Resource', resource_name)
+
             matching_configs = get_matching_configurations(configurations=processed_configs, resource_name=resource_name)
 
             for matched_configs in matching_configs:
@@ -61,7 +61,6 @@ class Client(object):
                 selected_resource['shared_path']    = str(matched_configs['shared_path'])
 
             selected_resources.append(selected_resource)
-
 
         # The length of matching_configs is the number of pilots we will launch. Currently, simply return the first 
         # one.
@@ -80,7 +79,6 @@ class Client(object):
 
         """
 
-
         try:
 
             self._db = Database(self._dburl, self._project)
@@ -98,15 +96,12 @@ class Client(object):
 
             resource_desc_for_pilot = self._get_resource_desc_for_pilot(processed_configurations, processed_resource_reqs)
 
-
             if len(resource_desc_for_pilot) > 0:
                 #pprint(resource_desc_for_pilot)
 
-                            
                 self._rmgr = ResourceManager(resource_desc = resource_desc_for_pilot, db=self._db)
                 self._rmgr.submit_resource_request()
-                
-                
+
                 self._tmgr = TaskManager(session=self._rmgr.session, db_obj=self._db)
 
                 #print self._tmgr
@@ -116,7 +111,7 @@ class Client(object):
                     task_descs = self._db.get_task_descriptions()
 
                     #print task_descs, 'while loop'
-                    
+
                     if task_descs:
                         cuds = create_cud_from_task_def(task_descs, self._db, resource_desc_for_pilot['shared_path'])
                         self._tmgr.run_cuds(cuds)
@@ -129,30 +124,25 @@ class Client(object):
                             #print cud.input_staging
                             #print cud.output_staging
                             #print cud.cores
-                        
+
                             #sleep(3)
 
                     else:
-                        sleep(3)                   
+                        sleep(3)
 
             else:
                 raise Error(msg="No matching resource found in configuration file. Please check your configuration file and the resource object.")
 
-
-            
-
         except Exception as ex:
 
             self._logger.error('Client process failed, error: %s'%ex)
-            print traceback.format_exc()
+            print(traceback.format_exc())
             raise Error(msg=ex)
 
         finally:
 
             self._rmgr.pilot.cancel()
             self._rmgr.session.close(cleanup=False)
-
-
 
     # ------------------------------------------------------------------------------------------------------------------
     # Public methods
@@ -174,7 +164,6 @@ class Client(object):
             self._logger.error("Error starting RP process, error: %s"%ex)
             self.end()
             raise Error(msg=ex)
-
 
     def stop(self):
 

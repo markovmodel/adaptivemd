@@ -21,25 +21,42 @@
 ##############################################################################
 from __future__ import absolute_import, print_function
 
-
+import os
 from .mongodb import StorableMixin
+from .task import DummyTask
 
+
+# TODO
+# unrolling capability for listed entries
+# first thing, queues --> queue, but accept a list
+
+# TODO
 # Wait until Andre provides a list without having
 # to instantiate session
 #from .rp import rp_resource_list
+
+# TODO
+# **** Want to add ability to grab specific nodes that aren't caught
+#      by specifying the queue name!!
+#
+# on Rhea:
+#           #PBS -lpartition=gpu
 
 # Where it came from now:
 #from radical.pilot import Session
 #s = Session()
 #resource_names = [k.split('_')[0] for k in s._resource_configs.keys()]
-resource_names = set(['fub.allegro', 'xsede.supermic', 'das4.fs2', 'osg.connect', 'xsede.stampede', 'radical.tutorial', 'lumc.gb-ui', 'chameleon.cloud', 'xsede.trestles', 'osg.xsede-virt-clust', 'futuregrid.echo', 'nersc.edison', 'xsede.greenfield', 'xsede.bridges', 'xsede.lonestar', 'futuregrid.bravo', 'xsede.gordon', 'radical.one', 'xsede.wrangler', 'stfc.joule', 'futuregrid.delta', 'lumc.shark', 'ornl.titan', 'ncar.yellowstone', 'xsede.comet', 'local.localhost', 'xsede.blacklight', 'yale.grace', 'rice.davinci', 'lrz.supermuc', 'nersc.hopper', 'futuregrid.xray', 'iu.bigred2', 'rice.biou', 'futuregrid.india', 'das5.fs1', 'epsrc.archer', 'ncsa.bw', 'radical.two', 'xsede.stampede2'])
 
 
 
 class Configuration(StorableMixin):
     """
-    Representation of the filesystem and allocation used to run
-    an AdaptiveMD workflow.
+    Configuration of the execution resource used to run an AdaptiveMD
+    workflow. This class is used to pass information about the resource
+    when using Radical Pilot, so the field "resource_name" must have a
+    matching entry in the Radical Pilot resource configurations. If
+    the "shared_path" is not defined, it is set to $HOME/adaptivemd,
+    which is likely not a good working a data directory on an HPC.
 
     Notes
     -----
@@ -81,47 +98,167 @@ class Configuration(StorableMixin):
         Radical Pilot
 
     """
+    _fields = [('shared_path',str), ('queues',str),
+               ('allocation',str), ('cores_per_node',int),
+               ('resource_name',str), ('current', bool)]
 
-    # **** Want to add ability to grab specific nodes that aren't caught
-    #      by specifying the queue name!!
-    #
-    # on Rhea:
-    #           #PBS -lpartition=gpu
+    _resource_names = set(['fub.allegro', 'xsede.supermic',
+        'das4.fs2', 'osg.connect', 'xsede.stampede',
+        'radical.tutorial', 'lumc.gb-ui', 'chameleon.cloud',
+        'xsede.trestles', 'osg.xsede-virt-clust',
+        'futuregrid.echo', 'nersc.edison', 'xsede.greenfield',
+        'xsede.bridges', 'xsede.lonestar', 'futuregrid.bravo',
+        'xsede.gordon', 'radical.one', 'xsede.wrangler',
+        'stfc.joule', 'futuregrid.delta', 'lumc.shark',
+        'ornl.titan', 'ncar.yellowstone', 'xsede.comet',
+        'local.localhost', 'xsede.blacklight', 'yale.grace',
+        'rice.davinci', 'lrz.supermuc', 'nersc.hopper',
+        'futuregrid.xray', 'iu.bigred2', 'rice.biou',
+        'futuregrid.india', 'das5.fs1', 'epsrc.archer',
+        'ncsa.bw', 'radical.two', 'xsede.stampede2'])
 
-    def read_configuration(configuration_file):
+    def update_resource_list(self):
+        '''
+        TODO Use this method to update list of resource names
+        '''
         pass
 
-    def __init__(self, name, shared_path='',
-                 queues=[], allocation='',
-                 #queue='', allocation='',
-                 cores_per_node=1, resource_name=''):
+    @staticmethod
+    def parse_configurations_file(configuration_file):
+        def parse_line(line):
+            v = line.strip().split()
+            if len(v) > 0 and v[0][0] != '#':
+                return v
+            else:
+                return []
 
-        if resource_name not in resource_names:
-            print("There is no configuration available for resource named:", name)
+        reading_fields = False
+        configurations_fields = dict()
+
+        with open(configuration_file, 'r') as f_cfg:
+            for line in f_cfg:
+                v = parse_line(line)
+                if reading_fields:
+                    if len(v) == 1 and len(v[0]) == 1:
+                        if v[0][0] == '}':
+                            reading_fields = False
+                        else:
+                            print("End configuration block with single '}'")
+                            raise ValueError
+                    elif len(v) == 2:
+                        configurations_fields[reading_fields][v[0]] = v[1]
+                    elif len(v) == 1 or len(v) > 2:
+                        print("Require one field and one value separated by space when reading entries from configuration file")
+                        raise ValueError
+
+                elif len(v) == 2 and v[1] == '{':
+                    reading_fields = v[0]
+                    configurations_fields[reading_fields] = dict()
+
+        return configurations_fields
+
+    @classmethod
+    def read_configurations(cls, configuration_file=None, project_name=None):
+        '''
+        This method will read a given configuration file or one
+        in a default location. The method returns a dict of
+        configuration dicts. The key of each configuration dict
+        is a given name. The keys in each configuration dict
+        are fields read from the configuration file with values
+        read from the file.
+
+        See adaptivemd/examples/configurations.txt for an example
+        of the format.
+        '''
+
+        f_cfg = None
+        configurations = list()
+        _ext = '.cfg'
+
+        if configuration_file is None:
+            locs = ['./' + project_name + _ext,]
+
+            if os.path.isfile(locs[0]):
+                f_cfg = locs[0]
+
+        elif os.path.isfile(configuration_file):
+            f_cfg = configuration_file
+
+        if f_cfg:
+            configurations_fields = cls.parse_configurations_file(f_cfg)
+
+            for configuration, fields in configurations_fields.items():
+                configurations.append(cls(configuration, **fields))
+
+        elif configuration_file and f_cfg is None:
+            print("Could not locate the given configuration file: {0}\n"
+                  .format(configuration_file,
+                  "Going to use default local configuration"))
+
+            configurations.append(cls('local', **dict(resource_name='local.localhost')))
 
         else:
-            assert isinstance(name, str)
-            self.name = name
+            configurations.append(cls('local', **dict(resource_name='local.localhost')))
 
-            # change this to str
-            self.queues = queues
-            #assert isinstance(queue, str)
-            #self.queue = queue
+        return configurations
 
-            if not shared_path:
-                shared_path = '$HOME/adaptivemd/'
-            assert isinstance(shared_path, str)
-            self.shared_path = shared_path
+    def __init__(self, name, wrapper=None, **fields):
+        '''
+        Configuration initialization will only complete if all
+        entries read from the configuration file entry correspond
+        to valid fields, and the resource name is a known
+        resource configured in Radical Pilot.
+        ^^^ maybe this is not true, if it is...
+             - need a conditional system that checks rp compatibility of a resource
+        '''
 
-            assert isinstance(allocation, str)
-            self.allocation = allocation
+        # Construction from file
+        if fields:
+            _fields, _types = zip(*Configuration._fields)
+            _dict = dict()
 
-            assert isinstance(cores_per_node, int)
-            self.cores_per_node = cores_per_node
+            for field, val in fields.items():
+                try:
+                    idx = _fields.index(field)
+                    _type = _types[idx]
+                    _val = _type(val)
 
-            assert isinstance(resource_name, str)
-            self.resource_name = resource_name
+                    assert isinstance(_val, _type)
+                    _dict[field] = _val
 
+                except ValueError:
+                    print("Listed field {0} is not a valid configuration field"
+                          .format(field))
+
+                except AssertionError:
+                    print("Listed field {0} is not the required type {1}"
+                          .format(field, _type))
+
+            # TODO add default val to _fields tuples above
+            #      and set them here
+            if 'shared_path' not in _dict:
+                _dict['shared_path'] = '$HOME/adaptivemd/'
+
+            if 'current' not in _dict:
+                _dict['current'] = False
+
+            unused = set(_fields).difference(set(_dict.keys()))
+            [_dict.update({uu: None}) for uu in unused]
+
+            if fields['resource_name'] in Configuration._resource_names:
+                super(Configuration, self).__init__()
+
+                [setattr(self, field, val) for field, val in _dict.items()]
+                self.name = name
+
+                # TODO fix this ugliness with queue unroll
+                self.queues = [ self.queues ]
+
+        # Construction via from_dict
+        else:
             super(Configuration, self).__init__()
 
+        if wrapper is None:
+            wrapper = DummyTask()
 
+        self.wrapper = wrapper

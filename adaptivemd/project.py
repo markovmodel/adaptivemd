@@ -20,7 +20,7 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with MDTraj. If not, see <http://www.gnu.org/licenses/>.
 ##############################################################################
-from __future__ import absolute_import
+from __future__ import absolute_import, print_function
 
 
 import threading
@@ -125,24 +125,99 @@ class Project(object):
 
     @classmethod
     def set_dblocation(cls, hostname, portnumber):
+        '''
+        Use this method to set the full address of the MongoDB
+        used by the project.
+        '''
         cls.set_dbhost(hostname)
         cls.set_dbport(portnumber)
 
     @classmethod
     def set_dbhost(cls, hostname):
+        '''
+        Set the hostname of MongoDB used by the project
+        '''
         MongoDBStorage.set_host(hostname)
+
+    def set_current_configuration(self, configuration=None):
+
+        cfg = None
+
+        # need cfg<Bundle> --> cfg<list>
+        # or   cfg<Object> --> cfg<list>
+        # to do some indexing below
+
+        # ORDER matters in conditions here!
+        if isinstance(configuration, Configuration):
+            cfg = [ configuration ]
+
+        elif isinstance(configuration, str):
+            cfg = list(self.configurations.a('resource_name', configuration))
+
+            if len(cfg) == 0:
+                cfg = list(self.configuration.a('name', configuration))
+
+        elif len(self.configurations) == 1:
+            cfg = [ self.configurations.one ]
+
+        elif configuration is None:
+            cfg = list(self.configurations.m('current', True))
+
+            if len(cfg) == 0:
+                cfg = list(self.configurations.a('resource_name', 'local.localhost'))
+
+        # TODO switch off last current?/always exactly 1 airtight?
+        #      also - no rule for when reading from file and multiple
+        #             configs try to set current to True
+        #             - last one wins?
+        # cfg had better be a list
+        if cfg:
+            if len(cfg) == 1:
+                [setattr(c, 'current', False) for c in self.configurations]
+
+                cur = cfg[0]
+                cur.current = True
+                self._current_configuration = cur
+
+            else:
+                print("Current configuration pattern must match a single item\n"
+                      "Arbitrarily selecting the last matching entry: Configuration.name=={0}"
+                      .format(cfg[-1].name))
+
+                self.set_current_configuration(cfg[-1])
+
+        else:
+            print("Did not set a new current configuration")
+
+    def read_configurations(self, configuration_file=None, default_configuration=None):
+        '''
+        Read in a configurations file to define supported resources.
+        If no argument is given, this method will try to read a
+        file with the given project name in the current working
+        directory, followed by the adaptivemd package directory
+        adaptivemd/configurations/.
+        '''
+        configurations = Configuration.read_configurations(
+            configuration_file, self.name)
+
+        for c in configurations:
+            if not self.configurations or c.name not in self.configurations.all.name:
+                self.configurations.add(c) 
+
+        self.set_current_configuration(default_configuration)
 
     @classmethod
     def set_dbport(cls, portnumber):
+        '''
+        Set the port number used by the MongoDB host
+        '''
         MongoDBStorage.set_port(portnumber)
 
     def __init__(self, name):
         self.name = name
 
-        self.session = None
-
-        #del#self.pilot_manager = None
-        #del#self.schedulers = set()
+        #del#self.session = None
+        self.schedulers = set()
 
         #self.execution_manager = client()
 
@@ -194,10 +269,14 @@ class Project(object):
         # or do not care. This is fast but not recommended
         # self._set_task_state_from_dead_workers = None
 
-    #del#def initialize(self, resource):
-    def initialize(self):
+        self._current_configuration = None
+        if len(self.configurations) > 0:
+            self.set_current_configuration()
+
+    def initialize(self, configuration_file=None,
+                   default_configuration=None):
         """
-        Initialize a project with a specific resource.
+        Initialize a project
 
         Notes
         -----
@@ -212,13 +291,18 @@ class Project(object):
         """
         self.storage.close()
 
-        #del#self.resource = resource
-
         st = MongoDBStorage(self.name, 'w')
         # st.create_store(ObjectStore('objs', None))
         st.create_store(ObjectStore('generators', TaskGenerator))
         st.create_store(ObjectStore('files', File))
         st.create_store(ObjectStore('resources', Resource))
+        # TODO configurations is behaving different than all other stores
+        #      probably to do with Configuration objects and how they
+        #      are constructed. Fix:
+        #       - Configuration class
+        #       - storage insertion method (p.configurations.add)
+        #       - StoredBundle access mechanism (p.configurations)
+        #       - yep
         st.create_store(ObjectStore('configurations', Configuration))
         st.create_store(ObjectStore('models', Model))
         st.create_store(ObjectStore('tasks', Task))
@@ -227,14 +311,20 @@ class Project(object):
         st.create_store(FileStore('data', DataDict))
         # st.create_store(ObjectStore('commands', Command))
 
-        #del#st.save(self.resource)
-
         st.close()
 
         self._open_db()
 
+        # this method will save configurations to the storage
+        # if a valid configuration file is found
+        self.read_configurations(configuration_file,
+                                 default_configuration)
+
     def request_resource(self, total_cpus, total_time,
                          total_gpus=0, destination=''):
+
+        if destination == 'current':
+            destination = self._current_configuration.resource_name
 
         # TODO regularize resource name generation
         #nm_r = get_nm_r()
@@ -243,8 +333,7 @@ class Project(object):
                      total_gpus, destination)
 
         self.storage.save(r)
-
-        return r
+        #return r
 
     def _open_db(self):
         # open DB and load status
@@ -253,13 +342,13 @@ class Project(object):
         if hasattr(self.storage, 'tasks'):
             self.files.set_store(self.storage.files)
             self.generators.set_store(self.storage.generators)
+            self.configurations.set_store(self.storage.configurations)
             self.models.set_store(self.storage.models)
             self.tasks.set_store(self.storage.tasks)
             self.workers.set_store(self.storage.workers)
             self.logs.set_store(self.storage.logs)
             self.data.set_store(self.storage.data)
             # self.commands.set_store(self.storage.commands)
-            #del#self.resource = self.storage.resources.find_one({})
             self.resources.set_store(self.storage.resources)
 
             self.storage.files.set_caching(True)
@@ -273,6 +362,7 @@ class Project(object):
             self.storage.logs.set_caching(WeakValueCache())
 
             # make sure that the file number will be new
+            # TODO This may note work...
             self.traj_name.initialize_from_files(self.trajectories)
 
     def reconnect(self):
@@ -285,27 +375,15 @@ class Project(object):
     def _close_db(self):
         self.storage.close()
 
-    def close_rp(self):
-        """
-        Close the RP session
+    #del#def close_rp(self):
+    #del#    """
+    #del#    Close the RP session
 
-        Before using RP you need to re-open and then you will run in a
-        new session.
+    #del#    Before using RP you need to re-open and then you will run in a
+    #del#    new session.
 
-        """
-        self._close_rp()
-
-    #del#def _close_rp(self):
-    #del#    for r in set(self.schedulers):
-    #del#        r.shut_down(False)
-
-    #del#    # self.report.header('finalize')
-    #del#    if self.session is not None and not self.session.closed:
-    #del#        self.session.close()
-
-    #del#    self.files.close()
-    #del#    self.generators.close()
-    #del#    self.models.close()
+    #del#    """
+    #del#    self._close_rp()
 
     @classmethod
     def list(cls):
@@ -338,57 +416,13 @@ class Project(object):
         """
         MongoDBStorage.delete_storage(name)
 
-    #del#def get_scheduler(self, name=None, **kwargs):
-    #del#    """
-
-    #del#    Parameters
-    #del#    ----------
-    #del#    name : str
-    #del#        name of the scheduler class provided by the `Resource` used in
-    #del#        this project. If None (default) the cluster/queue ``default`` is
-    #del#        used that needs to be implemented for every resource
-
-    #del#    kwargs : ``**kwargs``
-    #del#        Additional arguments to initialize the cluster scheduler provided
-    #del#        by the `Resource`
-
-    #del#    Notes
-    #del#    -----
-    #del#    the scheduler is automatically entered/opened so the pilot jobs is
-    #del#    submitted to the queueing system and it counts against your
-    #del#    simulation time! If you do not want to do so directly. Create
-    #del#    the `Scheduler` by yourself and later call ``scheduler.enter(project)``
-    #del#    to start using it. To close the scheduler call ``scheduler.exit()``
-
-    #del#    Returns
-    #del#    -------
-    #del#    `Scheduler`
-    #del#        the scheduler object that can be used to execute tasks on that
-    #del#        cluster/queue
-    #del#    """
-    #del#    # get a new scheduler to submit tasks
-    #del#    if name is None:
-    #del#        scheduler = self.resource.default()
-    #del#    else:
-    #del#        scheduler = getattr(self.resource, name)(**kwargs)
-
-    #del#    # and prepare the scheduler
-    #del#    scheduler.enter(self)
-
-    #del#    # add the task generating capabilities to the scheduler
-    #del#    list(map(scheduler.has, self.generators))
-
-    #del#    scheduler.stage_generators()
-
-    #del#    return scheduler
-
     def close(self):
         """
         Close the project and all related sessions and DB connections
 
         """
         self.stop()
-        self._close_rp()
+        #self._close_rp()
         self._close_db()
 
     def __enter__(self):
@@ -409,7 +443,7 @@ class Project(object):
 
         return fail
 
-    def queue(self, tasks, resource_name=None):
+    def queue(self, *tasks, **kwargs):#tasks, resource_name=None):
         """
         Submit jobs to the worker queue
 
@@ -426,8 +460,15 @@ class Project(object):
         #      r.queue(tasks)
         #      p.queue(r, tasks)
         #
-        #  and delete this horrible method of getting r
+        if 'resource_name' in kwargs:
+            resource_name = kwargs['resource_name']
+        else:
+            resource_name = None
+
         if isinstance(resource_name, str):
+            resource_name = [resource_name]
+
+        elif resource_name is None:
             resource_name = [resource_name]
 
         assert isinstance(resource_name, list)
@@ -445,7 +486,7 @@ class Project(object):
                 # TODO have it be like this:
                 #      list(map(self.queue, (task, resource_name)))
                 for ta in task:
-                    self.queue(task, resource_name)
+                    self.queue(ta, resource_name=resource_name)
 
             elif isinstance(task, Trajectory):
                 if task.engine is not None:
@@ -567,8 +608,8 @@ class Project(object):
         else:
             return NModels(self, numbers)
 
-    # TODO: move to brain
-    def find_ml_next_frame(self, n_pick=10):
+    # TODO: move to brain.sample_method
+    def find_ml_next_frame(self, n_pick=10, randomly=False):
         """
         Find initial frames picked by inverse equilibrium distribution
 
@@ -587,7 +628,7 @@ class Project(object):
         list of `Frame`
             the list of trajectories with the selected initial points.
         """
-        if len(self.models) > 0:
+        if not randomly and len(self.models) > 0:
 
             def get_model():
                 models = sorted(self.models, reverse=True,
@@ -637,6 +678,9 @@ class Project(object):
 
             state_picks = np.random.choice(np.arange(len(q)), size=n_pick, p=q)
 
+            print("Using probability vector for states q:\n", q)
+            print("...we have chosen these states:\n", [(s, q[s]) for s in state_picks])
+
             filelist = data['input']['trajectories']
 
             picks = [
@@ -645,16 +689,20 @@ class Project(object):
                 for state in state_picks
                 ]
 
-            return [filelist[pick[0]][pick[1]] for pick in picks]
+            trajlist = [filelist[pick[0]][pick[1]] for pick in picks]
 
         elif len(self.trajectories) > 0:
             # otherwise pick random
-            return [
+            print("Using random vector to select new frames")
+            trajlist = [
                 self.trajectories.pick().pick() for _ in range(n_pick)]
         else:
-            return []
+            trajlist = []
 
-    def new_ml_trajectory(self, engine, length, number=None):
+        print("Trajectory picks list:\n", trajlist)
+        return trajlist
+
+    def new_ml_trajectory(self, engine, length, number=None, randomly=False):
         """
         Find trajectories that have initial points picked by inverse eq dist
 
@@ -688,9 +736,9 @@ class Project(object):
             if number is None:
                 number = len(length)
             trajectories = [self.new_trajectory(
-                frame, length[i], engine)
-                for i,frame in enumerate(
-                self.find_ml_next_frame(number))]
+                            frame, length[i], engine)
+                            for i,frame in enumerate(
+                            self.find_ml_next_frame(number, randomly))]
 
             return trajectories
 

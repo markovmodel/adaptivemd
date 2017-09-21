@@ -21,7 +21,7 @@
 ##############################################################################
 from __future__ import absolute_import
 
-from .brain import Brain
+#from .brain import Brain
 # from event import StopEvent, Event, TasksFinished
 from .plan import ExecutionPlan
 # from condition import Condition, Now, Never

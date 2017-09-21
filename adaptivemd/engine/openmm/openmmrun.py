@@ -260,6 +260,8 @@ if __name__ == '__main__':
             platform,
             properties
         )
+        print("SIMULATION: ",simulation)
+
     except Exception:
         print('EXCEPTION', (socket.gethostname()))
         raise
