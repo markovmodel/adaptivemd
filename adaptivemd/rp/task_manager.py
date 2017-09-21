@@ -40,8 +40,20 @@ class TaskManager(object):
             #if state == rp.NEW:
             #    self._db_obj.update_task_description_status(unit.name, 'running')
 
-            if state == rp.DONE:
-                self._db_obj.update_task_description_status(unit.name, 'success')
+            f = open('/home/vivek/temp.txt','a')
+            f.write('abc %s %s \n'%(unit.state, state))
+            f.flush()
+            f.close()
+
+
+            if state in [rp.DONE, rp.UMGR_STAGING_OUTPUT_PENDING]:
+                
+                print unit.name
+                done = self._db_obj.update_task_description_status(unit.name, 'success')
+
+                if done:
+                    self._db_obj.file_created(unit.name)
+
                 self._running_tasks.remove(unit.uid)
 
             elif state == rp.FAILED:

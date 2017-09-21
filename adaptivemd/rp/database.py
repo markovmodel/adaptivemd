@@ -1,5 +1,8 @@
+import time
 from pymongo import MongoClient
 from pprint import pprint
+from utils import hex_to_id
+from datetime import datetime
 # Task Status: created, running, fail, halted, success, cancelled
 
 
@@ -70,6 +73,28 @@ class Database():
             configuration_descriptions.append(configuration_description)
         return configuration_descriptions
 
+    def file_created(self, id=None):
+        """Marks the 'MOVE' command's target file as created with current timestamp
+        :Parameters:
+            - `id`: task id to look-up the 'MOVE' command
+        """
+        udpated = False
+        if id:
+            task_col = self.db[self.tasks_collection]
+            file_col = self.db[self.file_collection]
+            task = task_col.find_one({'_id': id})
+            if task:
+                file_id = hex_to_id(
+                    task['_dict']['_main'][-1]['_dict']['target']['_hex_uuid'])
+                timestamp = time.mktime(datetime.now().timetuple())
+                result = file_col.update_one({'_id': file_id},
+                                             {'$set': {
+                                                 'created': timestamp
+                                             }})
+                if result.modified_count == 1:
+                    udpated = True
+        return udpated
+
     def get_file_destination(self, id=None):
         """Get the location information of a specific file
         :Parameters:
@@ -82,6 +107,20 @@ class Database():
             if result:
                 location = result['_dict']['location']
         return location
+
+    def get_shared_files(self):
+        """Get the source file locations from all generators"""
+        shared_files = set()
+        col = self.db[self.generator_collection]
+        for generator in col.find():
+            for staging in generator['_dict']['initial_staging']:
+                if staging['_cls'] == 'Transfer':
+                    if staging['_dict']['source']['_store'] == 'files':
+                        file = self.get_file_destination(
+                            hex_to_id(staging['_dict']['source']['_hex_uuid']))
+                        if file:
+                            shared_files.add(file)
+        return list(shared_files)
 
     def get_source_files(self, id=None):
         """Get the generator file locations for all types

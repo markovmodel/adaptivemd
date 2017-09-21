@@ -204,7 +204,7 @@ class Task(BaseTask):
     RESTARTABLE_STATES = ['fail', 'halted']
     RUNNABLE_STATES = ['created']
 
-    def __init__(self, generator=None, est_exec_time=5,
+    def __init__(self, generator=None, resource_name=None, est_exec_time=5,
                  cpu_threads=1, gpu_contexts=0, mpi_rank=0):
 
         super(Task, self).__init__()
@@ -231,6 +231,10 @@ class Task(BaseTask):
         assert isinstance(cpu_threads, int)
         assert isinstance(gpu_contexts, int)
         assert isinstance(mpi_rank, int)
+
+        if isinstance(resource_name, str):
+            resource_name = [resource_name]
+        self.resource_name = resource_name
 
         self.resource_requirements = {'cpu_threads': cpu_threads,
                              'gpu_contexts': gpu_contexts,
@@ -803,8 +807,15 @@ class PrePostTask(Task):
         'pre', 'post'
     ]
 
-    def __init__(self, generator=None):
-        super(PrePostTask, self).__init__(generator)
+    def __init__(self, generator=None, resource_name=None,
+                 est_exec_time=None, cpu_threads=None, 
+                 gpu_contexts=None, mpi_rank=None):
+
+        super(PrePostTask, self).__init__(generator, resource_name,
+                                          est_exec_time, cpu_threads,
+                                          gpu_contexts, mpi_rank)
+
+        print("making preposttask")
         self.pre = []
         self.post = []
 
@@ -862,11 +873,11 @@ class MPITask(PrePostTask):
         parts = [part.format(*args, **kwargs) for part in parts]
         self.executable = parts[0]
         self.arguments = parts[1:]
-        
+
     @property
     def main(self):
         return self.pre + [self.command] + self.post
-    
+
     def append(self, cmd):
         raise RuntimeWarning(
             'append does nothing for MPITasks. Use .pre.append or .post.append')
@@ -973,8 +984,14 @@ class PythonTask(PrePostTask):
 
     then_func = None
 
-    def __init__(self, generator=None):
-        super(PythonTask, self).__init__(generator)
+    def __init__(self, generator=None, resource_name=None,
+                 est_exec_time=5, cpu_threads=1, 
+                 gpu_contexts=0, mpi_rank=0):
+
+        print("supering from pythontask")
+        super(PythonTask, self).__init__(generator, resource_name,
+                                          est_exec_time, cpu_threads,
+                                          gpu_contexts, mpi_rank)
 
         self._python_import = None
         self._python_source_files = None
