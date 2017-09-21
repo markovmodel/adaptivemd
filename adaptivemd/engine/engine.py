@@ -280,7 +280,7 @@ class Trajectory(File):
         elif isinstance(f, OutputTypeDescription):
             return self.file(f.filename)
 
-    def run(self, resource_name=None):
+    def run(self, resource_name=None, export_path=None):
         """
         Return a task to run this engine
 
@@ -293,7 +293,7 @@ class Trajectory(File):
         # TODO check that you can generate one trajectory object only once
         # not just the task for it
         if self.engine:
-            return self.engine.run(self, resource_name)
+            return self.engine.run(self, resource_name, export_path)
         else:
             return None
 

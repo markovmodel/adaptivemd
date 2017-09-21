@@ -95,7 +95,7 @@ class OpenMMEngine(Engine):
 
         return '--types="%s"' % ujson.dumps(d).replace('"', "'")
 
-    def run(self, target, resource_name=None):
+    def run(self, target, resource_name=None, export_path=None):
         t = TrajectoryGenerationTask(self, target)
 
         if resource_name is None:
@@ -103,6 +103,9 @@ class OpenMMEngine(Engine):
 
         assert isinstance(resource_name, list)
         t.resource_name = resource_name
+
+        if export_path:
+            t.append(export_path)
 
         initial_pdb = t.link(self['pdb_file_stage'], Location('initial.pdb'))
         t.link(self['system_file_stage'])
@@ -163,7 +166,7 @@ class OpenMMEngine(Engine):
 
         return t
 
-    def extend(self, source, length):
+    def extend(self, source, length, export_path=None):
         if length < 0:
             return []
 
@@ -172,6 +175,9 @@ class OpenMMEngine(Engine):
         target.length = len(source) + length
 
         t = TrajectoryExtensionTask(self, target, source)
+
+        if export_path:
+            t.append(export_path)
 
         initial_pdb = t.link(self['pdb_file_stage'], Location('initial.pdb'))
         t.link(self['system_file_stage'])
