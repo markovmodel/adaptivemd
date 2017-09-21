@@ -63,7 +63,7 @@ install_requires:
   - pyyaml
   - six
   - numpy
-  - pymongo==2.8
+  - pymongo==3.5.1
   - ujson
   - radical.pilot
 
