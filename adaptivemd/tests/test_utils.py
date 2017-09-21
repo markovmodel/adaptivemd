@@ -4,12 +4,10 @@ import radical.pilot as rp
 
 def test_resolve_pathholders():
 
-
     raw_path = '/home/vivek/test.txt'
     processed_path = resolve_pathholders(raw_path,'/home/vivek')
     expected_path = raw_path
     assert expected_path == processed_path
-
 
     raw_path = 'staging:///test.txt'
     processed_path = resolve_pathholders(raw_path, '/home/vivek')

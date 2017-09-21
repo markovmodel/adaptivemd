@@ -4,6 +4,7 @@ import radical.pilot as rp
 import os
 from exceptions import *
 import traceback
+import json
 
 def resolve_pathholders(path, shared_path):
 
@@ -19,7 +20,7 @@ def resolve_pathholders(path, shared_path):
         resolved_path = path.replace(schema + '://', shared_path + '/')
 
     elif schema == 'file':
-        resolved_path = path.replace(schema + '://', relative_path)
+        resolved_path = path.replace(schema + '://', '')
 
     return os.path.expandvars(resolved_path)
 
@@ -57,8 +58,7 @@ def get_input_staging(task_details, shared_path):
         if temp_directive not in staging_directives:
             staging_directives.append(temp_directive)
 
-
-    #print staging_directives
+    print staging_directives
 
     return staging_directives
 
@@ -73,30 +73,38 @@ def get_executable_arguments(task_details):
             raw_exec = [str(entity)]
             break
 
-    #print raw_exec[0]
+    # print raw_exec[0]
 
     proc_exec = raw_exec[0][107:]
     proc_exec = proc_exec[:-31]
 
-    #print raw_exec[0]
-    proc_exec = raw_exec[0].split(';')[2].replace('then','').replace('worker://','').replace('=', ' ').replace('"','').strip()
-    #print proc_exec
+    # print raw_exec[0]
+    if ';' in raw_exec[0]:
+        # for the regular trajectory tasks
+        proc_exec = raw_exec[0].split(';')[2].replace('then', '').replace(
+            'worker://', '').replace('=', ' ').replace('"', '').strip()
+    else:
+        # for the modeler task
+        proc_exec = raw_exec[0].strip()
+    # print proc_exec
 
     exe = proc_exec.split(' ')[0]
     args = proc_exec.split(' ')[1:]
 
-    #print exe, args
+    # print exe, args
 
     return exe, args
 
 
 def get_output_staging(task_desc, db, shared_path):
 
-    hex_id_input = hex_to_id(hex_uuid=task_desc['_dict']['generator']['_hex_uuid'])
+    hex_id_input = hex_to_id(
+        hex_uuid=task_desc['_dict']['generator']['_hex_uuid'])
 
     src_files = db.get_source_files(hex_id_input)
 
-    hex_id_output = hex_to_id(hex_uuid=task_desc['_dict']['_main'][-1]['_dict']['target']['_hex_uuid'])
+    hex_id_output = hex_to_id(
+        hex_uuid=task_desc['_dict']['_main'][-1]['_dict']['target']['_hex_uuid'])
     output_loc = db.get_file_destination(hex_id_output)
 
     staging_directives = list()
@@ -104,14 +112,14 @@ def get_output_staging(task_desc, db, shared_path):
     for file in src_files:
 
         temp = {
-                    'source': os.path.basename(os.path.abspath(task_desc['_dict']['_main'][-1]['_dict']['source']['_dict']['location'])) + '/' + file,
-                    'action': rp.COPY,
-                    'target': resolve_pathholders(output_loc, shared_path) + '/' + file
-                }
+            'source': os.path.basename(os.path.abspath(task_desc['_dict']['_main'][-1]['_dict']['source']['_dict']['location'])) + '/' + file,
+            'action': rp.COPY,
+            'target': resolve_pathholders(output_loc, shared_path) + '/' + file
+        }
 
         staging_directives.append(temp)
 
-    #print staging_directives
+    # print staging_directives
 
     return staging_directives
 
@@ -119,29 +127,60 @@ def get_output_staging(task_desc, db, shared_path):
 def create_cud_from_task_def(task_descs, db, shared_path):
 
     try:
+
         cuds = list()
 
         for task_desc in task_descs:
 
-            task_details = task_desc['_dict']['_main']
+            if task_desc['_cls'] == 'PythonTask':
+                d = generate_pythontask_input(db, shared_path, task_desc)
+                with open(d['target'],'w') as fp:
+                    json.dump(d['contents'], fp)
 
-            cud = rp.ComputeUnitDescription()
-            cud.name = task_desc['_id']
-            cud.pre_exec = ['export PATH=/home/vivek/Research/tools/miniconda2/bin:$PATH','mkdir -p traj']
-            exe, args = get_executable_arguments(task_details)
-            cud.executable = [str(exe)]
-            cud.arguments = args
-            cud.input_staging = get_input_staging(task_details, shared_path)
-            cud.output_staging = get_output_staging(task_desc, db, shared_path)
-            cud.cores = 1  # currently overwriting
+                task_details = task_desc['_dict']['_main']
 
-            #print task_desc['_id'], cud.name
-            db.update_task_description_status(task_desc['_id'], 'running')
+                cud = rp.ComputeUnitDescription()
+                cud.name = task_desc['_id']
+                cud.pre_exec = [
+                        'export PATH=/home/vivek/Research/tools/miniconda2/bin:$PATH', 'mkdir -p traj']
+                #exe, args = get_executable_arguments(task_details)
+                cud.executable = ['python']
+                cud.arguments = ['__run__.py']
+                cud.input_staging = get_input_staging(task_details, shared_path).extend(['./'+d['target']])
+                cud.output_staging = [
+                                            {
+                                                'source': 'output.json',
+                                                'action': rp.COPY,
+                                                'target': ''
+                                            }
+                                        ]
+                cud.cores = 1  # currently overwriting
 
-            #print cud.executable, cud.arguments
+                cuds.append(cud)
 
-            cuds.append(cud)
-        
+
+            elif task_desc['_cls'] == 'TrajectoryGenerationTask':
+
+                task_details = task_desc['_dict']['_main']
+
+                cud = rp.ComputeUnitDescription()
+                cud.name = task_desc['_id']
+                cud.pre_exec = [
+                        'export PATH=/home/vivek/Research/tools/miniconda2/bin:$PATH', 'mkdir -p traj']
+                exe, args = get_executable_arguments(task_details)
+                cud.executable = [str(exe)]
+                cud.arguments = args
+                cud.input_staging = get_input_staging(task_details, shared_path)
+                cud.output_staging = get_output_staging(task_desc, db, shared_path)
+                cud.cores = 1  # currently overwriting
+
+                #print task_desc['_id'], cud.name
+                db.update_task_description_status(task_desc['_id'], 'running')
+
+                # print cud.executable, cud.arguments
+
+                cuds.append(cud)
+ 
         return cuds
 
     except Exception as ex:
@@ -159,7 +198,7 @@ def process_resource_requirements(raw_res_descs):
         temp_desc['total_cpus'] = res_desc['_dict']['total_cpus']
         temp_desc['total_gpus'] = res_desc['_dict']['total_gpus']
         temp_desc['total_time'] = res_desc['_dict']['total_time']
-        temp_desc['resource']   = res_desc['_dict']['destination']
+        temp_desc['resource'] = res_desc['_dict']['destination']
         resources.append(temp_desc)
 
     return resources
@@ -173,10 +212,10 @@ def process_configurations(conf_descs):
         if not conf['_dict']['queues']:
 
             temp_desc = dict()
-            temp_desc['resource']       = conf['_dict']['resource_name']
-            temp_desc['project']        = conf['_dict']['allocation']
-            temp_desc['shared_path']    = conf['_dict']['shared_path']
-            temp_desc['queue']          = ''
+            temp_desc['resource'] = conf['_dict']['resource_name']
+            temp_desc['project'] = conf['_dict']['allocation']
+            temp_desc['shared_path'] = conf['_dict']['shared_path']
+            temp_desc['queue'] = ''
 
             configurations.append(temp_desc)
 
@@ -185,10 +224,10 @@ def process_configurations(conf_descs):
             for queue in conf['_dict']['queues']:
 
                 temp_desc = dict()
-                temp_desc['resource']       = conf['_dict']['resource_name']
-                temp_desc['project']        = conf['_dict']['allocation']
-                temp_desc['shared_path']    = conf['_dict']['shared_path']
-                temp_desc['queue']          = queue
+                temp_desc['resource'] = conf['_dict']['resource_name']
+                temp_desc['project'] = conf['_dict']['allocation']
+                temp_desc['shared_path'] = conf['_dict']['shared_path']
+                temp_desc['queue'] = queue
 
                 configurations.append(temp_desc)
 
@@ -231,7 +270,10 @@ def get_matching_configurations(configurations=None, resource_name=''):
 
 
 def hex_to_id(hex_uuid=None):
-    """Convert a hexadecimal string to an ID"""
+    """Convert a hexadecimal string to an ID
+    :Parameters:
+    - `hex_uuid`: hex_uuid value as string
+    """
     the_id = None
     if hex_uuid:
         if hex_uuid.endswith('L'):
@@ -239,3 +281,58 @@ def hex_to_id(hex_uuid=None):
         temp = uuid.UUID(int=int(hex_uuid, 16))
         the_id = str(temp)
     return the_id
+
+
+def generate_pythontask_input(db, shared_path, task=None):
+    """Parse a 'PythonTask' task object and generate the
+    contents of its input file
+
+    :Parameters:
+    - `db`: database instance to poll file locations
+    - `shared_path`: shared_path string to flatten file
+    - `task`: task object to parse
+    """
+    input_file = None
+    temp_file_contents = None
+    temp_src = None
+    temp_target = None
+    if (task is not None) and (task['_cls'] == 'PythonTask'):
+        # Source & Target
+        for cmd in task['_dict']['pre']:
+            if cmd['_cls'] == 'Transfer':
+                location = db.get_file_destination(
+                    id=hex_to_id(cmd['_dict']['source']['_hex_uuid']))
+                if location:
+                    temp_src = resolve_pathholders(location, shared_path)
+                temp_target = cmd['_dict']['target']['_dict']['location']
+
+        # File Contents
+        temp = dict()
+        # {'import': None, 'function': None, 'kwargs': None}
+        temp['import'] = task['_dict']['_python_import']
+        temp['function'] = task['_dict']['_python_function_name']
+        for key, val in task['_dict']['_python_kwargs'].iteritems():
+            if key == 'topfile':
+                temp.setdefault('kwargs', dict())[
+                    key] = val['_dict']['location']
+            elif key == 'trajectories':
+                for traj in val:
+                    location = db.get_file_destination(
+                        id=hex_to_id(traj['_hex_uuid']))
+                    if location:
+                        temp.setdefault(
+                            'kwargs', dict()).setdefault(
+                            key, list()).append(resolve_pathholders(
+                                location, shared_path))
+            else:
+                temp.setdefault('kwargs', dict())[key] = val
+        temp_file_contents = temp
+
+        if temp_file_contents and temp_src and temp_target:
+            input_file = {
+                'source': temp_src,
+                'target': temp_target,
+                'contents': temp_file_contents
+            }
+
+    return input_file

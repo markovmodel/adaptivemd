@@ -25,11 +25,11 @@ if __name__ == '__main__':
     #gen = db.get_source_files(id='ba2b564e-8b3d-11e7-af58-00000000004a')
 
     #create_cud_from_task_def(db.get_tasks_definitions()[0])
-    task_desc = db.get_task_descriptions(state='running')
-    print len(task_desc)
+    task_desc = db.get_task_descriptions(state='cancelled')
+    #print len(task_desc)
 
 
-    #pprint(task_desc[0])
+    pprint(task_desc[0])
     #cuds = create_cud_from_task_def(task_desc, db, '/home/vivek')
 
     #cud = cuds[0]
