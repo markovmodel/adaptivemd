@@ -29,6 +29,8 @@ import socket
 import numpy as np
 import mdtraj as md
 
+import time, random
+
 import simtk.unit as u
 from simtk.openmm import Platform, XmlSerializer
 from simtk.openmm.app import PDBFile, Simulation, DCDReporter, StateDataReporter
@@ -91,8 +93,6 @@ def get_pdbfile(topology_pdb):
                 raise e
 
 def read_input(platform, pdbfile, system, integrator):
-    import time
-    import random
 
     return_order = ['get_platform', 'get_pdbfile',
                     'get_system', 'get_integrator']
