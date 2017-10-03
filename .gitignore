@@ -1,6 +1,9 @@
 # RP working directories
 examples/rp/rp.session*
 
+# Jupyter Notebooks
+**/**ipynb
+
 # Eclipse IDE files
 adaptivemd/.project
 adaptivemd/.pydevproject
