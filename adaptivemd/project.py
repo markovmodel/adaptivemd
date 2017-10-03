@@ -124,13 +124,16 @@ class Project(object):
     """
 
     @classmethod
-    def set_dblocation(cls, hostname, portnumber):
+    def set_dblocation(cls, hostname, portnumber=None):
         '''
         Use this method to set the full address of the MongoDB
         used by the project.
         '''
-        cls.set_dbhost(hostname)
-        cls.set_dbport(portnumber)
+        if portnumber:
+            cls.set_dbhost(hostname)
+            cls.set_dbport(portnumber)
+        else:
+            MongoDBStorage.set_location(hostname)
 
     @classmethod
     def set_dbhost(cls, hostname):

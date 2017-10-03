@@ -100,7 +100,8 @@ class Configuration(StorableMixin):
     """
     _fields = [('shared_path',str), ('queues',str),
                ('allocation',str), ('cores_per_node',int),
-               ('resource_name',str), ('current', bool)]
+               ('resource_name',str), ('current', bool),
+               ('gpu_per_node',int)]
 
     _resource_names = set(['fub.allegro', 'xsede.supermic',
         'das4.fs2', 'osg.connect', 'xsede.stampede',
