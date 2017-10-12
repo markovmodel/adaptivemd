@@ -584,13 +584,11 @@ class UUIDObjectJSON(ObjectJSON):
         if type(obj) is dict:
             if '_storage' in obj:
                 if obj['_storage'] == 'self':
-                    return self.storage
+                    result = self.storage
 
-            elif '_obj_uuid' in obj and '_store' in obj:
+            if '_obj_uuid' in obj and '_store' in obj:
                 store = self.storage._stores[obj['_store']]
                 result = store.load(int(UUID(obj['_obj_uuid'])))
-
-                return result
 
             elif '_hex_uuid' in obj and '_store' in obj:
                 store = self.storage._stores[obj['_store']]
@@ -607,7 +605,7 @@ class UUIDObjectJSON(ObjectJSON):
 
                     result = store.load(*load_args)
 
-                return result
+            return result
 
         return super(UUIDObjectJSON, self).build(obj)
 
