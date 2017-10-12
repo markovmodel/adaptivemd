@@ -522,7 +522,7 @@ class ObjectJSON(object):
     # def unit_from_json(self, json_string):
     #     return self.unit_from_dict(self.from_json(json_string))
 
-    def from_simple_dict(self, simplified):
+    def from_simple_dict(self, simplified, builder=None):
         obj = self.build(simplified)
 
         obj.__uuid__ = int(UUID(simplified.get('_id')))
@@ -532,8 +532,12 @@ class ObjectJSON(object):
             obj.name = simplified['name']
 
         for key in obj._find_by:
+
             if key in simplified:
-                setattr(obj, key, self.build(simplified[key]))
+                if builder is None:
+                    builder = obj
+
+                setattr(obj, key, self.build(simplified[key], builder))
 
         return obj
 
@@ -576,21 +580,32 @@ class UUIDObjectJSON(ObjectJSON):
 
         return super(UUIDObjectJSON, self).simplify(obj, base_type)
 
-    def build(self, obj):
+    def build(self, obj, builder=None):
         if type(obj) is dict:
             if '_storage' in obj:
                 if obj['_storage'] == 'self':
                     return self.storage
 
-            if '_obj_uuid' in obj and '_store' in obj:
+            elif '_obj_uuid' in obj and '_store' in obj:
                 store = self.storage._stores[obj['_store']]
                 result = store.load(int(UUID(obj['_obj_uuid'])))
 
                 return result
 
-            if '_hex_uuid' in obj and '_store' in obj:
+            elif '_hex_uuid' in obj and '_store' in obj:
                 store = self.storage._stores[obj['_store']]
-                result = store.load(long_t(obj['_hex_uuid'], 16))
+                _long = long_t(obj['_hex_uuid'], 16)
+
+                if builder and builder.__uuid__ == _long:
+                    result = builder
+
+                else:
+                    load_args = [ _long ]
+
+                    if builder:
+                        load_args.append(builder)
+
+                    result = store.load(*load_args)
 
                 return result
 

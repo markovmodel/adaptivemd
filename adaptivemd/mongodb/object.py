@@ -294,7 +294,7 @@ class ObjectStore(StorableMixin):
         tt = type(item)
         if tt is long_t:
             idx = item
-        elif tt in six.text_type:
+        elif tt in set([six.text_type]):
             if item[0] == '-':
                 return None
             idx = int(UUID(item))
@@ -479,9 +479,9 @@ class ObjectStore(StorableMixin):
 
         return modified
 
-    def _load(self, idx):
-        obj = self.storage.simplifier.from_simple_dict(
-            self._document.find_one({'_id': str(UUID(int=idx))}))
+    def _load(self, idx, builder=None):
+        one = self._document.find_one({'_id': str(UUID(int=idx))})
+        obj = self.storage.simplifier.from_simple_dict(one, builder)
         obj.__store__ = self
         return obj
 
@@ -606,7 +606,7 @@ class ObjectStore(StorableMixin):
         idx = self._document.find_one(dct)['_id']
         return self.load(int(UUID(idx)))
 
-    def load(self, idx):
+    def load(self, idx, builder=None):
         """
         Returns an object from the storage.
 
@@ -650,7 +650,7 @@ class ObjectStore(StorableMixin):
             'Calling load object of type `%s` @ IDX #%d' %
             (self.content_class.__name__, idx))
 
-        obj = self._load(idx)
+        obj = self._load(idx, builder)
 
         logger.debug(
             'Calling load object of type %s and IDX # %d ... DONE' %
