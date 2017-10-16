@@ -111,7 +111,7 @@ class Configuration(StorableMixin):
         'xsede.bridges', 'xsede.lonestar', 'futuregrid.bravo',
         'xsede.gordon', 'radical.one', 'xsede.wrangler',
         'stfc.joule', 'futuregrid.delta', 'lumc.shark',
-        'ornl.titan', 'ncar.yellowstone', 'xsede.comet',
+        'ornl.titan_aprun', 'ncar.yellowstone', 'xsede.comet',
         'local.localhost', 'xsede.blacklight', 'yale.grace',
         'rice.davinci', 'lrz.supermuc', 'nersc.hopper',
         'futuregrid.xray', 'iu.bigred2', 'rice.biou',
@@ -203,6 +203,7 @@ class Configuration(StorableMixin):
 
         return configurations
 
+    # TODO move this __init__ method higher and init from passed dict
     def __init__(self, name, wrapper=None, **fields):
         '''
         Configuration initialization will only complete if all
@@ -254,6 +255,9 @@ class Configuration(StorableMixin):
 
                 # TODO fix this ugliness with queue unroll
                 self.queues = [ self.queues ]
+
+            else:
+                raise ValueError("Resouce Name is not defined")
 
         # Construction via from_dict
         else:

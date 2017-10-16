@@ -68,7 +68,7 @@ def get_platform(platform_name):
                 platform = Platform.getPlatformByName(platform_name)
                 return platform
 
-            except IndexErrorError as e:
+            except IndexError as e:
                 if attempt < retries:
                     attempt += 1
                     time.sleep(5*random.random())
