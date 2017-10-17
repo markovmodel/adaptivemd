@@ -777,7 +777,7 @@ class Task(BaseTask):
         self.append(transaction)
         return transaction.source
 
-    def add_conda_env(self, name):
+    def add_conda_env(self, name, activate_prefix=None):
         """
         Add loading a conda env to all tasks of this resource. 
         This will be added as the first command.
@@ -789,7 +789,17 @@ class Task(BaseTask):
             name of the conda environment
 
         """
-        self.prepend('source activate %s' % name)
+        if activate_prefix:
+            assert isinstance(activate_prefix, str)
+            prefix = activate_prefix
+
+            if not prefix.endswith('/'):
+                prefix += '/'
+
+        else:
+            prefix = ''
+
+        self.prepend('source {p}activate {n}'.format(p=prefix, n=name))
 
 
 class PrePostTask(Task):
