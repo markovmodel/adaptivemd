@@ -779,7 +779,8 @@ class Task(BaseTask):
 
     def add_conda_env(self, name):
         """
-        Add loading a conda env to all tasks of this resource
+        Add loading a conda env to all tasks of this resource. 
+        This will be added as the first command.
 
         This calls `resource.wrapper.append('source activate {name}')`
         Parameters
@@ -788,7 +789,7 @@ class Task(BaseTask):
             name of the conda environment
 
         """
-        self.append('source activate %s' % name)
+        self.prepend('source activate %s' % name)
 
 
 class PrePostTask(Task):
