@@ -780,7 +780,9 @@ class Task(BaseTask):
     def add_conda_env(self, name, activate_prefix=None):
         """
         Add loading a conda env to all tasks of this resource. 
-        This will be added as the first command.
+        This will be added as the first command, with deactivate
+        as the final command. Currently this is best done as
+        a final step in defining the task objects.
 
         This calls `resource.wrapper.append('source activate {name}')`
         Parameters
@@ -800,6 +802,7 @@ class Task(BaseTask):
             prefix = ''
 
         self.prepend('source {p}activate {n}'.format(p=prefix, n=name))
+        self.append('source deactivate')
 
 
 class PrePostTask(Task):
