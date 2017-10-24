@@ -24,6 +24,7 @@ from __future__ import absolute_import, print_function
 import os
 from .mongodb import StorableMixin
 from .task import DummyTask
+from .utils import parse_cfg_file
 
 
 # TODO
@@ -118,45 +119,18 @@ class Configuration(StorableMixin):
         'futuregrid.india', 'das5.fs1', 'epsrc.archer',
         'ncsa.bw', 'radical.two', 'xsede.stampede2'])
 
+
     def update_resource_list(self):
         '''
         TODO Use this method to update list of resource names
         '''
         pass
 
+
     @staticmethod
     def parse_configurations_file(configuration_file):
-        def parse_line(line):
-            v = line.strip().split()
-            if len(v) > 0 and v[0][0] != '#':
-                return v
-            else:
-                return []
+        return parse_cfg_file(configuration_file)
 
-        reading_fields = False
-        configurations_fields = dict()
-
-        with open(configuration_file, 'r') as f_cfg:
-            for line in f_cfg:
-                v = parse_line(line)
-                if reading_fields:
-                    if len(v) == 1 and len(v[0]) == 1:
-                        if v[0][0] == '}':
-                            reading_fields = False
-                        else:
-                            print("End configuration block with single '}'")
-                            raise ValueError
-                    elif len(v) == 2:
-                        configurations_fields[reading_fields][v[0]] = v[1]
-                    elif len(v) == 1 or len(v) > 2:
-                        print("Require one field and one value separated by space when reading entries from configuration file")
-                        raise ValueError
-
-                elif len(v) == 2 and v[1] == '{':
-                    reading_fields = v[0]
-                    configurations_fields[reading_fields] = dict()
-
-        return configurations_fields
 
     @classmethod
     def read_configurations(cls, configuration_file=None, project_name=None):
@@ -202,6 +176,7 @@ class Configuration(StorableMixin):
             configurations.append(cls('local', **dict(resource_name='local.localhost')))
 
         return configurations
+
 
     # TODO move this __init__ method higher and init from passed dict
     def __init__(self, name, wrapper=None, **fields):

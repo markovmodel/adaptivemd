@@ -813,7 +813,7 @@ class Project(object):
                         # event is finished, clean up
                         idx = self._events.index(event)
 
-                        # todo: wait for completion
+                        # TODO: wait for completion
                         del self._events[idx]
                         logger.info('Event finished! Remaining %d' % len(self._events))
 

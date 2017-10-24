@@ -26,6 +26,40 @@ import os
 import datetime
 
 
+def parse_cfg_file(filepath):
+    def parse_line(line):
+        v = line.strip().split()
+        if len(v) > 0 and v[0][0] != '#':
+            return v
+        else:
+            return []
+
+    reading_fields = False
+    configurations_fields = dict()
+
+    with open(configuration_file, 'r') as f_cfg:
+        for line in f_cfg:
+            v = parse_line(line)
+            if reading_fields:
+                if len(v) == 1 and len(v[0]) == 1:
+                    if v[0][0] == '}':
+                        reading_fields = False
+                    else:
+                        print("End configuration block with single '}'")
+                        raise ValueError
+                elif len(v) == 2:
+                    configurations_fields[reading_fields][v[0]] = v[1]
+                elif len(v) == 1 or len(v) > 2:
+                    print("Require one field and one value separated by space when reading entries from configuration file")
+                    raise ValueError
+
+            elif len(v) == 2 and v[1] == '{':
+                reading_fields = v[0]
+                configurations_fields[reading_fields] = dict()
+
+    return configurations_fields
+
+
 def get_function_source(func):
     """
     Determine the source file of a function
