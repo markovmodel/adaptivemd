@@ -37,7 +37,7 @@ def parse_cfg_file(filepath):
     reading_fields = False
     configurations_fields = dict()
 
-    with open(configuration_file, 'r') as f_cfg:
+    with open(filepath, 'r') as f_cfg:
         for line in f_cfg:
             v = parse_line(line)
             if reading_fields:

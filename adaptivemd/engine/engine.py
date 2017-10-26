@@ -220,6 +220,7 @@ class Trajectory(File):
 
     def __init__(self, location, frame, length, engine=None):
         super(Trajectory, self).__init__(location)
+
         self.frame = frame
         self.length = length
         self.engine = engine

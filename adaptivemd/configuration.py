@@ -24,7 +24,7 @@ from __future__ import absolute_import, print_function
 import os
 from .mongodb import StorableMixin
 from .task import DummyTask
-from .utils import parse_cfg_file
+from .util import parse_cfg_file
 
 
 # TODO

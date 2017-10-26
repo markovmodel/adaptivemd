@@ -50,8 +50,8 @@ class Location(StorableMixin):
 
         if isinstance(location, Location):
             self.location = location.location
-        elif isinstance(location, str):
-            self.location = location
+        elif isinstance(location, (unicode, str)):
+            self.location = str(location)
         else:
             raise ValueError('location can only be a `File` or a string.')
 
@@ -507,9 +507,11 @@ class File(Location):
         if self.drive == 'file':
             if scheduler is not None:
                 path = scheduler.replace_prefix(self.url)
+
             else:
                 path = self.path
 
+            path = os.path.expandvars(path)
             with open(path, 'r') as f:
                 self._file = DataDict(f.read())
 
