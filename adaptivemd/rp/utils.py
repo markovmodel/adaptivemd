@@ -98,26 +98,32 @@ def get_executable_arguments(task_details):
 
 def get_output_staging(task_desc, db, shared_path):
 
-    hex_id_input = hex_to_id(
-        hex_uuid=task_desc['_dict']['generator']['_hex_uuid'])
-
-    src_files = db.get_source_files(hex_id_input)
-
-    hex_id_output = hex_to_id(
-        hex_uuid=task_desc['_dict']['_main'][-1]['_dict']['target']['_hex_uuid'])
-    output_loc = db.get_file_destination(hex_id_output)
-
+    # List containing all staging directives...
     staging_directives = list()
 
-    for file in src_files:
+    # If the last_step is a dictionary *and* the class is 'MOVE'
+    # Assume this is an output staging command....
+    last_step = task_desc['_dict']['_main'][-1]
+    if(isinstance(last_step, dict) and last_step['_cls'] == 'Move'):
 
-        temp = {
-            'source': os.path.basename(os.path.abspath(task_desc['_dict']['_main'][-1]['_dict']['source']['_dict']['location'])) + '/' + file,
-            'action': rp.COPY,
-            'target': resolve_pathholders(output_loc, shared_path) + '/' + file
-        }
+        # Get source files
+        hex_id_input = hex_to_id(hex_uuid=task_desc['_dict']['generator']['_hex_uuid'])
+        src_files = db.get_source_files(hex_id_input)
 
-        staging_directives.append(temp)
+        # Get output/target files
+        hex_id_output = hex_to_id(hex_uuid = last_step['_dict']['target']['_hex_uuid'])
+        output_loc = db.get_file_destination(hex_id_output)
+
+        # For each source file, create a staging directive...
+        for file in src_files:
+
+            temp = {
+                'source': os.path.basename(os.path.abspath(last_step['_dict']['source']['_dict']['location'])) + '/' + file,
+                'action': rp.COPY,
+                'target': resolve_pathholders(output_loc, shared_path) + '/' + file
+            }
+
+            staging_directives.append(temp)
 
     # print staging_directives
 

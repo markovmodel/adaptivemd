@@ -35,6 +35,8 @@ class Client(object):
         # Process related data
         self._proc = None
         self._terminate = None
+        self._rmgr = None
+        self._tmgr = None
 
     # ------------------------------------------------------------------------------------------------------------------
     # Private methods
@@ -142,8 +144,9 @@ class Client(object):
 
         finally:
 
-            self._rmgr.pilot.cancel()
-            self._rmgr.session.close(cleanup=False)
+            if self._rmgr:
+                self._rmgr.pilot.cancel()
+                self._rmgr.session.close(cleanup=False)
 
     # ------------------------------------------------------------------------------------------------------------------
     # Public methods

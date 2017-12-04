@@ -201,15 +201,15 @@ class ResourceManager(object):
 
             # Use '.get()' on optional fields when you need to have default values...
             self._project = resource_desc.get('project', '')
-            self._access_schema.get('access_schema', None)
-            self._queue.get('queue', None)
-            self._gpus.get('gpus', 0)
+            self._access_schema = resource_desc.get('access_schema', None)
+            self._queue = resource_desc.get('queue', None)
+            self._gpus = resource_desc.get('gpus', 0)
 
             self._logger.info('Resource manager population successful')
 
         except Exception, ex:
-            self._logger.error('Resource manager population unsuccessful')
-            raise Error(msg='Resource manager population unsuccessful')
+            self._logger.error('Resource manager population unsuccessful. Error: %s', ex.msg)
+            raise Error(msg='Resource manager population unsuccessful. Error: %s', ex.msg)
 
 
     def _get_shared_data(self):
