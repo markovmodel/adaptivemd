@@ -53,11 +53,12 @@ class Client(object):
 
             for matched_configs in matching_configs:
                 selected_resource = dict()
-                selected_resource['resource']   = str(matched_configs['resource'])
-                selected_resource['walltime']   = resource_reqs['total_time']
-                selected_resource['cores']      = resource_reqs['total_cpus']
-                selected_resource['project']    = str(matched_configs['project'])
-                selected_resource['queue']      = str(matched_configs['queue'])
+                selected_resource['resource']       = str(matched_configs['resource'])
+                selected_resource['runtime']        = resource_reqs['total_time']
+                selected_resource['cores']          = resource_reqs['total_cpus']
+                selected_resource['gpus']           = resource_reqs['total_gpus']
+                selected_resource['project']        = str(matched_configs['project'])
+                selected_resource['queue']          = str(matched_configs['queue'])
                 selected_resource['shared_path']    = str(matched_configs['shared_path'])
 
             selected_resources.append(selected_resource)

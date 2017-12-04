@@ -14,7 +14,7 @@ class ResourceManager(object):
 
     :arguments: 
         :resource_desc: dictionary with details of the resource request + access credentials of the user 
-            :example: resource_desc = {  'resource': 'xsede.stampede', 'walltime': 120, 'cores': 64, 'project: 'TG-abcxyz'}
+            :example: resource_desc = {  'resource': 'xsede.stampede', 'runtime': 120, 'cores': 64, 'project: 'TG-abcxyz'}
         :database_url: link to the MongoDB to be used for RADICAL Pilot purposes
 
     """
@@ -35,8 +35,9 @@ class ResourceManager(object):
         self._pmgr          = None
         self._pilot         = None
         self._resource      = None
-        self._walltime      = None
+        self._runtime       = None
         self._cores         = None
+        self._gpus          = None
         self._project       = None
         self._access_schema = None
         self._queue         = None
@@ -87,12 +88,12 @@ class ResourceManager(object):
         return self._resource
 
     @property
-    def walltime(self):
+    def runtime(self):
 
         """
-        :getter: Return user specified walltime
+        :getter: Return user specified runtime
         """
-        return self._walltime
+        return self._runtime
 
     @property
     def cores(self):
@@ -147,7 +148,7 @@ class ResourceManager(object):
 
 
             expected_keys = [   'resource',
-                                'walltime',
+                                'runtime',
                                 'cores',
                                 'project'
                             ]
@@ -159,8 +160,8 @@ class ResourceManager(object):
             if not isinstance(resource_desc['resource'],str):
                 raise TypeError(expected_type=str, actual_type=type(resource_desc['resource']))
 
-            if not isinstance(resource_desc['walltime'], int):
-                raise TypeError(expected_type=int, actual_type=type(resource_desc['walltime']))
+            if not isinstance(resource_desc['runtime'], int):
+                raise TypeError(expected_type=int, actual_type=type(resource_desc['runtime']))
 
             if not isinstance(resource_desc['cores'], int):
                 raise TypeError(expected_type=int, actual_type=type(resource_desc['cores']))
@@ -193,17 +194,16 @@ class ResourceManager(object):
 
         try:
 
+            # Use direct key lookup for required fields since it throws exceptions
             self._resource = resource_desc['resource']
-            self._walltime = resource_desc['walltime']
+            self._runtime = resource_desc['runtime']
             self._cores = resource_desc['cores']
-            self._project = resource_desc['project']
 
-            if 'access_schema' in resource_desc:
-                self._access_schema = resource_desc['access_schema']
-
-            if 'queue' in resource_desc:
-                self._queue = resource_desc['queue']
-
+            # Use '.get()' on optional fields when you need to have default values...
+            self._project = resource_desc.get('project', '')
+            self._access_schema.get('access_schema', None)
+            self._queue.get('queue', None)
+            self._gpus.get('gpus', 0)
 
             self._logger.info('Resource manager population successful')
 
@@ -257,9 +257,10 @@ class ResourceManager(object):
 
             pd_init = {
                     'resource'  : self._resource,
-                    'runtime'   : self._walltime,
-                    'cores'     : self._cores,
+                    'runtime'   : self._runtime,
                     'project'   : self._project,
+                    'cores'     : self._cores,
+                    # 'gpus'     : self._gpus, # for later...
                     }
     
             if self._access_schema:
@@ -282,7 +283,7 @@ class ResourceManager(object):
             self._pilot.wait([rp.ACTIVE, rp.FAILED])
 
             if self._pilot.state == rp.FAILED:
-                raise Exception
+                raise Exception(msg='Pilot Failed to launch.')
 
             self._logger.info('Pilot is now active')
 
