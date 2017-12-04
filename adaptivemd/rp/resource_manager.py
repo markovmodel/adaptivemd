@@ -208,8 +208,8 @@ class ResourceManager(object):
             self._logger.info('Resource manager population successful')
 
         except Exception, ex:
-            self._logger.error('Resource manager population unsuccessful. Error: %s', ex.msg)
-            raise Error(msg='Resource manager population unsuccessful. Error: %s', ex.msg)
+            self._logger.error('Resource manager population unsuccessful. Error: %s'%ex)
+            raise Error(msg='Resource manager population unsuccessful. Error: %s'%ex)
 
 
     def _get_shared_data(self):
