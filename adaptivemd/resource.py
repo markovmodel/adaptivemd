@@ -25,7 +25,7 @@ from __future__ import absolute_import
 
 from .mongodb import StorableMixin
 #from .task import DummyTask
-from .configuration import Configuration
+#from .configuration import Configuration
 
 
 class Resource(StorableMixin):
@@ -54,7 +54,7 @@ class Resource(StorableMixin):
         assert isinstance(total_cpus, int)
         self.total_cpus = total_cpus
 
-        assert isinstance(total_cpus, int)
+        assert isinstance(total_time, int)
         self.total_time = total_time
 
         assert isinstance(total_gpus, int)
@@ -78,35 +78,3 @@ class Resource(StorableMixin):
 #del#
 #del#        self.wrapper = wrapper
 
-
-#update#class AllegroCluster(Resource):
-#update#    """
-#update#    The FUB Allegro cluster and its queues with shared FS on ``NO_BACKUP``
-#update#
-#update#    """
-#update#    def __init__(self, shared_path=None):
-#update#        if shared_path is None:
-#update#            shared_path = '$HOME/NO_BACKUP/adaptivemd/'
-#update#
-#update#        super(AllegroCluster, self).__init__(shared_path=shared_path)
-#update#
-#update#    def add_cuda_module(self):
-#update#        """
-#update#        Add loading the CUDA module
-#update#
-#update#        """
-#update#        w = self.wrapper
-#update#        w.pre.append(
-#update#            'export MODULEPATH=/import/ag_cmb/software/modules:$MODULEPATH')
-#update#        w.pre.append('module load cuda/7.5')
-
-
-#update#class LocalResource(Resource):
-#update#    """
-#update#    Run tasks locally and store data in ``$HOME/adaptivemd/``
-#update#    or a directory given by "shared_path"
-#update#
-#update#    """
-#update#    def __init__(self, shared_path=None):
-#update#        super(LocalResource, self).__init__(shared_path=shared_path)
-#update#
