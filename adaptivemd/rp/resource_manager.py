@@ -283,7 +283,7 @@ class ResourceManager(object):
             self._pilot.wait([rp.ACTIVE, rp.FAILED])
 
             if self._pilot.state == rp.FAILED:
-                raise Exception(msg='Pilot Failed to launch.')
+                raise Exception('Pilot Failed to launch.')
 
             self._logger.info('Pilot is now active')
 
