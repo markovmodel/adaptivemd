@@ -65,6 +65,7 @@ scripts:
 
 install_requires:
   - python
+  - jsonschema
   - pyyaml
   - six
   - numpy

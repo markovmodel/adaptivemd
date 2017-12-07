@@ -241,9 +241,9 @@ def generate_pythontask_cud(task_desc, db, shared_path, project):
     
     # Next, get input staging
     # We get "ALL" COPY/LINK directives from the pre_exec
-    staging_directives = get_input_staging(pre_task_details, shared_path, project, break_after_non_dict=False)
+    staging_directives = get_input_staging(pre_task_details, db, shared_path, project, break_after_non_dict=False)
     # We get "ALL" COPY/LINK directives from the main *before* the first non-dictionary entry
-    staging_directives.extend(get_input_staging(main_task_details, shared_path, project))
+    staging_directives.extend(get_input_staging(main_task_details, db, shared_path, project))
     cud.input_staging = staging_directives
 
 
@@ -266,9 +266,9 @@ def generate_pythontask_cud(task_desc, db, shared_path, project):
 
     # Now, get output staging steps
     # We get "ALL" COPY/LINK directives from the post_exec
-    staging_directives = get_output_staging(task_desc, post_task_details, shared_path, project, continue_before_non_dict=False)
+    staging_directives = get_output_staging(task_desc, post_task_details, db, shared_path, project, continue_before_non_dict=False)
     # We get "ALL" COPY/LINK directives from the main *after* the first non-dictionary entry
-    staging_directives.extend(get_output_staging(task_desc, main_task_details, shared_path, project))
+    staging_directives.extend(get_output_staging(task_desc, main_task_details, db, shared_path, project))
     cud.output_staging = staging_directives
     
     # Cores per CUD
@@ -298,9 +298,9 @@ def generate_trajectorygenerationtask_cud(task_desc, db, shared_path, project):
     
     # Next, get input staging
     # We get "ALL" COPY/LINK directives from the pre_exec
-    staging_directives = get_input_staging(pre_task_details, shared_path, project, break_after_non_dict=False)
+    staging_directives = get_input_staging(pre_task_details, db, shared_path, project, break_after_non_dict=False)
     # We get "ALL" COPY/LINK directives from the main *before* the first non-dictionary entry
-    staging_directives.extend(get_input_staging(main_task_details, shared_path, project))
+    staging_directives.extend(get_input_staging(main_task_details, db, shared_path, project))
     cud.input_staging = staging_directives
 
 
@@ -312,16 +312,16 @@ def generate_trajectorygenerationtask_cud(task_desc, db, shared_path, project):
 
 
     # Now, do main executable
-    exe, args = get_executable_arguments(task_details)
+    exe, args = get_executable_arguments(main_task_details)
     cud.executable = [str(exe)]
     cud.arguments = args
 
 
     # Now, get output staging steps
     # We get "ALL" COPY/LINK directives from the post_exec
-    staging_directives = get_output_staging(task_desc, post_task_details, shared_path, project, continue_before_non_dict=False)
+    staging_directives = get_output_staging(task_desc, post_task_details, db, shared_path, project, continue_before_non_dict=False)
     # We get "ALL" COPY/LINK directives from the main *after* the first non-dictionary entry
-    staging_directives.extend(get_output_staging(task_desc, main_task_details, shared_path, project))
+    staging_directives.extend(get_output_staging(task_desc, main_task_details, db, shared_path, project))
     cud.output_staging = staging_directives
     
     # Cores per CUD

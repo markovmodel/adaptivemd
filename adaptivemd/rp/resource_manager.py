@@ -1,8 +1,11 @@
+import os
+import traceback
+import json
+import jsonschema
 import radical.pilot as rp
 import radical.utils as ru
-import os
 from exceptions import *
-import traceback
+
 
 
 class ResourceManager(object):
@@ -238,7 +241,6 @@ class ResourceManager(object):
             pd_init = {
                     'resource'  : self._resource,
                     'runtime'   : self._runtime,
-                    'project'   : self._project,
                     'cores'     : self._cores,
                     # 'gpus'     : self._gpus, # for later...
                     }
@@ -246,9 +248,12 @@ class ResourceManager(object):
             if self._access_schema:
                 pd_init['access_schema'] = self._access_schema
     
-            if self._queue:
-                pd_init['queue'] = self._queue
-    
+            if pd_init['resource'] != 'local.localhost':
+                if self._queue:
+                    pd_init['queue'] = self._queue
+                if self._project:
+                    pd_init['project'] = self._project
+
 
             # Create Compute Pilot with validated resource description
             pdesc = rp.ComputePilotDescription(pd_init)
