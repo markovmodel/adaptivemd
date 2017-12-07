@@ -61,7 +61,7 @@ class Client(object):
                 selected_resource['gpus']           = resource_reqs['total_gpus']
                 selected_resource['project']        = str(matched_configs['project'])
                 selected_resource['queue']          = str(matched_configs['queue'])
-                selected_resource['shared_path']    = str(matched_configs['shared_path'])
+                selected_resource['shared_path']    = str(matched_configs.get('shared_path', '$HOME'))
 
             selected_resources.append(selected_resource)
 
@@ -113,10 +113,10 @@ class Client(object):
 
                     task_descs = self._db.get_task_descriptions()
 
-                    #print task_descs, 'while loop'
+                    # print task_descs, 'while loop'
 
                     if task_descs:
-                        cuds = create_cud_from_task_def(task_descs, self._db, resource_desc_for_pilot['shared_path'])
+                        cuds = create_cud_from_task_def(task_descs, self._db, resource_desc_for_pilot['shared_path'], self._project)
                         self._tmgr.run_cuds(cuds)
 
                         #for cud in cuds:

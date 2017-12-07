@@ -6,7 +6,7 @@ from exceptions import *
 import traceback
 import json
 
-def resolve_pathholders(path, shared_path):
+def resolve_pathholders(path, shared_path, project):
 
     if '///' not in path:
         return os.path.expandvars(path)
@@ -22,26 +22,30 @@ def resolve_pathholders(path, shared_path):
     elif schema == 'file':
         resolved_path = path.replace(schema + '://', '')
 
+    elif schema == 'project':
+        resolved_path = path.replace(schema + '://', shared_path + '/projects/' + project + '/')
+
     return os.path.expandvars(resolved_path)
 
 
-def get_input_staging(task_details, shared_path):
+def get_input_staging(task_details, db, shared_path, project, break_after_non_dict=True):
 
-    staging_directives = []
+    staging_directives = list()
 
     for entity in task_details:
 
         if not isinstance(entity, dict):
-            break
+            if break_after_non_dict:
+                break
+            else:
+                continue
 
         staging_type = entity['_cls']
 
         if staging_type in ['Link', 'Copy']:
 
-            src = resolve_pathholders(
-                entity['_dict']['source']['_dict']['location'], shared_path)
-            dest = os.path.basename(
-                resolve_pathholders(entity['_dict']['target']['_dict']['location'], shared_path))
+            src,_ = get_file_location(entity['_dict']['source'], db, shared_path, project)
+            dest,_ = get_file_location(entity['_dict']['target'], db, shared_path, project)
 
             if staging_type == 'Link':
                 rp_staging_type = rp.LINK
@@ -49,18 +53,110 @@ def get_input_staging(task_details, shared_path):
             elif staging_type == 'Copy':
                 rp_staging_type = rp.COPY
 
-        temp_directive = {
-            'source': src,
-            'action': rp_staging_type,
-            'target': 'unit:///' + dest
-        }
+            temp_directive = {
+                'source': str(src),
+                'action': rp_staging_type,
+                'target': str('unit:///' + dest)
+            }
 
-        if temp_directive not in staging_directives:
-            staging_directives.append(temp_directive)
+            if temp_directive not in staging_directives:
+                staging_directives.append(temp_directive)
 
-    print staging_directives
+    # print staging_directives
 
     return staging_directives
+
+
+def get_output_staging(task_desc, task_details, db, shared_path, project, continue_before_non_dict=True):
+
+    # List containing all staging directives...
+    staging_directives = list()
+
+    for entity in reversed(task_details):
+        
+        if not isinstance(entity, dict):
+            if continue_before_non_dict:
+                break
+            else:
+                continue
+
+        staging_type = entity['_cls']
+
+        if staging_type in ['Move', 'Copy', 'Link']:
+            
+            # Get source files
+            src_location, is_traj = get_file_location(entity['_dict']['source'], db, shared_path, project)
+            if is_traj: # is a trajectory, we need to do something extra
+                hex_id_input = hex_to_id(hex_uuid=task_desc['_dict']['generator']['_hex_uuid'])
+                traj_files = db.get_source_files(hex_id_input)
+            
+            # Get output/target files
+            output_loc, _ = get_file_location(entity['_dict']['target'], db, shared_path, project)
+
+            # Build the directives (for traj files, we need multiple directives...)
+
+            # get propert action type
+            if staging_type == 'Move':
+               rp_staging_type = rp.MOVE
+            
+            elif staging_type == 'Link':
+                rp_staging_type = rp.LINK
+            
+            else:
+                rp_staging_type = rp.COPY
+
+
+            if is_traj:
+                # For each source file, create a staging directive...
+                for file in traj_files:
+                    temp = {
+                        'source': str(src_location + '/' + file),
+                        'action': rp_staging_type,
+                        'target': str(output_loc + '/' + file)
+                    }
+                    staging_directives.append(temp)
+            else:
+                temp = {
+                        'source': str(src_location),
+                        'action': rp_staging_type,
+                        'target': str(output_loc)
+                    }
+                staging_directives.append(temp)
+
+    return staging_directives
+
+
+def get_file_location(file_entity, db, shared_path, project):
+
+    output_loc = None
+    trajectory = False
+
+    # it is NOT an entity with '_cls' assume it is something we need to get
+    # from the files
+    if file_entity.get('_cls', None) is None:
+        hex_id_output = hex_to_id(hex_uuid = file_entity['_hex_uuid'])
+        output_loc = db.get_file_destination(hex_id_output)
+        output_loc = resolve_pathholders(output_loc, shared_path, project)
+
+    # it *is* an entity with "_cls", treat it as such
+    elif file_entity.get('_cls') == 'File':
+        output_loc = resolve_pathholders(file_entity['_dict']['location'], shared_path, project)
+    elif file_entity.get('_cls') == 'Trajectory':
+        output_loc = os.path.basename(os.path.abspath(file_entity['_dict']['location']))
+        trajectory = True
+
+    return output_loc, trajectory
+
+
+def get_commands(task_steps_list, shared_path, project):
+
+    commands = []
+
+    for step in task_steps_list:
+        if isinstance(step, unicode) or isinstance(step, str):
+            commands.append(str(step))
+
+    return commands
 
 
 def get_executable_arguments(task_details):
@@ -95,42 +191,7 @@ def get_executable_arguments(task_details):
 
     return exe, args
 
-
-def get_output_staging(task_desc, db, shared_path):
-
-    # List containing all staging directives...
-    staging_directives = list()
-
-    # If the last_step is a dictionary *and* the class is 'MOVE'
-    # Assume this is an output staging command....
-    last_step = task_desc['_dict']['_main'][-1]
-    if(isinstance(last_step, dict) and last_step['_cls'] == 'Move'):
-
-        # Get source files
-        hex_id_input = hex_to_id(hex_uuid=task_desc['_dict']['generator']['_hex_uuid'])
-        src_files = db.get_source_files(hex_id_input)
-
-        # Get output/target files
-        hex_id_output = hex_to_id(hex_uuid = last_step['_dict']['target']['_hex_uuid'])
-        output_loc = db.get_file_destination(hex_id_output)
-
-        # For each source file, create a staging directive...
-        for file in src_files:
-
-            temp = {
-                'source': os.path.basename(os.path.abspath(last_step['_dict']['source']['_dict']['location'])) + '/' + file,
-                'action': rp.COPY,
-                'target': resolve_pathholders(output_loc, shared_path) + '/' + file
-            }
-
-            staging_directives.append(temp)
-
-    # print staging_directives
-
-    return staging_directives
-
-
-def create_cud_from_task_def(task_descs, db, shared_path):
+def create_cud_from_task_def(task_descs, db, shared_path, project):
 
     try:
 
@@ -139,60 +200,134 @@ def create_cud_from_task_def(task_descs, db, shared_path):
         for task_desc in task_descs:
 
             if task_desc['_cls'] == 'PythonTask':
-                d = generate_pythontask_input(db, shared_path, task_desc)
-                with open(d['target'],'w') as fp:
-                    json.dump(d['contents'], fp)
-
-                task_details = task_desc['_dict']['_main']
-
-                cud = rp.ComputeUnitDescription()
-                cud.name = task_desc['_id']
-                cud.pre_exec = [
-                        'export PATH=/home/vivek/Research/tools/miniconda2/bin:$PATH', 'mkdir -p traj']
-                #exe, args = get_executable_arguments(task_details)
-                cud.executable = ['python']
-                cud.arguments = ['__run__.py']
-                cud.input_staging = get_input_staging(task_details, shared_path).extend(['./'+d['target']])
-                cud.output_staging = [
-                                            {
-                                                'source': 'output.json',
-                                                'action': rp.COPY,
-                                                'target': ''
-                                            }
-                                        ]
-                cud.cores = 1  # currently overwriting
-
+                cud = generate_pythontask_cud(task_desc, db, shared_path, project)
                 cuds.append(cud)
-
 
             elif task_desc['_cls'] == 'TrajectoryGenerationTask':
-
-                task_details = task_desc['_dict']['_main']
-
-                cud = rp.ComputeUnitDescription()
-                cud.name = task_desc['_id']
-                cud.pre_exec = [
-                        'export PATH=/home/vivek/Research/tools/miniconda2/bin:$PATH', 'mkdir -p traj']
-                exe, args = get_executable_arguments(task_details)
-                cud.executable = [str(exe)]
-                cud.arguments = args
-                cud.input_staging = get_input_staging(task_details, shared_path)
-                cud.output_staging = get_output_staging(task_desc, db, shared_path)
-                cud.cores = 1  # currently overwriting
-
-                #print task_desc['_id'], cud.name
-                db.update_task_description_status(task_desc['_id'], 'running')
-
-                # print cud.executable, cud.arguments
-
+                cud = generate_trajectorygenerationtask_cud(task_desc, db, shared_path, project)
                 cuds.append(cud)
- 
+            else:
+                continue
+
+            db.update_task_description_status(task_desc['_id'], 'running')
+
         return cuds
 
     except Exception as ex:
 
         print traceback.format_exc()
         raise Error(msg=ex)
+
+
+def generate_pythontask_cud(task_desc, db, shared_path, project):
+    # Compute Unit Description
+    cud = rp.ComputeUnitDescription()
+    cud.name = task_desc['_id']
+
+    # Get each component of the task
+    pre_task_details = task_desc['_dict']['pre']
+    main_task_details = task_desc['_dict']['_main']
+    post_task_details = task_desc['_dict']['post']
+
+    
+    # First, extract environment variables
+    cud.environment = get_environment_from_task(task_desc)
+
+    
+    # Next, extract things we need to add to the PATH
+    # TODO: finish adding path directive
+    paths = get_paths_from_task(task_desc)
+
+    
+    # Next, get input staging
+    # We get "ALL" COPY/LINK directives from the pre_exec
+    staging_directives = get_input_staging(pre_task_details, shared_path, project, break_after_non_dict=False)
+    # We get "ALL" COPY/LINK directives from the main *before* the first non-dictionary entry
+    staging_directives.extend(get_input_staging(main_task_details, shared_path, project))
+    cud.input_staging = staging_directives
+
+
+    # Next, get pre execution steps
+    d = generate_pythontask_input(db, shared_path, task_desc, project)
+    pre_exec = list()
+    pre_exec = [
+    'mkdir -p traj',
+    'echo \'{}\' > \'{}\''.format(json.dumps(d['contents']), d['target']) # stage input.json
+    ]
+    pre_exec.extend(get_commands(pre_task_details, shared_path, project))
+    cud.pre_exec = pre_exec
+
+
+    # Now, do main executable
+    #exe, args = get_executable_arguments(main_task_details)
+    cud.executable = ['python']
+    cud.arguments = ['_run_.py']
+
+
+    # Now, get output staging steps
+    # We get "ALL" COPY/LINK directives from the post_exec
+    staging_directives = get_output_staging(task_desc, post_task_details, shared_path, project, continue_before_non_dict=False)
+    # We get "ALL" COPY/LINK directives from the main *after* the first non-dictionary entry
+    staging_directives.extend(get_output_staging(task_desc, main_task_details, shared_path, project))
+    cud.output_staging = staging_directives
+    
+    # Cores per CUD
+    cud.cores = 1  # currently overwriting
+
+    return cud
+
+def generate_trajectorygenerationtask_cud(task_desc, db, shared_path, project):
+    # Compute Unit Description
+    cud = rp.ComputeUnitDescription()
+    cud.name = task_desc['_id']
+
+    # Get each component of the task
+    pre_task_details = task_desc['_dict'].get('pre', dict())
+    main_task_details = task_desc['_dict']['_main']
+    post_task_details = task_desc['_dict'].get('post', dict())
+
+    
+    # First, extract environment variables
+    cud.environment = get_environment_from_task(task_desc)
+
+    
+    # Next, extract things we need to add to the PATH
+    # TODO: finish adding path directive
+    paths = get_paths_from_task(task_desc)
+
+    
+    # Next, get input staging
+    # We get "ALL" COPY/LINK directives from the pre_exec
+    staging_directives = get_input_staging(pre_task_details, shared_path, project, break_after_non_dict=False)
+    # We get "ALL" COPY/LINK directives from the main *before* the first non-dictionary entry
+    staging_directives.extend(get_input_staging(main_task_details, shared_path, project))
+    cud.input_staging = staging_directives
+
+
+    # Next, get pre execution steps
+    pre_exec = list()
+    pre_exec = ['mkdir -p traj']
+    pre_exec.extend(get_commands(pre_task_details, shared_path, project))
+    cud.pre_exec = pre_exec
+
+
+    # Now, do main executable
+    exe, args = get_executable_arguments(task_details)
+    cud.executable = [str(exe)]
+    cud.arguments = args
+
+
+    # Now, get output staging steps
+    # We get "ALL" COPY/LINK directives from the post_exec
+    staging_directives = get_output_staging(task_desc, post_task_details, shared_path, project, continue_before_non_dict=False)
+    # We get "ALL" COPY/LINK directives from the main *after* the first non-dictionary entry
+    staging_directives.extend(get_output_staging(task_desc, main_task_details, shared_path, project))
+    cud.output_staging = staging_directives
+    
+    # Cores per CUD
+    cud.cores = 1  # currently overwriting
+
+    return cud
 
 
 def process_resource_requirements(raw_res_descs):
@@ -289,7 +424,22 @@ def hex_to_id(hex_uuid=None):
     return the_id
 
 
-def generate_pythontask_input(db, shared_path, task=None):
+def get_environment_from_task(task):
+    environment = dict()
+    task_environment = task['_dict'].get('_environment', dict())
+    for key in task_environment:
+        environment[str(key)] = str(task_environment[key])
+    return environment
+
+
+def get_paths_from_task(task):
+    paths = list()
+    for path in task['_dict'].get('_add_paths', list()):
+        paths.append(str(path))
+    return paths
+
+
+def generate_pythontask_input(db, shared_path, task, project):
     """Parse a 'PythonTask' task object and generate the
     contents of its input file
 
@@ -305,11 +455,13 @@ def generate_pythontask_input(db, shared_path, task=None):
     if (task is not None) and (task['_cls'] == 'PythonTask'):
         # Source & Target
         for cmd in task['_dict']['pre']:
+            if not isinstance(cmd, dict):
+                continue
             if cmd['_cls'] == 'Transfer':
                 location = db.get_file_destination(
                     id=hex_to_id(cmd['_dict']['source']['_hex_uuid']))
                 if location:
-                    temp_src = resolve_pathholders(location, shared_path)
+                    temp_src = resolve_pathholders(location, shared_path, project)
                 temp_target = cmd['_dict']['target']['_dict']['location']
 
         # File Contents
@@ -329,7 +481,7 @@ def generate_pythontask_input(db, shared_path, task=None):
                         temp.setdefault(
                             'kwargs', dict()).setdefault(
                             key, list()).append(resolve_pathholders(
-                                location, shared_path))
+                                location, shared_path, project))
             else:
                 temp.setdefault('kwargs', dict())[key] = val
         temp_file_contents = temp

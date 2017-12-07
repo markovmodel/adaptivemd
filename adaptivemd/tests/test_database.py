@@ -170,8 +170,8 @@ class TestDatabase(unittest.TestCase):
         task = task_descriptions[0]
         self.assertTrue(self.db.update_task_description_status(
             id=task['_id'], state='fail'))
-        self.db.update_task_description_status(
-            id=task['_id'], state='created')
+        self.assertTrue(self.db.update_task_description_status(
+            id=task['_id'], state='created'))
 
     def test_bad_update_task_state(self):
         """Test that the task update state method returns

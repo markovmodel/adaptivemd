@@ -41,6 +41,7 @@ class ResourceManager(object):
         self._project       = None
         self._access_schema = None
         self._queue         = None
+        self._directory     = os.path.dirname(os.path.abspath(__file__));
 
 
         self._db = db
@@ -143,39 +144,16 @@ class ResourceManager(object):
 
         try:
 
+
             if not isinstance(resource_desc, dict):
                 raise TypeError(expected_type=dict, actual_type=type(resource_desc))
 
+            # load the json schema
+            with file(os.path.join(self._directory, "schemas/resource_description.schema")) as fp:
+                schema = json.load(fp)
 
-            expected_keys = [   'resource',
-                                'runtime',
-                                'cores',
-                                'project'
-                            ]
-
-            for key in expected_keys:
-                if key not in resource_desc:
-                    raise MissingError(obj='resource description', missing_attribut=key)
-
-            if not isinstance(resource_desc['resource'],str):
-                raise TypeError(expected_type=str, actual_type=type(resource_desc['resource']))
-
-            if not isinstance(resource_desc['runtime'], int):
-                raise TypeError(expected_type=int, actual_type=type(resource_desc['runtime']))
-
-            if not isinstance(resource_desc['cores'], int):
-                raise TypeError(expected_type=int, actual_type=type(resource_desc['cores']))
-
-            if not isinstance(resource_desc['project'],str):
-                raise TypeError(expected_type=str, actual_type=type(resource_desc['project']))            
-
-            if 'access_schema' in resource_desc:
-                if not isinstance(resource_desc['access_schema'], str):
-                    raise TypeError(expected_type=str, actual_type=type(resource_desc['access_schema']))
-
-            if 'queue' in resource_desc:
-                if not isinstance(resource_desc['queue'], str):
-                    raise TypeError(expected_type=str, actual_type=type(resource_desc['queue']))
+            # this will throw a Validation Error...
+            jsonschema.validate(resource_desc, schema)
 
             return True
 
@@ -201,6 +179,8 @@ class ResourceManager(object):
 
             # Use '.get()' on optional fields when you need to have default values...
             self._project = resource_desc.get('project', '')
+            if not self._project: self._project = ''
+            
             self._access_schema = resource_desc.get('access_schema', None)
             self._queue = resource_desc.get('queue', None)
             self._gpus = resource_desc.get('gpus', 0)
@@ -299,7 +279,7 @@ class ResourceManager(object):
             raise KeyboardInterrupt
 
         except Exception, ex:
-            self._logger.error('Resource request submission failed')
+            self._logger.error('Resource request submission failed. Error: %s'%ex)
             print traceback.format_exc()
             raise Error(msg='Resource request submission failed')
 

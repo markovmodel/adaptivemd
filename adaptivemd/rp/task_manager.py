@@ -37,14 +37,8 @@ class TaskManager(object):
 
         def unit_state_cb(unit, state):
 
-            #if state == rp.NEW:
-            #    self._db_obj.update_task_description_status(unit.name, 'running')
-
-            f = open('/home/vivek/temp.txt','a')
-            f.write('abc %s %s \n'%(unit.state, state))
-            f.flush()
-            f.close()
-
+            if state == rp.NEW:
+                self._db_obj.update_task_description_status(unit.name, 'running')
 
             if state in [rp.DONE, rp.UMGR_STAGING_OUTPUT_PENDING]:
                 
