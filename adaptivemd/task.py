@@ -811,7 +811,7 @@ class Task(BaseTask):
         activate_location : 
             Full file location of the virtualenv activate script
         """
-        self.prepend(os.path.join('source ', activate_location))
+        self.prepend('source ' + activate_location)
         self.append('deactivate')
 
 
@@ -852,6 +852,20 @@ class PrePostTask(Task):
     @property
     def main(self):
         return self.pre + self._main + self.post
+
+    def add_virtualenv(self, activate_location):
+        """
+        Add activation of virtualenv as the first command, with deactivate
+        as the final command. Currently this is best done as
+        a final step in defining the task objects.
+
+        Parameters
+        ----------
+        activate_location : 
+            Full file location of the virtualenv activate script
+        """
+        self.pre.append('source ' + activate_location)
+        self.post.append('deactivate')
 
 
 class MPITask(PrePostTask):
