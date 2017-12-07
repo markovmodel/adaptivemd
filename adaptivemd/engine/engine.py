@@ -32,7 +32,7 @@ import six
 from adaptivemd.file import File
 from adaptivemd.generator import TaskGenerator
 from adaptivemd.mongodb import StorableMixin, ObjectSyncVariable
-from adaptivemd.task import Task
+from adaptivemd.task import Task, PrePostTask
 
 
 class Engine(TaskGenerator):
@@ -452,13 +452,13 @@ class Frame(StorableMixin):
         return ty is not None
 
 
-class TrajectoryGenerationTask(Task):
+class TrajectoryGenerationTask(PrePostTask):
     """
     A task that will generate a trajectory
 
     """
 
-    _copy_attributes = Task._copy_attributes + [
+    _copy_attributes = PrePostTask._copy_attributes + [
             'trajectory'
         ]
 
