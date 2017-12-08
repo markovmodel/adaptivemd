@@ -95,8 +95,11 @@ class OpenMMEngine(Engine):
 
         return '--types="%s"' % ujson.dumps(d).replace('"', "'")
 
-    def run(self, target, resource_name=None, export_path=None):
-        t = TrajectoryGenerationTask(self, target)
+    def run(self, target, resource_name=None, export_path=None,
+            cpu_threads=1, gpu_contexts=0, mpi_rank=0):
+
+        t = TrajectoryGenerationTask(self, target, cpu_threads, 
+                                     gpu_contexts, mpi_rank)
 
         if resource_name is None:
             resource_name = list()
@@ -174,7 +177,9 @@ class OpenMMEngine(Engine):
 
         return t
 
-    def extend(self, source, length, export_path=None):
+    def extend(self, source, length, resource_name=None, export_path=None,
+               cpu_threads=1, gpu_contexts=0, mpi_rank=0):
+
         if length < 0:
             return []
 
@@ -182,7 +187,14 @@ class OpenMMEngine(Engine):
         target = source.clone()
         target.length = len(source) + length
 
-        t = TrajectoryExtensionTask(self, target, source)
+        t = TrajectoryExtensionTask(self, target, source, cpu_threads,
+                                    gpu_contexts, mpi_rank)
+
+        if resource_name is None:
+            resource_name = list()
+
+        assert isinstance(resource_name, list)
+        t.resource_name = resource_name
 
         if export_path:
             t.append(export_path)
