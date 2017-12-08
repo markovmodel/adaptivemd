@@ -294,6 +294,7 @@ class Trajectory(File):
         """
         # TODO check that you can generate one trajectory object only once
         # not just the task for it
+
         if self.engine:
             return self.engine.run(self, resource_name, export_path,
                                    cpu_threads, gpu_contexts, mpi_rank)

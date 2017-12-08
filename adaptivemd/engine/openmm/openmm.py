@@ -98,8 +98,8 @@ class OpenMMEngine(Engine):
     def run(self, target, resource_name=None, export_path=None,
             cpu_threads=1, gpu_contexts=0, mpi_rank=0):
 
-        t = TrajectoryGenerationTask(self, target, cpu_threads, 
-                                     gpu_contexts, mpi_rank)
+        t = TrajectoryGenerationTask(self, target, cpu_threads=cpu_threads, 
+                               gpu_contexts=gpu_contexts, mpi_rank=mpi_rank)
 
         if resource_name is None:
             resource_name = list()
