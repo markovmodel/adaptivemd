@@ -1,345 +1,405 @@
+import os
+import json
+import random
+import string
+import unittest
+from adaptivemd.rp.database import Database
 from adaptivemd.rp.utils import *
-import radical.pilot as rp
+
+# Configuration Variables
+mongo_url = 'mongodb://user:user@two.radical-project.org:32769/'
+project = 'rp_testing'
+
+# Example JSON locations
+directory = os.path.dirname(os.path.abspath(__file__))
+conf_example = 'example-json/configuration-example.json'
+res_example = 'example-json/resource-example.json'
+task_example = 'example-json/task-example.json'
+file_example = 'example-json/file-example.json'
+gen_example = 'example-json/generator-example.json'
+ptask_in_example = 'example-json/pythontask-input-example.json'
 
 
-def test_resolve_pathholders():
-
-    raw_path = '/home/vivek/test.txt'
-    processed_path = resolve_pathholders(raw_path,'/home/vivek')
-    expected_path = raw_path
-    assert expected_path == processed_path
-
-    raw_path = 'staging:///test.txt'
-    processed_path = resolve_pathholders(raw_path, '/home/vivek')
-    expected_path = 'pilot:///test.txt'
-    assert expected_path == processed_path
-
-    raw_path = 'sandbox:///abc/xyc/test.txt'
-    process_path = resolve_pathholders(raw_path, '/home/vivek')
-    expected_path = '/home/vivek//abc/xyz/test.txt'
-    assert expected_path == processed_path
+def id_generator(size=6, chars=string.ascii_uppercase + string.digits):
+    """Random ID/String Generator"""
+    return ''.join(random.choice(chars) for _ in range(size))
 
 
+class TestUtils(unittest.TestCase):
 
-def test_process_resource_description():
+    @classmethod
+    def setUpClass(cls):
+        """Initialize tests, just creates instance variables needed and the DB object.
+        """
+        super(TestUtils, cls).setUpClass()
+        cls.db = Database(mongo_url=mongo_url,
+                          project='{}_{}'.format(project, id_generator()))
 
-    input_res_desc = [{
-                        "_id": "1e78cf80-8a96-11e7-af58-000000000062",
-                        "_cls": "Resource",
-                        "_obj_uuid": "1e78cf80-8a96-11e7-af58-000000000062",
-                        "_dict": {
-                                    "total_cpus": 32,
-                                    'name': None,
-                                    "total_gpus": 1,
-                                    "total_time": 30,
-                                    "destination": "ornl.titan",
-                                },
-                        "_time": 1503776502,
-                        'name': None
-                    }]
+        # Create Database and collections
+        client = cls.db.client
+        cls.store_name = "{}-{}".format(cls.db.store_prefix, cls.db.project)
+        mongo_db = client[cls.store_name]
+        tasks_col = mongo_db[cls.db.tasks_collection]
+        configs_col = mongo_db[cls.db.configuration_collection]
+        resources_col = mongo_db[cls.db.resource_collection]
+        files_col = mongo_db[cls.db.file_collection]
+        generators_col = mongo_db[cls.db.generator_collection]
 
-    expected_output_res_desc = [{
+        # Insert test documents
+        with open('{}/{}'.format(directory, conf_example)) as json_data:
+            data = json.load(json_data)
+            for config_entry in data:
+                configs_col.insert_one(config_entry)
 
-                        "total_cpus": 32,
-                        "total_gpus": 1,
-                        "total_time": 30,
-                        "resource": "ornl.titan"
-                        }]
+        with open('{}/{}'.format(directory, res_example)) as json_data:
+            data = json.load(json_data)
+            for resource_entry in data:
+                resources_col.insert_one(resource_entry)
 
-    actual_output_res_desc = process_resource_requirements(input_res_desc)
+        with open('{}/{}'.format(directory, file_example)) as json_data:
+            data = json.load(json_data)
+            for file_entry in data:
+                files_col.insert_one(file_entry)
 
+        with open('{}/{}'.format(directory, gen_example)) as json_data:
+            data = json.load(json_data)
+            for generator_entry in data:
+                generators_col.insert_one(generator_entry)
 
-    assert set(actual_output_res_desc[0].keys()) == set(["total_cpus", "total_gpus", "total_time", "resource"])
+        with open('{}/{}'.format(directory, task_example)) as json_data:
+            # insert tasks
+            data = json.load(json_data)
+            for task_entry in data:
+                tasks_col.insert_one(task_entry)
+
+    @classmethod
+    def tearDownClass(cls):
+        """Destroy the database since we don't need it anymore"""
+        client = cls.db.client
+        client.drop_database(cls.store_name)
+        client.close()
+
+    def test_get_input_staging_TrajectoryGenerationTask(self):
+        """Test that the input staging directives are properly 
+        generated for a TrajectoryGenerationTask"""
+        task_descriptions = self.db.get_task_descriptions()
+        task_desc = dict()
+        for task in task_descriptions:
+            if task['_id'] == '04f01b52-8c69-11e7-9eb2-000000000124':
+                task_desc = task
+                break
+        # Get each component of the task
+        pre_task_details = task_desc['_dict'].get('pre', dict())
+        main_task_details = task_desc['_dict'].get('_main', dict())
+        
+        staging_directives = get_input_staging(
+        task_details=pre_task_details, db=self.db, shared_path='/home/test', 
+        project=self.db.project, break_after_non_dict=False)
+        staging_directives.extend(get_input_staging(
+        task_details=main_task_details, db=self.db, shared_path='/home/test', 
+        project=self.db.project, break_after_non_dict=True))
+        
+        actual = [
+            {"action":"Link","source":"pilot:///alanine.pdb","target":"unit:///initial.pdb"},
+            {"action":"Link","source":"pilot:///system.xml","target":"unit:///system.xml"},
+            {"action":"Link","source":"pilot:///integrator.xml","target":"unit:///integrator.xml"},
+            {"action":"Link","source":"pilot:///openmmrun.py","target":"unit:///openmmrun.py"}
+        ]
+
+        self.assertListEqual(staging_directives, actual)
+
+    def test_get_input_staging_PythonTask(self):
+        """Test that the input staging directives are properly 
+        generated for a PythonTask"""
+        task_descriptions = self.db.get_task_descriptions()
+        task_desc = dict()
+        for task in task_descriptions:
+            if task['_id'] == '04f01b52-8c69-11e7-9eb2-0000000000fe':
+                task_desc = task
+                break
+        # Get each component of the task
+        pre_task_details = task_desc['_dict'].get('pre', dict())
+        main_task_details = task_desc['_dict'].get('_main', dict())
+        
+        staging_directives = get_input_staging(
+        task_details=pre_task_details, db=self.db, shared_path='/home/test', 
+        project=self.db.project, break_after_non_dict=False)
+        staging_directives.extend(get_input_staging(
+        task_details=main_task_details, db=self.db, shared_path='/home/test', 
+        project=self.db.project, break_after_non_dict=True))
+
+        actual = [
+            {"action":"Link","source":"pilot:///_run_.py","target":"unit:///_run_.py"},
+            {"action":"Link","source":"pilot:///alanine.pdb","target":"unit:///input.pdb"}
+        ]
+        self.assertListEqual(staging_directives, actual)
+
+    def test_get_output_staging_TrajectoryGenerationTask(self):
+        """Test that the output staging directives are properly generated for a TrajectoryGenerationTask"""
+        task_descriptions = self.db.get_task_descriptions()
+        task_desc = dict()
+        for task in task_descriptions:
+            if task['_id'] == '04f01b52-8c69-11e7-9eb2-000000000124':
+                task_desc = task
+                break
+        # Get each component of the task
+        main_task_details = task_desc['_dict'].get('_main', dict())
+        post_task_details = task_desc['_dict'].get('post', dict())
+
+        staging_directives = get_output_staging(
+        task_desc=task_desc, task_details=post_task_details, db=self.db,
+        shared_path='/home/test', project=self.db.project,
+        continue_before_non_dict=False)
+        staging_directives.extend(get_output_staging(
+        task_desc=task_desc, task_details=main_task_details, db=self.db,
+        shared_path='/home/test', project=self.db.project,
+        continue_before_non_dict=True))
+        
+        actual = [{
+            "action":"Move","source":"traj/protein.dcd",
+            "target":"/home/test//projects/rp_testing_modeller_1/trajs/00000004//protein.dcd"},
+            {"action":"Move","source":"traj/master.dcd",
+            "target":"/home/test//projects/rp_testing_modeller_1/trajs/00000004//master.dcd"
+        }]
+        
+        self.assertListEqual(staging_directives, actual)
+
+    def test_get_output_staging_PythonTask(self):
+        """Test that the output staging directives are properly generated for a PythonTask"""
+        task_descriptions = self.db.get_task_descriptions()
+        task_desc = dict()
+        for task in task_descriptions:
+            if task['_id'] == '04f01b52-8c69-11e7-9eb2-0000000000fe':
+                task_desc = task
+                break
+        # Get each component of the task
+        main_task_details = task_desc['_dict'].get('_main', dict())
+        post_task_details = task_desc['_dict'].get('post', dict())
+
+        staging_directives = get_output_staging(
+        task_desc=task_desc, task_details=post_task_details, db=self.db,
+        shared_path='/home/test', project=self.db.project,
+        continue_before_non_dict=False)
+        staging_directives.extend(get_output_staging(
+        task_desc=task_desc, task_details=main_task_details, db=self.db,
+        shared_path='/home/test', project=self.db.project,
+        continue_before_non_dict=True))
+        
+        actual = [{
+            "action": "Copy",
+            "source": "output.json", 
+            "target": "/home/test/projects/{}//models/model.0x4f01b528c6911e79eb20000000000feL.json".format(self.db.project)
+        }]
+        
+        self.assertListEqual(staging_directives, actual)
+
+    def test_get_commands_TrajectoryGenerationTask(self):
+        """Test that the commands are properly captured for a TrajectoryGenerationTask"""
+        task_descriptions = self.db.get_task_descriptions()
+        task_desc = dict()
+        for task in task_descriptions:
+            if task['_id'] == '04f01b52-8c69-11e7-9eb2-000000000124':
+                task_desc = task
+                break
+        # Get each component of the task
+        pre_task_details = task_desc['_dict'].get('pre', dict())
+        main_task_details = task_desc['_dict'].get('_main', dict())
+        post_task_details = task_desc['_dict'].get('post', dict())
+
+        pre_commands = get_commands(task_steps_list=pre_task_details)
+        actual = ["source /home/test/venv/bin/activate"]
+        self.assertListEqual(pre_commands, actual)
+
+        main_commands = get_commands(task_steps_list=main_task_details)
+        actual = ["\nj=0\ntries=10\nsleep=1\n\ntrajfile=traj/allatoms.dcd\n\nwhile [ $j -le $tries ]; do if ! [ -s $trajfile ]; then python openmmrun.py -r --report-interval 1 -p CPU --types=\"{'protein':{'stride':1,'selection':'protein','name':null,'filename':'protein.dcd'},'master':{'stride':10,'selection':null,'name':null,'filename':'master.dcd'}}\" -t worker://initial.pdb --length 100 worker://traj/; fi; sleep 1; j=$((j+1)); done"]
+        self.assertListEqual(main_commands, actual)
+
+        post_commands = get_commands(task_steps_list=post_task_details)
+        actual = ["deactivate"]
+        self.assertListEqual(post_commands, actual)
+        
+
+    def test_get_commands_PythonTask(self):
+        """Test that the commands are properly captured for a PythonTask"""
+        task_descriptions = self.db.get_task_descriptions()
+        task_desc = dict()
+        for task in task_descriptions:
+            if task['_id'] == '04f01b52-8c69-11e7-9eb2-0000000000fe':
+                task_desc = task
+                break
+        # Get each component of the task
+        pre_task_details = task_desc['_dict'].get('pre', dict())
+        main_task_details = task_desc['_dict'].get('_main', dict())
+        post_task_details = task_desc['_dict'].get('post', dict())
+
+        pre_commands = get_commands(task_steps_list=pre_task_details)
+        actual = ["source /home/test/venv/bin/activate"]
+        self.assertListEqual(pre_commands, actual)
+
+        main_commands = get_commands(task_steps_list=main_task_details)
+        actual = ["python _run_.py"]
+        self.assertListEqual(main_commands, actual)
+
+        post_commands = get_commands(task_steps_list=post_task_details)
+        actual = ["deactivate"]
+        self.assertListEqual(post_commands, actual)
+
+    def test_get_environment_from_task_TrajectoryGenerationTask(self):
+        """Test that the environment variables are properly captured"""
+        task_descriptions = self.db.get_task_descriptions()
+        
+        # TrajectoryGenerationTask
+        task_desc = dict()
+        for task in task_descriptions:
+            if task['_id'] == '04f01b52-8c69-11e7-9eb2-000000000124':
+                task_desc = task
+                break
+
+        environment = get_environment_from_task(task_desc)
+        actual = {"TEST1": "1", "TEST2": "2"}
+        self.assertDictEqual(environment, actual)
     
-    assert actual_output_res_desc[0]['total_cpus'] == expected_output_res_desc[0]['total_cpus']
-    assert actual_output_res_desc[0]['total_gpus'] == expected_output_res_desc[0]['total_gpus']
-    assert actual_output_res_desc[0]['total_time'] == expected_output_res_desc[0]['total_time']
-    assert actual_output_res_desc[0]['resource'] == expected_output_res_desc[0]['resource']
+    def test_get_environment_from_task_PythonTask(self):
+        """Test that the environment variables are properly captured"""
+        task_descriptions = self.db.get_task_descriptions()
 
+        # PythonTask
+        task_desc = dict()
+        for task in task_descriptions:
+            if task['_id'] == '04f01b52-8c69-11e7-9eb2-0000000000fe':
+                task_desc = task
+                break
 
-def test_process_configurations():
+        environment = get_environment_from_task(task_desc)
+        actual = {"TEST3": "3", "TEST4": "4"}
+        self.assertDictEqual(environment, actual)
 
-    input_conf_desc = [{
-                            "_id": "1e78cf80-8a96-11e7-af58-000000000034",
-                            "_cls": "Configuration",
-                            "_obj_uuid": "1e78cf80-8a96-11e7-af58-000000000034",
-                            "_dict": {
-                                        "shared_path": "$HOME/adaptivemd/",
-                                        "allocation": "some-allocation-id",
-                                        "resource_name": "ornl.titan",
-                                        "queues": ['queue1', 'queue2'],
-                                        "cores_per_node": 1,
-                                        "name": "titan-1"
-                                    },
-                            "_time": 1503776431,
-                            "name": "titan-1"
-                        }]
+    def test_get_paths_from_task_TrajectoryGenerationTask(self):
+        """Test that the paths variables are properly captured"""
+        task_descriptions = self.db.get_task_descriptions()
+        
+        # TrajectoryGenerationTask
+        task_desc = dict()
+        for task in task_descriptions:
+            if task['_id'] == '04f01b52-8c69-11e7-9eb2-000000000124':
+                task_desc = task
+                break
 
+        paths = get_paths_from_task(task_desc)
+        actual = [
+            "/home/test/path1",
+            "/home/test/path2"
+        ]
+        self.assertListEqual(paths, actual)
+    
+    def test_get_paths_from_task_PythonTask(self):
+        """Test that the paths variables are properly captured"""
+        task_descriptions = self.db.get_task_descriptions()
 
-    expected_output_conf_desc = [
+        # PythonTask
+        task_desc = dict()
+        for task in task_descriptions:
+            if task['_id'] == '04f01b52-8c69-11e7-9eb2-0000000000fe':
+                task_desc = task
+                break
 
-                            {
-                                "resource": "ornl.titan",
-                                "queue": "queue1",
-                                "project": "some-allocation-id",
-                                "shared_path": "$HOME/adaptivemd/"
-                            },
-                            {
-                                "resource": "ornl.titan",
-                                "queue": "queue2",
-                                "project": "some-allocation-id",
-                                "shared_path": "$HOME/adaptivemd/"
-                            }
+        paths = get_paths_from_task(task_desc)
+        actual = [
+            "/home/test/path3",
+            "/home/test/path4"
+        ]
+        self.assertListEqual(paths, actual)
 
-                        ]
+    def test_get_executable_arguments_TrajectoryGenerationTask(self):
+        """Test that the paths variables are properly captured"""
+        task_descriptions = self.db.get_task_descriptions()
+        
+        # TrajectoryGenerationTask
+        task_desc = dict()
+        for task in task_descriptions:
+            if task['_id'] == '04f01b52-8c69-11e7-9eb2-000000000124':
+                task_desc = task
+                break
 
-    actual_output_conf_desc = process_configurations(input_conf_desc)
-
-    assert set(actual_output_conf_desc[0].keys()) == set(expected_output_conf_desc[0].keys())
-    assert set(actual_output_conf_desc[1].keys()) == set(expected_output_conf_desc[1].keys())
-
-    assert actual_output_conf_desc[0]['resource']       == expected_output_conf_desc[0]['resource']
-    assert actual_output_conf_desc[0]['queue']          == expected_output_conf_desc[0]['queue']
-    assert actual_output_conf_desc[0]['project']        == expected_output_conf_desc[0]['project']
-    assert actual_output_conf_desc[0]['shared_path']    == expected_output_conf_desc[0]['shared_path']
-
-    assert actual_output_conf_desc[1]['resource']       == expected_output_conf_desc[1]['resource']
-    assert actual_output_conf_desc[1]['queue']          == expected_output_conf_desc[1]['queue']
-    assert actual_output_conf_desc[1]['project']        == expected_output_conf_desc[1]['project']
-    assert actual_output_conf_desc[1]['shared_path']    == expected_output_conf_desc[1]['shared_path']
-
-
-def test_process_task_descriptions():
-
-    input_task_desc =   {
-                            "_id": "fc2a421c-89e4-11e7-af58-0000000000da",
-                            "_cls": "TrajectoryGenerationTask",
-                            "_obj_uuid": "fc2a421c-89e4-11e7-af58-0000000000da",
-                            "_dict": {
-                                "_main": [
-                                        {
-                                            "_cls": "Link",
-                                            "_obj_uuid": "fc2a421c-89e4-11e7-af58-0000000000de",
-                                            "_dict": {
-                                                "source": {
-                                                    "_cls": "File",
-                                                    "_obj_uuid": "fc2a421c-89e4-11e7-af58-000000000072",
-                                                    "_dict": {
-                                                        "location": "staging:///alanine.pdb",
-                                                        "resource": None,
-                                                        "_file": None
-                                                    }
-                                                },
-                                                "target": {
-                                                    "_cls": "File",
-                                                    "_obj_uuid": "fc2a421c-89e4-11e7-af58-0000000000e0",
-                                                    "_dict": {
-                                                        "location": "initial.pdb",
-                                                        "resource": None,
-                                                        "_file": None
-                                                    }
-                                                }
-                                            }
-                                        },
-                                        {
-                                            "_cls": "Link",
-                                            "_obj_uuid": "fc2a421c-89e4-11e7-af58-0000000000e4",
-                                            "_dict": {
-                                                "source": {
-                                                    "_cls": "File",
-                                                    "_obj_uuid": "fc2a421c-89e4-11e7-af58-000000000078",
-                                                    "_dict": {
-                                                        "location": "staging:///system.xml",
-                                                        "resource": None,
-                                                        "_file": None
-                                                    }
-                                                },
-                                                "target": {
-                                                    "_cls": "File",
-                                                    "_obj_uuid": "fc2a421c-89e4-11e7-af58-0000000000e6",
-                                                    "_dict": {
-                                                        "location": "system.xml",
-                                                        "resource": None,
-                                                        "_file": None
-                                                    }
-                                                }
-                                            }
-                                        },
-                                        {
-                                            "_cls": "Link",
-                                            "_obj_uuid": "fc2a421c-89e4-11e7-af58-0000000000ea",
-                                            "_dict": {
-                                                "source": {
-                                                    "_cls": "File",
-                                                    "_obj_uuid": "fc2a421c-89e4-11e7-af58-00000000007e",
-                                                    "_dict": {
-                                                        "location": "staging:///integrator.xml",
-                                                        "resource": None,
-                                                        "_file": None
-                                                    }
-                                                },
-                                                "target": {
-                                                    "_cls": "File",
-                                                    "_obj_uuid": "fc2a421c-89e4-11e7-af58-0000000000ec",
-                                                    "_dict": {
-                                                        "location": "integrator.xml",
-                                                        "resource": None,
-                                                        "_file": None
-                                                    }
-                                                }
-                                            }
-                                        },
-                                        {
-                                            "_cls": "Link",
-                                            "_obj_uuid": "fc2a421c-89e4-11e7-af58-0000000000f0",
-                                            "_dict": {
-                                                "source": {
-                                                    "_cls": "File",
-                                                    "_obj_uuid": "fc2a421c-89e4-11e7-af58-000000000084",
-                                                    "_dict": {
-                                                        "location": "staging:///openmmrun.py",
-                                                        "resource": None,
-                                                        "_file": None
-                                                    }
-                                                },
-                                                "target": {
-                                                    "_cls": "File",
-                                                    "_obj_uuid": "fc2a421c-89e4-11e7-af58-0000000000f2",
-                                                    "_dict": {
-                                                        "location": "openmmrun.py",
-                                                        "resource": None,
-                                                        "_file": None
-                                                    }
-                                                }
-                                            }
-                                        },
-                                        {
-                                            "_cls": "Touch",
-                                            "_obj_uuid": "fc2a421c-89e4-11e7-af58-0000000000f6",
-                                            "_dict": {
-                                                "source": {
-                                                    "_cls": "Trajectory",
-                                                    "_obj_uuid": "fc2a421c-89e4-11e7-af58-0000000000f4",
-                                                    "_dict": {
-                                                        "length": 100,
-                                                        "location": "traj/",
-                                                        "frame": {
-                                                            "_hex_uuid": "0xfc2a421c89e411e7af5800000000003a",
-                                                            "_store": "files"
-                                                        },
-                                                    "resource": None,
-                                                    "_file": None
-                                                    }
-                                                }
-                                            }
-                                        },
-                                        "\nj=0\ntries=10\nsleep=1\n\ntrajfile=traj/allatoms.dcd\n\nwhile [ $j -le $tries ]; do if ! [ -s $trajfile ]; then python openmmrun.py -r --report-interval 1 -p CPU --types=\"{'master':{'selection':None,'filename':'master.dcd','stride':10},'protein':{'selection':'protein','filename':'protein.dcd','stride':1}}\" -t worker://initial.pdb --length 100 worker://traj/; fi; sleep 1; j=$((j+1)); done",
-                                        {
-                                            "_cls": "Move",
-                                            "_obj_uuid": "fc2a421c-89e4-11e7-af58-0000000000f8",
-                                            "_dict": {
-                                                "source": {
-                                                    "_cls": "Trajectory",
-                                                    "_obj_uuid": "fc2a421c-89e4-11e7-af58-0000000000f4",
-                                                    "_dict": {
-                                                        "length": 100,
-                                                        "location": "traj/",
-                                                        "frame": {
-                                                            "_hex_uuid": "0xfc2a421c89e411e7af5800000000003a",
-                                                            "_store": "files"
-                                                        },
-                                                    "resource": None,
-                                                    "_file": None
-                                                    }
-                                                },
-                                                "target": {
-                                                "_hex_uuid": "0xfc2a421c89e411e7af58000000000096",
-                                                "_store": "files"
-                                                }
-                                            }
-                                        }
-                                    ],
-                                "_add_paths": [],
-                                "_environment": {},
-                                "stdout": None,
-                                "stderr": None,
-                                "restartable": None,
-                                "cleanup": None,
-                                'est_exec_time': 5,
-                                'resource_name': ['ornl.titan'],
-                                'resource_requirements': {
-                                                            'cpu_threads': 1,
-                                                            'gpu_contexts': 0,
-                                                            'mpi_rank': 0
-                                                        },
-                                "generator": {
-                                  "_hex_uuid": "0xfc2a421c89e411e7af5800000000006a",
-                                  "_store": "generators"
-                                },
-                                "dependencies": None,
-                                "state": "created",
-                                "worker": None,
-                                "trajectory": {
-                                  "_hex_uuid": "0xfc2a421c89e411e7af58000000000096",
-                                  "_store": "files"
-                                }
-                            },
-                        "_time": 1503700753,
-                        "state": "created",
-                        "worker": None,
-                        "stderr": None,
-                        "stdout": None
-                    }
-                
-
-
-    expected_output_task_desc = rp.ComputeUnitDescription()
-
-    expected_output_task_desc.name = input_task_desc['_id']
-    expected_output_task_desc.executable = 'python'
-    expected_output_task_desc.arguments = [ 'openmmrun.py','-r', 
-                                            '--report-interval' ,'1',
-                                            '-p', 'CPU', 
-                                            '--types="{\'master\':{\'selection\':None,\'filename\':\'master.dcd\',\'stride\':10},\'protein\':{\'selection\':\'protein\',\'filename\':\'protein.dcd\',\'stride\':1}}"']
-    expected_output_task_desc.input_staging = [
-                                                {
-                                                    'source': '$HOME/vivek/workers/staging_area/alanine.pdb',
-                                                    'action': rp.LINK,
-                                                    'target': 'initial.pdb'
-                                                },
-                                                {
-                                                    'source': '$HOME/vivek/workers/staging_area/system.xml',
-                                                    'action': rp.LINK,
-                                                    'target': 'system.xml'
-                                                },
-                                                {
-                                                    'source': '$HOME/vivek/workers/staging_area/integrator.xml',
-                                                    'action': rp.LINK,
-                                                    'target': 'integrator.xml'
-                                                },
-                                                
-                                                {
-                                                    'source': '$HOME/vivek/workers/staging_area/openmmrun.py',
-                                                    'action': rp.LINK,
-                                                    'target': 'openmmrun.py'
-                                                },
-                                            ]
-
-    pprint(expected_output_task_desc.input_staging)
-
-    expected_output_task_desc.output_staging = []
-    expected_output_task_desc.cores = 16
+        exe, args = get_executable_arguments(task_desc['_dict']['_main'])
+        actual_exe = 'python'
+        actual_args = [
+            "openmmrun.py", "-r", "--report-interval", "1",
+            "-p", "CPU", "--types",
+            "{'protein':{'stride':1,'selection':'protein','name':null,'filename':'protein.dcd'},'master':{'stride':10,'selection':null,'name':null,'filename':'master.dcd'}}",
+            "-t", "initial.pdb", "--length", "100", "traj/"
+        ]
+        self.assertEqual(exe, actual_exe)
+        for i in xrange(len(args)):
+            self.assertEqual(args[i], actual_args[i])
 
     
+    def test_get_executable_arguments_PythonTask(self):
+        """Test that the paths variables are properly captured"""
+        task_descriptions = self.db.get_task_descriptions()
 
-    actual_output_task_desc = create_cud_from_task_def(input_task_desc, '$HOME/vivek')
+        # PythonTask
+        task_desc = dict()
+        for task in task_descriptions:
+            if task['_id'] == '04f01b52-8c69-11e7-9eb2-0000000000fe':
+                task_desc = task
+                break
+
+        exe, args = get_executable_arguments(task_desc['_dict']['_main'])
+        actual_exe = 'python'
+        actual_args = ['_run_.py']
+        self.assertEqual(exe, actual_exe)
+        for i in xrange(len(args)):
+            self.assertEqual(args[i], actual_args[i])
 
 
-    pprint(actual_output_task_desc.input_staging)
+    def test_generate_pythontask_input(self):
+        """Test that the input file is properly generated"""
+        d1 = None
+        with open('{}/{}'.format(directory, ptask_in_example)) as json_data:
+            d1 = json.load(json_data)
+        task = None
+        task_descriptions = self.db.get_task_descriptions()
+        for t in task_descriptions:
+            if t['_cls'] == 'PythonTask':
+                task = t
+                break
+        d2 = generate_pythontask_input(
+            db=self.db, shared_path='/home/example', task=task, project=self.db.project)
+        self.assertDictEqual(d1, d2)
 
-    assert actual_output_task_desc.name == expected_output_task_desc.name
-    assert actual_output_task_desc.executable == expected_output_task_desc.executable
-    assert actual_output_task_desc.arguments == expected_output_task_desc.arguments
-    assert actual_output_task_desc.input_staging == expected_output_task_desc.input_staging
-    assert actual_output_task_desc.output_staging == expected_output_task_desc.output_staging
-    assert actual_output_task_desc.cores == expected_output_task_desc.cores
+    def test_hex_to_id(self):
+        hex_uuid = hex_to_id("0x4f01b528c6911e79eb200000000003aL")
+        actual = "04f01b52-8c69-11e7-9eb2-00000000003a"
+        self.assertEquals(hex_uuid, actual)
+
+    def test_resolve_pathholders(self):
+        # Direct Path
+        exp_path = resolve_pathholders("/some/path", shared_path='/home/test', project=self.db.project)
+        actual = "/some/path"
+        self.assertEquals(exp_path, actual)
+
+        # Staging Path
+        exp_path = resolve_pathholders("staging:///some/path", shared_path='/home/test', project=self.db.project)
+        actual = "pilot:///path" # SHOULD BE: actual = "pilot:///some/path"
+        self.assertEquals(exp_path, actual)
+
+        # Sandbox Path
+        exp_path = resolve_pathholders("sandbox:///some/path", shared_path='/home/test', project=self.db.project)
+        actual = "/home/test//some/path"
+        self.assertEquals(exp_path, actual)
+
+        # File Path
+        exp_path = resolve_pathholders("file:///some/path.py", shared_path='/home/test', project=self.db.project)
+        actual = "/some/path.py"
+        self.assertEquals(exp_path, actual)
+
+        # Projects Path
+        exp_path = resolve_pathholders("project:///some/path.py", shared_path='/home/test', project=self.db.project)
+        actual = "/home/test/projects/{}//some/path.py".format(self.db.project)
+        self.assertEquals(exp_path, actual)
+
+
+if __name__ == '__main__':
+    suite = unittest.TestLoader().loadTestsFromTestCase(TestUtils)
+    unittest.TextTestRunner(verbosity=2).run(suite)

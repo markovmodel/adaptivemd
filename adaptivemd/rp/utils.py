@@ -148,7 +148,7 @@ def get_file_location(file_entity, db, shared_path, project):
     return output_loc, trajectory
 
 
-def get_commands(task_steps_list, shared_path, project):
+def get_commands(task_steps_list):
 
     commands = []
 
@@ -159,28 +159,23 @@ def get_commands(task_steps_list, shared_path, project):
     return commands
 
 
-def get_executable_arguments(task_details):
+def get_executable_arguments(task_steps_list):
 
     raw_exec = None
     proc_exec = None
 
-    for entity in task_details:
-        if not isinstance(entity, dict):
-            raw_exec = [str(entity)]
-            break
-
-    # print raw_exec[0]
+    raw_exec = get_commands(task_steps_list)
 
     proc_exec = raw_exec[0][107:]
     proc_exec = proc_exec[:-31]
 
-    # print raw_exec[0]
     if ';' in raw_exec[0]:
-        # for the regular trajectory tasks
+        # for the regular trajectory tasks (TrajectoryGenerationTasks)
         proc_exec = raw_exec[0].split(';')[2].replace('then', '').replace(
             'worker://', '').replace('=', ' ').replace('"', '').strip()
     else:
-        # for the modeler task
+        # for all other "standard" tasks
+        # Standard == <executable> <args>
         proc_exec = raw_exec[0].strip()
     # print proc_exec
 
@@ -198,6 +193,11 @@ def create_cud_from_task_def(task_descs, db, shared_path, project):
         cuds = list()
 
         for task_desc in task_descs:
+
+            # TODO: the only difference between the two is the input.json
+            #       if we learn how to pull/push it then we can handle it
+            #       using the staging directives, which mean we don't need to
+            #       differentiate between tasks...
 
             if task_desc['_cls'] == 'PythonTask':
                 cud = generate_pythontask_cud(task_desc, db, shared_path, project)
@@ -228,6 +228,7 @@ def generate_pythontask_cud(task_desc, db, shared_path, project):
     pre_task_details = task_desc['_dict']['pre']
     main_task_details = task_desc['_dict']['_main']
     post_task_details = task_desc['_dict']['post']
+    resource_requirements = task_desc['_dict']['resource_requirements']
 
     
     # First, extract environment variables
@@ -240,9 +241,9 @@ def generate_pythontask_cud(task_desc, db, shared_path, project):
 
     
     # Next, get input staging
-    # We get "ALL" COPY/LINK directives from the pre_exec
+    # We get "ALL" COPY/LINK/MOVE directives from the pre_exec
     staging_directives = get_input_staging(pre_task_details, db, shared_path, project, break_after_non_dict=False)
-    # We get "ALL" COPY/LINK directives from the main *before* the first non-dictionary entry
+    # We get "ALL" COPY/LINK/MOVE directives from the main *before* the first non-dictionary entry
     staging_directives.extend(get_input_staging(main_task_details, db, shared_path, project))
     cud.input_staging = staging_directives
 
@@ -254,14 +255,14 @@ def generate_pythontask_cud(task_desc, db, shared_path, project):
     'mkdir -p traj',
     'echo \'{}\' > \'{}\''.format(json.dumps(d['contents']), d['target']) # stage input.json
     ]
-    pre_exec.extend(get_commands(pre_task_details, shared_path, project))
+    pre_exec.extend(get_commands(pre_task_details))
     cud.pre_exec = pre_exec
 
 
     # Now, do main executable
-    #exe, args = get_executable_arguments(main_task_details)
-    cud.executable = ['python']
-    cud.arguments = ['_run_.py']
+    exe, args = get_executable_arguments(main_task_details)
+    cud.executable = [str(exe)]
+    cud.arguments = args
 
 
     # Now, get output staging steps
@@ -270,9 +271,21 @@ def generate_pythontask_cud(task_desc, db, shared_path, project):
     # We get "ALL" COPY/LINK directives from the main *after* the first non-dictionary entry
     staging_directives.extend(get_output_staging(task_desc, main_task_details, db, shared_path, project))
     cud.output_staging = staging_directives
+
+    # Get all post-execution steps
+    post_exec = list()
+    post_exec.extend(get_commands(post_task_details))
+    cud.post_exec = post_exec
     
-    # Cores per CUD
-    cud.cores = 1  # currently overwriting
+    # Get core count, support MPI
+    if is_mpi(task_desc):
+        cud.mpi = True
+        cud.cores = resource_requirements.get('mpi_rank', 1) * resource_requirements.get('cpu_threads', 1)
+    else :
+        cud.mpi = False
+        cud.cores = esource_requirements.get('cpu_threads', 1)
+
+    # TODO: cud.gpus...
 
     return cud
 
@@ -285,6 +298,7 @@ def generate_trajectorygenerationtask_cud(task_desc, db, shared_path, project):
     pre_task_details = task_desc['_dict'].get('pre', dict())
     main_task_details = task_desc['_dict']['_main']
     post_task_details = task_desc['_dict'].get('post', dict())
+    resource_requirements = task_desc['_dict']['resource_requirements']
 
     
     # First, extract environment variables
@@ -307,7 +321,7 @@ def generate_trajectorygenerationtask_cud(task_desc, db, shared_path, project):
     # Next, get pre execution steps
     pre_exec = list()
     pre_exec = ['mkdir -p traj']
-    pre_exec.extend(get_commands(pre_task_details, shared_path, project))
+    pre_exec.extend(get_commands(pre_task_details))
     cud.pre_exec = pre_exec
 
 
@@ -324,8 +338,22 @@ def generate_trajectorygenerationtask_cud(task_desc, db, shared_path, project):
     staging_directives.extend(get_output_staging(task_desc, main_task_details, db, shared_path, project))
     cud.output_staging = staging_directives
     
-    # Cores per CUD
-    cud.cores = 1  # currently overwriting
+
+    # Get all post-execution steps
+    post_exec = list()
+    post_exec.extend(get_commands(post_task_details))
+    cud.post_exec = post_exec
+    
+
+    # Get core count, support MPI
+    if is_mpi(task_desc):
+        cud.mpi = True
+        cud.cores = resource_requirements.get('mpi_rank', 1) * resource_requirements.get('cpu_threads', 1)
+    else :
+        cud.mpi = False
+        cud.cores = esource_requirements.get('cpu_threads', 1)
+
+    # TODO: cud.gpus...
 
     return cud
 
@@ -437,6 +465,13 @@ def get_paths_from_task(task):
     for path in task['_dict'].get('_add_paths', list()):
         paths.append(str(path))
     return paths
+
+def is_mpi(task):
+    task_dict = task.get('_dict', dict())
+    task_reqs = task_dict.get('resource_requirements', dict())
+    mpi_rank = task_reqs.get('mpi_rank', 0)
+    return (mpi_rank > 0)
+
 
 
 def generate_pythontask_input(db, shared_path, task, project):
