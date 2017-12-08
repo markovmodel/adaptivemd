@@ -351,7 +351,7 @@ def generate_trajectorygenerationtask_cud(task_desc, db, shared_path, project):
         cud.cores = resource_requirements.get('mpi_rank', 1) * resource_requirements.get('cpu_threads', 1)
     else :
         cud.mpi = False
-        cud.cores = esource_requirements.get('cpu_threads', 1)
+        cud.cores = resource_requirements.get('cpu_threads', 1)
 
     # TODO: cud.gpus...
 

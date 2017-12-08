@@ -103,6 +103,8 @@ class OpenMMEngine(Engine):
 
         if resource_name is None:
             resource_name = list()
+        elif isinstance(resource_name, str):
+            resource_name = [resource_name]
 
         assert isinstance(resource_name, list)
         t.resource_name = resource_name
@@ -192,6 +194,8 @@ class OpenMMEngine(Engine):
 
         if resource_name is None:
             resource_name = list()
+        elif isinstance(resource_name, str):
+            resource_name = [resource_name]
 
         assert isinstance(resource_name, list)
         t.resource_name = resource_name

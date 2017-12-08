@@ -142,6 +142,13 @@ class PyEMMAAnalysis(Analysis):
         # we call the PythonTask with self to tell him about the generator used
         # this will fire the then_func from the generator once finished
         t = PythonTask(self, resource_name, cpu_threads, gpu_contexts, mpi_rank)
+        if resource_name is None:
+            resource_name = list()
+        elif isinstance(resource_name, str):
+            resource_name = [resource_name]
+
+        assert isinstance(resource_name, list)
+        t.resource_name = resource_name
 
         # we handle the returned output ourselves -> its stored as a model
         # so do not store the returned JSON also
