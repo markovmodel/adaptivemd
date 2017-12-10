@@ -238,8 +238,8 @@ class Task(BaseTask):
         self.resource_name = resource_name
 
         self.resource_requirements = {'cpu_threads': cpu_threads,
-                             'gpu_contexts': gpu_contexts,
-                             'mpi_rank': mpi_rank}
+                                      'gpu_contexts': gpu_contexts,
+                                      'mpi_rank': mpi_rank}
 
         assert isinstance(est_exec_time, int)
         self.est_exec_time = est_exec_time

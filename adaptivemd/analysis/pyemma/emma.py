@@ -111,7 +111,8 @@ class PyEMMAAnalysis(Analysis):
 
     def execute(self, trajectories, tica_lag=10,
                 tica_dim=2, tica_stride=2, msm_states=10,
-                msm_lag=2, clust_stride=2):
+                msm_lag=2, clust_stride=2, resource_name=None,
+                cpu_threads=1, gpu_contexts=0, mpi_rank=0):
 
         """
         Create a task that computes an msm using a given set of trajectories
@@ -140,7 +141,14 @@ class PyEMMAAnalysis(Analysis):
 
         # we call the PythonTask with self to tell him about the generator used
         # this will fire the then_func from the generator once finished
-        t = PythonTask(self)
+        t = PythonTask(self, resource_name, cpu_threads, gpu_contexts, mpi_rank)
+        if resource_name is None:
+            resource_name = list()
+        elif isinstance(resource_name, str):
+            resource_name = [resource_name]
+
+        assert isinstance(resource_name, list)
+        t.resource_name = resource_name
 
         # we handle the returned output ourselves -> its stored as a model
         # so do not store the returned JSON also

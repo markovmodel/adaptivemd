@@ -281,7 +281,8 @@ class Trajectory(File):
         elif isinstance(f, OutputTypeDescription):
             return self.file(f.filename)
 
-    def run(self, resource_name=None, export_path=None):
+    def run(self, resource_name=None, export_path=None,
+            cpu_threads=1, gpu_contexts=0, mpi_rank=0):
         """
         Return a task to run this engine
 
@@ -293,8 +294,10 @@ class Trajectory(File):
         """
         # TODO check that you can generate one trajectory object only once
         # not just the task for it
+
         if self.engine:
-            return self.engine.run(self, resource_name, export_path)
+            return self.engine.run(self, resource_name, export_path,
+                                   cpu_threads, gpu_contexts, mpi_rank)
         else:
             return None
 
@@ -470,12 +473,12 @@ class TrajectoryGenerationTask(PrePostTask):
         #     if isinstance(t, Trajectory):
         #         t.engine = self.generator
 
-    def __init__(self, generator=None, trajectory=None, est_exec_time=5,
-                 cpu_threads=1, gpu_contexts=0, mpi_rank=0):
+    def __init__(self, generator=None, trajectory=None, resource_name=None,
+                 est_exec_time=5, cpu_threads=1, gpu_contexts=0, mpi_rank=0):
 
         super(TrajectoryGenerationTask, self).__init__(
-            generator, est_exec_time, cpu_threads,
-            gpu_contexts, mpi_rank)
+            generator, resource_name, est_exec_time,
+            cpu_threads, gpu_contexts, mpi_rank)
 
         # set this engine to be run by this
         self.trajectory = trajectory
@@ -516,8 +519,13 @@ class TrajectoryExtensionTask(TrajectoryGenerationTask):
             'source'
         ]
 
-    def __init__(self, generator=None, trajectory=None, source=None):
-        super(TrajectoryExtensionTask, self).__init__(generator, trajectory)
+    def __init__(self, generator=None, trajectory=None, source=None,
+                 est_exec_time=5, cpu_threads=1, gpu_contexts=0, mpi_rank=0):
+
+        super(TrajectoryExtensionTask, self).__init__(
+            generator, trajectory, resource_name, est_exec_time,
+            cpu_threads, gpu_contexts, mpi_rank)
+
         self.source = source
 
     @property
