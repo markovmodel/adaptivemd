@@ -218,7 +218,6 @@ class TestUtils(unittest.TestCase):
         actual = ["deactivate"]
         self.assertListEqual(post_commands, actual)
         
-
     def test_get_commands_PythonTask(self):
         """Test that the commands are properly captured for a PythonTask"""
         task_descriptions = self.db.get_task_descriptions()
@@ -245,7 +244,7 @@ class TestUtils(unittest.TestCase):
         self.assertListEqual(post_commands, actual)
 
     def test_get_environment_from_task_TrajectoryGenerationTask(self):
-        """Test that the environment variables are properly captured"""
+        """Test that the environment variables for the TrajectoryGenerationTask are properly captured"""
         task_descriptions = self.db.get_task_descriptions()
         
         # TrajectoryGenerationTask
@@ -260,7 +259,7 @@ class TestUtils(unittest.TestCase):
         self.assertDictEqual(environment, actual)
     
     def test_get_environment_from_task_PythonTask(self):
-        """Test that the environment variables are properly captured"""
+        """Test that the environment variables for the PythonTask are properly captured"""
         task_descriptions = self.db.get_task_descriptions()
 
         # PythonTask
@@ -275,7 +274,7 @@ class TestUtils(unittest.TestCase):
         self.assertDictEqual(environment, actual)
 
     def test_get_paths_from_task_TrajectoryGenerationTask(self):
-        """Test that the paths variables are properly captured"""
+        """Test that the paths variables for the TrajectoryGenerationTask are properly captured"""
         task_descriptions = self.db.get_task_descriptions()
         
         # TrajectoryGenerationTask
@@ -293,7 +292,7 @@ class TestUtils(unittest.TestCase):
         self.assertListEqual(paths, actual)
     
     def test_get_paths_from_task_PythonTask(self):
-        """Test that the paths variables are properly captured"""
+        """Test that the paths variables for PythonTask are properly captured"""
         task_descriptions = self.db.get_task_descriptions()
 
         # PythonTask
@@ -311,7 +310,7 @@ class TestUtils(unittest.TestCase):
         self.assertListEqual(paths, actual)
 
     def test_get_executable_arguments_TrajectoryGenerationTask(self):
-        """Test that the paths variables are properly captured"""
+        """Test that the executable and its arguments for TrajectoryGenerationTask are properly captured"""
         task_descriptions = self.db.get_task_descriptions()
         
         # TrajectoryGenerationTask
@@ -333,9 +332,8 @@ class TestUtils(unittest.TestCase):
         for i in xrange(len(args)):
             self.assertEqual(args[i], actual_args[i])
 
-    
     def test_get_executable_arguments_PythonTask(self):
-        """Test that the paths variables are properly captured"""
+        """Test that the executable and its arguments for PythonTask are properly captured"""
         task_descriptions = self.db.get_task_descriptions()
 
         # PythonTask
@@ -352,9 +350,8 @@ class TestUtils(unittest.TestCase):
         for i in xrange(len(args)):
             self.assertEqual(args[i], actual_args[i])
 
-
     def test_generate_pythontask_input(self):
-        """Test that the input file is properly generated"""
+        """Test that the input.json file and its contents is properly generated"""
         d1 = None
         with open('{}/{}'.format(directory, ptask_in_example)) as json_data:
             d1 = json.load(json_data)
@@ -369,11 +366,13 @@ class TestUtils(unittest.TestCase):
         self.assertDictEqual(d1, d2)
 
     def test_hex_to_id(self):
+        """Test proper hex-to-id convertion"""
         hex_uuid = hex_to_id("0x4f01b528c6911e79eb200000000003aL")
         actual = "04f01b52-8c69-11e7-9eb2-00000000003a"
         self.assertEquals(hex_uuid, actual)
 
     def test_resolve_pathholders(self):
+        """Test our path expander/resolver"""
         # Direct Path
         exp_path = resolve_pathholders("/some/path", shared_path='/home/test', project=self.db.project)
         actual = "/some/path"
@@ -398,6 +397,119 @@ class TestUtils(unittest.TestCase):
         exp_path = resolve_pathholders("project:///some/path.py", shared_path='/home/test', project=self.db.project)
         actual = "/home/test/projects/{}//some/path.py".format(self.db.project)
         self.assertEquals(exp_path, actual)
+
+    def test_generate_trajectorygenerationtask_cud(self):
+        """Test proper Compute Unit Description generation for TrajectoryGenerationTask"""
+        task_descriptions = self.db.get_task_descriptions()
+
+        # PythonTask
+        task_desc = dict()
+        for task in task_descriptions:
+            if task['_id'] == "04f01b52-8c69-11e7-9eb2-000000000124":
+                task_desc = task
+                break
+
+        cud = generate_trajectorygenerationtask_cud(task_desc, self.db, '/home/test', self.db.project)
+        actual_cud = rp.ComputeUnitDescription()
+        actual_cud.name = "04f01b52-8c69-11e7-9eb2-000000000124"
+        actual_cud.environment = {
+            "TEST1": "1",
+            "TEST2": "2"
+        }
+        actual_cud.input_staging = [
+            {"action":"Link","source":"pilot:///alanine.pdb","target":"unit:///initial.pdb"},
+            {"action":"Link","source":"pilot:///system.xml","target":"unit:///system.xml"},
+            {"action":"Link","source":"pilot:///integrator.xml","target":"unit:///integrator.xml"},
+            {"action":"Link","source":"pilot:///openmmrun.py","target":"unit:///openmmrun.py"}
+        ]
+        actual_cud.pre_exec = [
+            'mkdir -p traj',
+            'source /home/test/venv/bin/activate'
+        ]
+        actual_cud.executable = 'python'
+        actual_cud.arguments = [
+            "openmmrun.py", "-r", "--report-interval", "1",
+            "-p", "CPU", "--types",
+            "{'protein':{'stride':1,'selection':'protein','name':null,'filename':'protein.dcd'},'master':{'stride':10,'selection':null,'name':null,'filename':'master.dcd'}}",
+            "-t", "initial.pdb", "--length", "100", "traj/"
+        ]
+        actual_cud.output_staging = [{
+            "action":"Move","source":"traj/protein.dcd",
+            "target":"/home/test//projects/rp_testing_modeller_1/trajs/00000004//protein.dcd"},
+            {"action":"Move","source":"traj/master.dcd",
+            "target":"/home/test//projects/rp_testing_modeller_1/trajs/00000004//master.dcd"
+        }]
+        actual_cud.post_exec = ['deactivate']
+        actual_cud.mpi = False
+        actual_cud.cores = 1
+
+        # compare all parts of the cuds
+        self.maxDiff = None
+        self.assertEquals(cud.name, actual_cud.name)
+        self.assertDictEqual(cud.environment, actual_cud.environment)
+        self.assertListEqual(cud.input_staging, actual_cud.input_staging)
+        self.assertListEqual(cud.pre_exec, actual_cud.pre_exec)
+        self.assertEquals(cud.executable, actual_cud.executable)
+        self.assertListEqual(cud.arguments, actual_cud.arguments)
+        self.assertListEqual(cud.output_staging, actual_cud.output_staging)
+        self.assertListEqual(cud.post_exec, actual_cud.post_exec)
+        self.assertEquals(cud.mpi, actual_cud.mpi)
+        self.assertEquals(cud.cores, actual_cud.cores)
+
+    def test_generate_pythontask_cud(self):
+        """Test proper Compute Unit Description generation for PythonTask"""
+        task_descriptions = self.db.get_task_descriptions()
+
+        # PythonTask
+        task_desc = dict()
+        for task in task_descriptions:
+            if task['_id'] == "04f01b52-8c69-11e7-9eb2-0000000000fe":
+                task_desc = task
+                break
+
+        # Get the input.json example
+        with open('{}/{}'.format(directory, ptask_in_example)) as json_data:
+            inpu_json_data = json.load(json_data)
+
+        cud = generate_pythontask_cud(task_desc, self.db, '/home/example', self.db.project)
+        actual_cud = rp.ComputeUnitDescription()
+        actual_cud.name = "04f01b52-8c69-11e7-9eb2-0000000000fe"
+        actual_cud.environment = {
+            "TEST3": "3",
+            "TEST4": "4"
+        }
+        actual_cud.input_staging = [
+            {"action":"Link","source":"pilot:///_run_.py","target":"unit:///_run_.py"},
+            {"action":"Link","source":"pilot:///alanine.pdb","target":"unit:///input.pdb"}
+        ]
+        actual_cud.pre_exec = [
+            'mkdir -p traj',
+            'echo \'{}\' > \'{}\''.format(json.dumps(inpu_json_data['contents']), inpu_json_data['target']), # stage input.json
+            "source /home/test/venv/bin/activate"
+        ]
+        actual_cud.executable = 'python'
+        actual_cud.arguments = ['_run_.py']
+        actual_cud.output_staging = [{
+            "action": "Copy",
+            "source": "output.json", 
+            "target": "/home/example/projects/{}//models/model.0x4f01b528c6911e79eb20000000000feL.json".format(self.db.project)
+        }]
+        actual_cud.post_exec = ["deactivate"]
+        actual_cud.mpi = False
+        actual_cud.cores = 10
+
+        # compare all parts of the cuds
+        self.maxDiff = None
+        self.assertEquals(cud.name, actual_cud.name)
+        self.assertDictEqual(cud.environment, actual_cud.environment)
+        self.assertListEqual(cud.input_staging, actual_cud.input_staging)
+        self.assertListEqual(cud.pre_exec, actual_cud.pre_exec)
+        self.assertEquals(cud.executable, actual_cud.executable)
+        self.assertListEqual(cud.arguments, actual_cud.arguments)
+        self.assertListEqual(cud.output_staging, actual_cud.output_staging)
+        self.assertListEqual(cud.post_exec, actual_cud.post_exec)
+        self.assertEquals(cud.mpi, actual_cud.mpi)
+        self.assertEquals(cud.cores, actual_cud.cores)
 
 
 if __name__ == '__main__':

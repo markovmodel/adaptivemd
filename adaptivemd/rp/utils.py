@@ -261,7 +261,7 @@ def generate_pythontask_cud(task_desc, db, shared_path, project):
 
     # Now, do main executable
     exe, args = get_executable_arguments(main_task_details)
-    cud.executable = [str(exe)]
+    cud.executable = str(exe)
     cud.arguments = args
 
 
@@ -327,7 +327,7 @@ def generate_trajectorygenerationtask_cud(task_desc, db, shared_path, project):
 
     # Now, do main executable
     exe, args = get_executable_arguments(main_task_details)
-    cud.executable = [str(exe)]
+    cud.executable = str(exe)
     cud.arguments = args
 
 
