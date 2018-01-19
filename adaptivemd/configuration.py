@@ -112,7 +112,7 @@ class Configuration(StorableMixin):
         'xsede.bridges', 'xsede.lonestar', 'futuregrid.bravo',
         'xsede.gordon', 'radical.one', 'xsede.wrangler',
         'stfc.joule', 'futuregrid.delta', 'lumc.shark',
-        'ornl.titan_aprun', 'ncar.yellowstone', 'xsede.comet',
+        'ornl.titan_aprun', 'ncar.yellowstone', 'xsede.comet', 'ornl.titan_orte',
         'local.localhost', 'xsede.blacklight', 'yale.grace',
         'rice.davinci', 'lrz.supermuc', 'nersc.hopper',
         'futuregrid.xray', 'iu.bigred2', 'rice.biou',
