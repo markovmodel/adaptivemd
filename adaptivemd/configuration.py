@@ -32,8 +32,9 @@ from .util import parse_cfg_file
 # first thing, queues --> queue, but accept a list
 
 # TODO
-# Wait until Andre provides a list without having
-# to instantiate session
+# Read this guy as function
+# and eliminate the (incorrect) use of
+# truncated names
 #from .rp import rp_resource_list
 
 # TODO
