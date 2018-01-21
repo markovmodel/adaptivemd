@@ -1,7 +1,7 @@
 import time
 from pymongo import MongoClient
 from pprint import pprint
-from utils import hex_to_id
+from utils import hex_to_id, resolve_location
 from datetime import datetime
 # Task Status: created, running, fail, halted, success, cancelled
 
@@ -106,6 +106,8 @@ class Database():
             result = col.find_one({'_id': id})
             if result:
                 location = result['_dict']['location']
+
+        location = resolve_location(location)
         return location
 
     def get_shared_files(self):

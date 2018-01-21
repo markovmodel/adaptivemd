@@ -6,26 +6,48 @@ from exceptions import *
 import traceback
 import json
 
+
+def resolve_location(path):
+    tripleslash = '///'
+    doubleslash = '//'
+    singleslash = '/'
+    loc = os.path.expandvars(path)
+
+    if loc.count(tripleslash) > 0:
+        nvalid = loc.count(':///')
+        loc = singleslash.join(loc.rsplit(
+                tripleslash, loc.count(tripleslash) - nvalid
+                ))
+
+    loc = loc.rsplit(doubleslash, loc.count(doubleslash)-1 )
+    location = singleslash.join(loc)
+
+    return location
+
+
 def resolve_pathholders(path, shared_path, project):
 
     if '///' not in path:
-        return os.path.expandvars(path)
+        resolved_path = os.path.expandvars(path)
 
-    schema, relative_path = path.split(':///')
+    else:
+        schema, relative_path = path.split(':///')
 
-    if schema == 'staging':
-        resolved_path = 'pilot:///' + os.path.basename(relative_path)
+        if schema == 'staging':
+            resolved_path = 'pilot:///' + os.path.basename(relative_path)
 
-    elif schema == 'sandbox':
-        resolved_path = path.replace(schema + '://', shared_path + '/')
+        elif schema == 'sandbox':
+            resolved_path = path.replace(schema + '://', shared_path + '/')
 
-    elif schema == 'file':
-        resolved_path = path.replace(schema + '://', '')
+        elif schema == 'file':
+            resolved_path = path.replace(schema + '://', '')
 
-    elif schema == 'project':
-        resolved_path = path.replace(schema + '://', shared_path + '/projects/' + project + '/')
+        elif schema == 'project':
+            resolved_path = path.replace(schema + '://', shared_path + '/projects/' + project + '/')
 
-    return os.path.expandvars(resolved_path)
+        resolved_path = resolve_location(resolved_path)
+
+    return resolved_path
 
 
 def get_input_staging(task_details, db, shared_path, project, break_after_non_dict=True):
