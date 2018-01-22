@@ -224,7 +224,7 @@ def remote_analysis(
     inp = pyemma.coordinates.source(files, feat)
 
     tica_obj = pyemma.coordinates.tica(inp, lag=tica_lag,
-                   dim=tica_dim, kinetic_map=False, stride=tica_stride)
+                   dim=tica_dim, kinetic_map=True, stride=tica_stride)
 
     y = tica_obj.get_output()
 

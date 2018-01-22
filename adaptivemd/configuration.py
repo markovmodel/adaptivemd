@@ -32,8 +32,9 @@ from .util import parse_cfg_file
 # first thing, queues --> queue, but accept a list
 
 # TODO
-# Wait until Andre provides a list without having
-# to instantiate session
+# Read this guy as function
+# and eliminate the (incorrect) use of
+# truncated names
 #from .rp import rp_resource_list
 
 # TODO
@@ -112,7 +113,7 @@ class Configuration(StorableMixin):
         'xsede.bridges', 'xsede.lonestar', 'futuregrid.bravo',
         'xsede.gordon', 'radical.one', 'xsede.wrangler',
         'stfc.joule', 'futuregrid.delta', 'lumc.shark',
-        'ornl.titan_aprun', 'ncar.yellowstone', 'xsede.comet',
+        'ornl.titan_aprun', 'ncar.yellowstone', 'xsede.comet', 'ornl.titan_orte',
         'local.localhost', 'xsede.blacklight', 'yale.grace',
         'rice.davinci', 'lrz.supermuc', 'nersc.hopper',
         'futuregrid.xray', 'iu.bigred2', 'rice.biou',
