@@ -3,8 +3,9 @@ import json
 import random
 import string
 import unittest
+import adaptivemd.rp.utils as utils
+import radical.pilot as rp
 from adaptivemd.rp.database import Database
-from adaptivemd.rp.utils import *
 
 # Configuration Variables
 mongo_url = 'mongodb://user:user@two.radical-project.org:32769/'
@@ -92,10 +93,10 @@ class TestUtils(unittest.TestCase):
         pre_task_details = task_desc['_dict'].get('pre', dict())
         main_task_details = task_desc['_dict'].get('_main', dict())
         
-        staging_directives = get_input_staging(
+        staging_directives = utils.get_input_staging(
         task_details=pre_task_details, db=self.db, shared_path='/home/test', 
         project=self.db.project, break_after_non_dict=False)
-        staging_directives.extend(get_input_staging(
+        staging_directives.extend(utils.get_input_staging(
         task_details=main_task_details, db=self.db, shared_path='/home/test', 
         project=self.db.project, break_after_non_dict=True))
         
@@ -121,10 +122,10 @@ class TestUtils(unittest.TestCase):
         pre_task_details = task_desc['_dict'].get('pre', dict())
         main_task_details = task_desc['_dict'].get('_main', dict())
         
-        staging_directives = get_input_staging(
+        staging_directives = utils.get_input_staging(
         task_details=pre_task_details, db=self.db, shared_path='/home/test', 
         project=self.db.project, break_after_non_dict=False)
-        staging_directives.extend(get_input_staging(
+        staging_directives.extend(utils.get_input_staging(
         task_details=main_task_details, db=self.db, shared_path='/home/test', 
         project=self.db.project, break_after_non_dict=True))
 
@@ -146,11 +147,11 @@ class TestUtils(unittest.TestCase):
         main_task_details = task_desc['_dict'].get('_main', dict())
         post_task_details = task_desc['_dict'].get('post', dict())
 
-        staging_directives = get_output_staging(
+        staging_directives = utils.get_output_staging(
         task_desc=task_desc, task_details=post_task_details, db=self.db,
         shared_path='/home/test', project=self.db.project,
         continue_before_non_dict=False)
-        staging_directives.extend(get_output_staging(
+        staging_directives.extend(utils.get_output_staging(
         task_desc=task_desc, task_details=main_task_details, db=self.db,
         shared_path='/home/test', project=self.db.project,
         continue_before_non_dict=True))
@@ -176,11 +177,11 @@ class TestUtils(unittest.TestCase):
         main_task_details = task_desc['_dict'].get('_main', dict())
         post_task_details = task_desc['_dict'].get('post', dict())
 
-        staging_directives = get_output_staging(
+        staging_directives = utils.get_output_staging(
         task_desc=task_desc, task_details=post_task_details, db=self.db,
         shared_path='/home/test', project=self.db.project,
         continue_before_non_dict=False)
-        staging_directives.extend(get_output_staging(
+        staging_directives.extend(utils.get_output_staging(
         task_desc=task_desc, task_details=main_task_details, db=self.db,
         shared_path='/home/test', project=self.db.project,
         continue_before_non_dict=True))
@@ -206,15 +207,15 @@ class TestUtils(unittest.TestCase):
         main_task_details = task_desc['_dict'].get('_main', dict())
         post_task_details = task_desc['_dict'].get('post', dict())
 
-        pre_commands = get_commands(task_steps_list=pre_task_details)
+        pre_commands = utils.get_commands(task_steps_list=pre_task_details)
         actual = ["source /home/test/venv/bin/activate"]
         self.assertListEqual(pre_commands, actual)
 
-        main_commands = get_commands(task_steps_list=main_task_details)
+        main_commands = utils.get_commands(task_steps_list=main_task_details)
         actual = ["\nj=0\ntries=10\nsleep=1\n\ntrajfile=traj/allatoms.dcd\n\nwhile [ $j -le $tries ]; do if ! [ -s $trajfile ]; then python openmmrun.py -r --report-interval 1 -p CPU --types=\"{'protein':{'stride':1,'selection':'protein','name':null,'filename':'protein.dcd'},'master':{'stride':10,'selection':null,'name':null,'filename':'master.dcd'}}\" -t worker://initial.pdb --length 100 worker://traj/; fi; sleep 1; j=$((j+1)); done"]
         self.assertListEqual(main_commands, actual)
 
-        post_commands = get_commands(task_steps_list=post_task_details)
+        post_commands = utils.get_commands(task_steps_list=post_task_details)
         actual = ["deactivate"]
         self.assertListEqual(post_commands, actual)
         
@@ -231,15 +232,15 @@ class TestUtils(unittest.TestCase):
         main_task_details = task_desc['_dict'].get('_main', dict())
         post_task_details = task_desc['_dict'].get('post', dict())
 
-        pre_commands = get_commands(task_steps_list=pre_task_details)
+        pre_commands = utils.get_commands(task_steps_list=pre_task_details)
         actual = ["source /home/test/venv/bin/activate"]
         self.assertListEqual(pre_commands, actual)
 
-        main_commands = get_commands(task_steps_list=main_task_details)
+        main_commands = utils.get_commands(task_steps_list=main_task_details)
         actual = ["python _run_.py"]
         self.assertListEqual(main_commands, actual)
 
-        post_commands = get_commands(task_steps_list=post_task_details)
+        post_commands = utils.get_commands(task_steps_list=post_task_details)
         actual = ["deactivate"]
         self.assertListEqual(post_commands, actual)
 
@@ -254,7 +255,7 @@ class TestUtils(unittest.TestCase):
                 task_desc = task
                 break
 
-        environment = get_environment_from_task(task_desc)
+        environment = utils.get_environment_from_task(task_desc)
         actual = {"TEST1": "1", "TEST2": "2"}
         self.assertDictEqual(environment, actual)
     
@@ -269,7 +270,7 @@ class TestUtils(unittest.TestCase):
                 task_desc = task
                 break
 
-        environment = get_environment_from_task(task_desc)
+        environment = utils.get_environment_from_task(task_desc)
         actual = {"TEST3": "3", "TEST4": "4"}
         self.assertDictEqual(environment, actual)
 
@@ -284,7 +285,7 @@ class TestUtils(unittest.TestCase):
                 task_desc = task
                 break
 
-        paths = get_paths_from_task(task_desc)
+        paths = utils.get_paths_from_task(task_desc)
         actual = [
             "/home/test/path1",
             "/home/test/path2"
@@ -302,7 +303,7 @@ class TestUtils(unittest.TestCase):
                 task_desc = task
                 break
 
-        paths = get_paths_from_task(task_desc)
+        paths = utils.get_paths_from_task(task_desc)
         actual = [
             "/home/test/path3",
             "/home/test/path4"
@@ -320,7 +321,7 @@ class TestUtils(unittest.TestCase):
                 task_desc = task
                 break
 
-        exe, args = get_executable_arguments(task_desc['_dict']['_main'])
+        exe, args = utils.get_executable_arguments(task_desc['_dict']['_main'])
         actual_exe = 'python'
         actual_args = [
             "openmmrun.py", "-r", "--report-interval", "1",
@@ -343,7 +344,7 @@ class TestUtils(unittest.TestCase):
                 task_desc = task
                 break
 
-        exe, args = get_executable_arguments(task_desc['_dict']['_main'])
+        exe, args = utils.get_executable_arguments(task_desc['_dict']['_main'])
         actual_exe = 'python'
         actual_args = ['_run_.py']
         self.assertEqual(exe, actual_exe)
@@ -361,40 +362,40 @@ class TestUtils(unittest.TestCase):
             if t['_cls'] == 'PythonTask':
                 task = t
                 break
-        d2 = generate_pythontask_input(
+        d2 = utils.generate_pythontask_input(
             db=self.db, shared_path='/home/example', task=task, project=self.db.project)
         self.assertDictEqual(d1, d2)
 
     def test_hex_to_id(self):
         """Test proper hex-to-id convertion"""
-        hex_uuid = hex_to_id("0x4f01b528c6911e79eb200000000003aL")
+        hex_uuid = utils.hex_to_id("0x4f01b528c6911e79eb200000000003aL")
         actual = "04f01b52-8c69-11e7-9eb2-00000000003a"
         self.assertEquals(hex_uuid, actual)
 
     def test_resolve_pathholders(self):
         """Test our path expander/resolver"""
         # Direct Path
-        exp_path = resolve_pathholders("/some/path", shared_path='/home/test', project=self.db.project)
+        exp_path = utils.resolve_pathholders("/some/path", shared_path='/home/test', project=self.db.project)
         actual = "/some/path"
         self.assertEquals(exp_path, actual)
 
         # Staging Path
-        exp_path = resolve_pathholders("staging:///some/path", shared_path='/home/test', project=self.db.project)
+        exp_path = utils.resolve_pathholders("staging:///some/path", shared_path='/home/test', project=self.db.project)
         actual = "pilot:///path" # SHOULD BE: actual = "pilot:///some/path"
         self.assertEquals(exp_path, actual)
 
         # Sandbox Path
-        exp_path = resolve_pathholders("sandbox:///some/path", shared_path='/home/test', project=self.db.project)
+        exp_path = utils.resolve_pathholders("sandbox:///some/path", shared_path='/home/test', project=self.db.project)
         actual = "/home/test//some/path"
         self.assertEquals(exp_path, actual)
 
         # File Path
-        exp_path = resolve_pathholders("file:///some/path.py", shared_path='/home/test', project=self.db.project)
+        exp_path = utils.resolve_pathholders("file:///some/path.py", shared_path='/home/test', project=self.db.project)
         actual = "/some/path.py"
         self.assertEquals(exp_path, actual)
 
         # Projects Path
-        exp_path = resolve_pathholders("project:///some/path.py", shared_path='/home/test', project=self.db.project)
+        exp_path = utils.resolve_pathholders("project:///some/path.py", shared_path='/home/test', project=self.db.project)
         actual = "/home/test/projects/{}//some/path.py".format(self.db.project)
         self.assertEquals(exp_path, actual)
 
@@ -409,7 +410,7 @@ class TestUtils(unittest.TestCase):
                 task_desc = task
                 break
 
-        cud = generate_trajectorygenerationtask_cud(task_desc, self.db, '/home/test', self.db.project)
+        cud = utils.generate_trajectorygenerationtask_cud(task_desc, self.db, '/home/test', self.db.project)
         actual_cud = rp.ComputeUnitDescription()
         actual_cud.name = "04f01b52-8c69-11e7-9eb2-000000000124"
         actual_cud.environment = {
@@ -471,7 +472,7 @@ class TestUtils(unittest.TestCase):
         with open('{}/{}'.format(directory, ptask_in_example)) as json_data:
             inpu_json_data = json.load(json_data)
 
-        cud = generate_pythontask_cud(task_desc, self.db, '/home/example', self.db.project)
+        cud = utils.generate_pythontask_cud(task_desc, self.db, '/home/example', self.db.project)
         actual_cud = rp.ComputeUnitDescription()
         actual_cud.name = "04f01b52-8c69-11e7-9eb2-0000000000fe"
         actual_cud.environment = {
