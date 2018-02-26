@@ -37,22 +37,25 @@ class TaskManager(object):
 
         def unit_state_cb(unit, state):
 
-            if state == rp.NEW:
-                self._db_obj.update_task_description_status(unit.name, 'running')
+            # O(N) search, could make this an O(log N) search
+            # or O(1) if we use hashing, since we assume uid's are unique
+            if unit.uid in self._running_tasks:
+                if state == rp.NEW:
+                    self._db_obj.update_task_description_status(unit.name, 'running')
 
-            if state in [rp.DONE, rp.UMGR_STAGING_OUTPUT_PENDING]:
-                
-                print unit.name
-                done = self._db_obj.update_task_description_status(unit.name, 'success')
+                if state in [rp.DONE, rp.UMGR_STAGING_OUTPUT_PENDING]:
+                    
+                    print unit.name
+                    done = self._db_obj.update_task_description_status(unit.name, 'success')
 
-                if done:
-                    self._db_obj.file_created(unit.name)
+                    if done:
+                        self._db_obj.file_created(unit.name)
 
-                self._running_tasks.remove(unit.uid)
+                    self._running_tasks.remove(unit.uid)
 
-            elif state == rp.FAILED:
-                self._db_obj.update_task_description_status(unit.name, 'cancelled')
-                self._running_tasks.remove(unit.uid)
+                elif state == rp.FAILED:
+                    self._db_obj.update_task_description_status(unit.name, 'cancelled')
+                    self._running_tasks.remove(unit.uid)
 
 
         self._umgr = rp.UnitManager(session=self._session)
