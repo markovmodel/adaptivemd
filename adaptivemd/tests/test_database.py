@@ -7,7 +7,7 @@ from adaptivemd.rp.database import Database
 from adaptivemd.rp.utils import generate_pythontask_input
 
 # Configuration Variables
-mongo_url = 'mongodb://user:user@two.radical-project.org:32769/'
+mongo_url = 'mongodb://user:user@two.radical-project.org:32770/'
 project = 'rp_testing'
 
 # Example JSON locations
@@ -180,22 +180,6 @@ class TestDatabase(unittest.TestCase):
         task = task_descriptions[0]
         self.assertFalse(self.db.update_task_description_status(
             id='{}_asdasd'.format(task['_id']), state='fail'))
-
-    def test_utils_generate_pythontask_input(self):
-        """Test that the input file is properly generated"""
-        d1 = None
-        with open('{}/{}'.format(directory, ptask_in_example)) as json_data:
-            d1 = json.load(json_data)
-        task = None
-        task_descriptions = self.db.get_task_descriptions()
-        for t in task_descriptions:
-            if t['_cls'] == 'PythonTask':
-                task = t
-                break
-        d2 = generate_pythontask_input(
-            db=self.db, shared_path='/home/example', task=task)
-        self.assertDictEqual(d1, d2)
-
 
 if __name__ == '__main__':
     suite = unittest.TestLoader().loadTestsFromTestCase(TestDatabase)

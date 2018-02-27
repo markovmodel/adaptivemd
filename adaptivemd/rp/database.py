@@ -84,15 +84,18 @@ class Database():
             file_col = self.db[self.file_collection]
             task = task_col.find_one({'_id': id})
             if task:
-                file_id = hex_to_id(
-                    task['_dict']['_main'][-1]['_dict']['target']['_hex_uuid'])
-                timestamp = time.mktime(datetime.now().timetuple())
-                result = file_col.update_one({'_id': file_id},
-                                             {'$set': {
-                                                 'created': timestamp
-                                             }})
-                if result.modified_count == 1:
-                    udpated = True
+                for directive in task['_dict']['_main']:
+                    if (isinstance(directive, dict)):
+                        if (str(directive.get('_cls', '')).lower() == 'move'):
+                            file_id = hex_to_id(
+                                directive['_dict']['target']['_hex_uuid'])
+                            timestamp = time.mktime(datetime.now().timetuple())
+                            result = file_col.update_one({'_id': file_id},
+                                                         {'$set': {
+                                                             'created': timestamp
+                                                         }})
+                            if (udpated is False) and (result.modified_count == 1):
+                                udpated = True
         return udpated
 
     def get_file_destination(self, id=None):
