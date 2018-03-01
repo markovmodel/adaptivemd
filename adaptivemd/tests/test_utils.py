@@ -208,11 +208,15 @@ class TestUtils(unittest.TestCase):
         post_task_details = task_desc['_dict'].get('post', dict())
 
         pre_commands = utils.get_commands(task_steps_list=pre_task_details)
-        actual = ["source /home/test/venv/bin/activate"]
+        actual = [
+            "source /home/test/venv/bin/activate",
+            "mdconvert -o input.pdb -i 3 -t initial.pdb source/allatoms.dcd"
+        ]
+
         self.assertListEqual(pre_commands, actual)
 
         main_commands = utils.get_commands(task_steps_list=main_task_details)
-        actual = ["\nj=0\ntries=10\nsleep=1\n\ntrajfile=traj/allatoms.dcd\n\nwhile [ $j -le $tries ]; do if ! [ -s $trajfile ]; then python openmmrun.py -r --report-interval 1 -p CPU --types=\"{'protein':{'stride':1,'selection':'protein','name':null,'filename':'protein.dcd'},'master':{'stride':10,'selection':null,'name':null,'filename':'master.dcd'}}\" -t worker://initial.pdb --length 100 worker://traj/; fi; sleep 1; j=$((j+1)); done"]
+        actual = ["\nj=0\ntries=10\nsleep=1\n\ntrajfile=traj/allatoms.dcd\n\nwhile [ $j -le $tries ]; do if ! [ -s $trajfile ]; then python openmmrun.py -r --report-interval 1 -p CPU --types=\"{'protein':{'stride':1,'selection':'protein','name':null,'filename':'protein.dcd'},'master':{'stride':10,'selection':null,'name':null,'filename':'master.dcd'}}\" -t initial.pdb --length 100 traj/; fi; sleep 1; j=$((j+1)); done"]
         self.assertListEqual(main_commands, actual)
 
         post_commands = utils.get_commands(task_steps_list=post_task_details)
@@ -425,7 +429,8 @@ class TestUtils(unittest.TestCase):
         ]
         actual_cud.pre_exec = [
             'mkdir -p traj',
-            'source /home/test/venv/bin/activate'
+            'source /home/test/venv/bin/activate',
+            'mdconvert -o input.pdb -i 3 -t initial.pdb source/allatoms.dcd'
         ]
         actual_cud.executable = 'python'
         actual_cud.arguments = [

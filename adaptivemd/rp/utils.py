@@ -176,7 +176,8 @@ def get_commands(task_steps_list):
 
     for step in task_steps_list:
         if isinstance(step, unicode) or isinstance(step, str):
-            commands.append(str(step))
+            # Get the command, normalize the command, by removing the `worker://` reference
+            commands.append(str(step).replace('worker://', ''))
 
     return commands
 
