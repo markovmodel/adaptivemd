@@ -125,7 +125,7 @@ class OpenMMEngine(Engine):
             input_pdb = t.get(target.frame, loc)
 
         elif isinstance(target.frame, Frame):
-            input_traj = t.link(target.frame.trajectory, 'source/')
+            input_traj = t.pre_link(target.frame.trajectory, 'source/')
             input_pdb = File('input.pdb')
 
             # frame index is in canonical stride = 1
@@ -138,7 +138,7 @@ class OpenMMEngine(Engine):
                 # cannot use a trajectory where we do not have full coordinates
                 return
 
-            t.append('mdconvert -o {target} -i {index} -t {pdb} {source}'.format(
+            t.pre.append('mdconvert -o {target} -i {index} -t {pdb} {source}'.format(
                 target=input_pdb,  # input.pdb is used as starting structure
                 index=idx,         # the index from the source trajectory
                 pdb=initial_pdb,   # use the main pdb

@@ -523,6 +523,11 @@ def generate_pythontask_input(db, shared_path, task, project):
 
         # File Contents
         temp = dict()
+        print("HELLO FROM rp.utils.generate_pythontask_input, project:", project)
+        # The project and generator fields are names that can be read to
+        # build adaptivemd objects when using the adaptivemd.project api
+        temp['project']   = project
+        temp['generator'] = task['_dict']['generator']
         # {'import': None, 'function': None, 'kwargs': None}
         temp['import'] = task['_dict']['_python_import']
         temp['function'] = task['_dict']['_python_function_name']

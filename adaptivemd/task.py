@@ -396,7 +396,7 @@ class Task(BaseTask):
 
         return '\n'.join(s)
 
-    def fire(self, event, scheduler):
+    def fire(self, event, scheduler, path=None):
         """
         Fire an event like success or failed.
 
@@ -415,7 +415,7 @@ class Task(BaseTask):
         if event in Task._events:
             cbs = self._on.get(event, [])
             for cb in cbs:
-                cb(self, scheduler)
+                cb(self, scheduler, path)
 
         if event in ['submit', 'fail', 'success']:
             self.state = event
@@ -430,7 +430,12 @@ class Task(BaseTask):
             True if the task has finished its execution
 
         """
-        return self.state in ['fail', 'success', 'cancelled']
+        # TODO make final states from attributes
+        if self.state in ['fail', 'success', 'cancelled']:
+            return True
+
+        else:
+            return False
 
     def was_successful(self):
         """
@@ -843,6 +848,28 @@ class PrePostTask(Task):
         self.pre = []
         self.post = []
 
+    def pre_link(self, f, name=None):
+        """
+        Add an action to create a link to a file (under a new name)
+
+        Parameters
+        ----------
+        f : `Location`
+            the source location (file or folder) to be used
+        name : `Location` or str
+            the target location to be used. For source files and target folders the
+            basename is copied
+
+        Returns
+        -------
+        `Location`
+            the actual target location
+
+        """
+        transaction = f.link(name)
+        self.pre.append(transaction)
+        return transaction.target
+
     @property
     def pre_exec(self):
         return (
@@ -1073,17 +1100,16 @@ class PythonTask(PrePostTask):
         """
         self.post.append(File('output.json').copy(target))
 
-    def _cb_success(self, scheduler):
+    def _cb_success(self, scheduler, path=None):
         # here is the logic to retrieve the result object
         # the output file is a JSON and these know how to load itself
 
         if self.store_output:
             # by default store the result. If you handle it yourself you
             # might want to turn it off to not save the data twice
-            self._rpc_output_file.load(scheduler)
+            self._rpc_output_file.load(scheduler, path)
 
-        filename = scheduler.get_path(self._rpc_output_file)
-        data = self._rpc_output_file.get(scheduler)
+        data = self._rpc_output_file.get(scheduler, path)
 
         if self.generator is not None and hasattr(self.generator, self.then_func_name):
             getattr(self.generator, self.then_func_name)(
@@ -1091,12 +1117,15 @@ class PythonTask(PrePostTask):
 
         # cleanup
         # mark as changed / deleted
-        os.remove(filename)
-        self._rpc_output_file.modified()
-        os.remove(scheduler.get_path(self._rpc_input_file))
-        self._rpc_input_file.modified()
+        if not path:
+            filename = scheduler.get_path(self._rpc_output_file)
+            os.remove(filename)
+            self._rpc_output_file.modified()
+            os.remove(scheduler.get_path(self._rpc_input_file))
+            self._rpc_input_file.modified()
 
     def _cb_submit(self, scheduler):
+        print("HELLO FROM {}._cb_submit".format(self.__class__))
         filename = scheduler.replace_prefix(self._rpc_input_file.url)
         with open(filename, 'w') as f:
             f.write(scheduler.simplifier.to_json(self._get_json(scheduler)))
@@ -1154,9 +1183,12 @@ class PythonTask(PrePostTask):
         self.append('python _run_.py')
 
     def _get_json(self, scheduler):
+        print("HELLO FROM {}._get_json".format(self.__class__))
         dct = {
             'import': self._python_import,
             'function': self._python_function_name,
-            'kwargs': self._python_kwargs
+            'kwargs': self._python_kwargs,
+            'project': scheduler.project.name,
+            'generator': self.generator.name
         }
         return scheduler.flatten_location(dct)

@@ -629,15 +629,15 @@ class JSONFile(File):
 
         return None
 
-    def load(self, scheduler=None):
+    def load(self, scheduler=None, path=None):
         if self._data is None:
-            s = self.get(scheduler)
+            s = self.get(scheduler, path)
             if s is not None:
                 self._data = s
 
         return self
 
-    def get(self, scheduler=None):
+    def get(self, scheduler=None, path=None):
         """
         Read data from the JSON file at the files location without storing
 
@@ -655,13 +655,12 @@ class JSONFile(File):
         if self._data is not None:
             return self._data
 
-        path = None
+        if not path:
+            if self.drive == 'file':
+                path = self.path
 
-        if self.drive == 'file':
-            path = self.path
-
-        if scheduler is not None:
-            path = scheduler.get_path(self)
+            if scheduler is not None:
+                path = scheduler.get_path(self)
 
         if path:
             with open(path, 'r') as f:
