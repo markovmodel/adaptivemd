@@ -111,6 +111,7 @@ def get_output_staging(task_desc, task_details, db, shared_path, project, contin
             if is_traj: # is a trajectory, we need to do something extra
                 hex_id_input = hex_to_id(hex_uuid=task_desc['_dict']['generator']['_hex_uuid'])
                 traj_files = db.get_source_files(hex_id_input)
+                traj_files.append('restart.npz') # hard-code that we also need restart.npz
             
             # Get output/target files
             output_loc, _ = get_file_location(entity['_dict']['target'], db, shared_path, project)
@@ -248,9 +249,9 @@ def generate_pythontask_cud(task_desc, db, shared_path, project):
     cud.name = task_desc['_id']
 
     # Get each component of the task
-    pre_task_details = task_desc['_dict']['pre']
+    pre_task_details = task_desc['_dict'].get('pre', list())
     main_task_details = task_desc['_dict']['_main']
-    post_task_details = task_desc['_dict']['post']
+    post_task_details = task_desc['_dict'].get('post', list())
     resource_requirements = task_desc['_dict']['resource_requirements']
 
     
@@ -318,9 +319,9 @@ def generate_trajectorygenerationtask_cud(task_desc, db, shared_path, project):
     cud.name = task_desc['_id']
 
     # Get each component of the task
-    pre_task_details = task_desc['_dict'].get('pre', dict())
+    pre_task_details = task_desc['_dict'].get('pre', list())
     main_task_details = task_desc['_dict']['_main']
-    post_task_details = task_desc['_dict'].get('post', dict())
+    post_task_details = task_desc['_dict'].get('post', list())
     resource_requirements = task_desc['_dict']['resource_requirements']
 
     
@@ -360,7 +361,6 @@ def generate_trajectorygenerationtask_cud(task_desc, db, shared_path, project):
     # We get "ALL" COPY/LINK directives from the main *after* the first non-dictionary entry
     staging_directives.extend(get_output_staging(task_desc, main_task_details, db, shared_path, project))
     cud.output_staging = staging_directives
-    
 
     # Get all post-execution steps
     post_exec = list()

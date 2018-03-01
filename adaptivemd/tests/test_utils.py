@@ -160,7 +160,9 @@ class TestUtils(unittest.TestCase):
             "action":"Move","source":"traj/protein.dcd",
             "target":"/home/test//projects/rp_testing_modeller_1/trajs/00000004//protein.dcd"},
             {"action":"Move","source":"traj/master.dcd",
-            "target":"/home/test//projects/rp_testing_modeller_1/trajs/00000004//master.dcd"
+            "target":"/home/test//projects/rp_testing_modeller_1/trajs/00000004//master.dcd"},
+            {"action":"Move","source":"traj/restart.npz",
+            "target":"/home/test//projects/rp_testing_modeller_1/trajs/00000004//restart.npz"
         }]
         
         self.assertListEqual(staging_directives, actual)
@@ -443,7 +445,9 @@ class TestUtils(unittest.TestCase):
             "action":"Move","source":"traj/protein.dcd",
             "target":"/home/test//projects/rp_testing_modeller_1/trajs/00000004//protein.dcd"},
             {"action":"Move","source":"traj/master.dcd",
-            "target":"/home/test//projects/rp_testing_modeller_1/trajs/00000004//master.dcd"
+            "target":"/home/test//projects/rp_testing_modeller_1/trajs/00000004//master.dcd"},
+            {"action":"Move","source":"traj/restart.npz",
+            "target":"/home/test//projects/rp_testing_modeller_1/trajs/00000004//restart.npz"
         }]
         actual_cud.post_exec = ['deactivate']
         actual_cud.mpi = False
