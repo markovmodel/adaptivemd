@@ -156,14 +156,13 @@ class TestUtils(unittest.TestCase):
         shared_path='/home/test', project=self.db.project,
         continue_before_non_dict=True))
         
-        actual = [{
-            "action":"Move","source":"traj/protein.dcd",
-            "target":"/home/test//projects/rp_testing_modeller_1/trajs/00000004//protein.dcd"},
+        actual = [{"action":"Move","source":"traj/restart.npz",
+            "target":"/home/test//projects/rp_testing_modeller_1/trajs/00000004//restart.npz"},
             {"action":"Move","source":"traj/master.dcd",
             "target":"/home/test//projects/rp_testing_modeller_1/trajs/00000004//master.dcd"},
-            {"action":"Move","source":"traj/restart.npz",
-            "target":"/home/test//projects/rp_testing_modeller_1/trajs/00000004//restart.npz"
-        }]
+            {"action":"Move","source":"traj/protein.dcd",
+            "target":"/home/test//projects/rp_testing_modeller_1/trajs/00000004//protein.dcd"},
+        ]
         
         self.assertListEqual(staging_directives, actual)
 
@@ -441,14 +440,13 @@ class TestUtils(unittest.TestCase):
             "{'protein':{'stride':1,'selection':'protein','name':null,'filename':'protein.dcd'},'master':{'stride':10,'selection':null,'name':null,'filename':'master.dcd'}}",
             "-t", "initial.pdb", "--length", "100", "traj/"
         ]
-        actual_cud.output_staging = [{
-            "action":"Move","source":"traj/protein.dcd",
-            "target":"/home/test//projects/rp_testing_modeller_1/trajs/00000004//protein.dcd"},
+        actual_cud.output_staging = [{"action":"Move","source":"traj/restart.npz",
+            "target":"/home/test//projects/rp_testing_modeller_1/trajs/00000004//restart.npz"},
             {"action":"Move","source":"traj/master.dcd",
             "target":"/home/test//projects/rp_testing_modeller_1/trajs/00000004//master.dcd"},
-            {"action":"Move","source":"traj/restart.npz",
-            "target":"/home/test//projects/rp_testing_modeller_1/trajs/00000004//restart.npz"
-        }]
+            {"action":"Move","source":"traj/protein.dcd",
+            "target":"/home/test//projects/rp_testing_modeller_1/trajs/00000004//protein.dcd"},
+            ]
         actual_cud.post_exec = ['deactivate']
         actual_cud.mpi = False
         actual_cud.cores = 1

@@ -146,6 +146,10 @@ def get_output_staging(task_desc, task_details, db, shared_path, project, contin
                     }
                 staging_directives.append(temp)
 
+    # reverse again to maintain order
+    if len(staging_directives) > 0:
+        staging_directives = staging_directives[::-1]
+    
     return staging_directives
 
 
