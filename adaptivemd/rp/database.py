@@ -98,6 +98,33 @@ class Database():
                                 udpated = True
         return udpated
 
+    def file_removed(self, id=None):
+        """Marks the 'LINK' command's source file as removed with negative timestamp
+        :Parameters:
+            - `id`: task id to look-up the 'LINK' command
+        """
+        udpated = False
+        if id:
+            task_col = self.db[self.tasks_collection]
+            file_col = self.db[self.file_collection]
+            task = task_col.find_one(
+                {'_id': id, '_cls': 'TrajectoryExtensionTask'})
+            if task:
+                for directive in task['_dict']['_main']:
+                    if isinstance(directive, dict):
+                        if str(directive.get('_cls', '')).lower() == 'link':
+                            if directive.get('_dict', dict).get('source', dict).get('_hex_uuid', None) is not None:
+                                file_id = hex_to_id(
+                                    directive['_dict']['source']['_hex_uuid'])
+                                timestamp = time.mktime(datetime.now().timetuple())
+                                result = file_col.update_one({'_id': file_id},
+                                                             {'$set': {
+                                                                 'created': (timestamp * -1)
+                                                             }})
+                                if result.modified_count == 1:
+                                    udpated = True
+        return udpated
+
     def get_file_destination(self, id=None):
         """Get the location information of a specific file
         :Parameters:

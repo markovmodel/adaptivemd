@@ -50,6 +50,7 @@ class TaskManager(object):
 
                     if done:
                         self._db_obj.file_created(unit.name)
+                        self._db_obj.file_removed(unit.name)
 
                     self._running_tasks.remove(unit.uid)
 

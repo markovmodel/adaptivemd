@@ -39,6 +39,12 @@ def resolve_pathholders(path, shared_path, project):
         elif schema == 'sandbox':
             resolved_path = path.replace(schema + '://', shared_path + '/')
 
+        elif schema == 'shared':
+            resolved_path = path.replace(schema + '://', shared_path + '/')
+
+        elif schema == 'worker':
+            resolved_path = path.replace(schema + '://', '')
+
         elif schema == 'file':
             resolved_path = path.replace(schema + '://', '')
 
@@ -175,24 +181,30 @@ def get_file_location(file_entity, db, shared_path, project):
     return output_loc, trajectory
 
 
-def get_commands(task_steps_list):
+def get_commands(task_steps_list, shared_path, project):
 
     commands = []
 
     for step in task_steps_list:
         if isinstance(step, unicode) or isinstance(step, str):
             # Get the command, normalize the command, by removing the `worker://` reference
-            commands.append(str(step).replace('worker://', ''))
+            # and replacing 'sandbox://' with 'shared_path'
+            cmd = str(step).replace('worker://', '')
+            cmd = cmd.replace('file://', '')
+            cmd = cmd.replace('sandbox://', shared_path + '/')
+            cmd = cmd.replace('shared://', shared_path + '/')
+            cmd = cmd.replace('project://', shared_path + '/projects/' + project + '/')
+            commands.append(cmd)
 
     return commands
 
 
-def get_executable_arguments(task_steps_list):
+def get_executable_arguments(task_steps_list, shared_path, project):
 
     raw_exec = None
     proc_exec = None
 
-    raw_exec = get_commands(task_steps_list)
+    raw_exec = get_commands(task_steps_list, shared_path, project)
 
     proc_exec = raw_exec[0][107:]
     proc_exec = proc_exec[:-31]
@@ -222,16 +234,15 @@ def create_cud_from_task_def(task_descs, db, shared_path, project):
 
         for task_desc in task_descs:
 
-            # TODO: the only difference between the two is the input.json
+            # TODO: the only difference between 'PythonTask' and 
+            #       'TrajectoryGenerationTask' is the input.json
             #       if we learn how to pull/push it then we can handle it
             #       using the staging directives, which mean we don't need to
             #       differentiate between tasks...
-
             if task_desc['_cls'] == 'PythonTask':
                 cud = generate_pythontask_cud(task_desc, db, shared_path, project)
                 cuds.append(cud)
-
-            elif task_desc['_cls'] == 'TrajectoryGenerationTask':
+            elif task_desc['_cls'] in ['TrajectoryGenerationTask', 'TrajectoryExtensionTask']:
                 cud = generate_trajectorygenerationtask_cud(task_desc, db, shared_path, project)
                 cuds.append(cud)
             else:
@@ -281,14 +292,15 @@ def generate_pythontask_cud(task_desc, db, shared_path, project):
     pre_exec = list()
     pre_exec = [
     'mkdir -p traj',
+    'mkdir -p extension',
     'echo \'{}\' > \'{}\''.format(json.dumps(d['contents']), d['target']) # stage input.json
     ]
-    pre_exec.extend(get_commands(pre_task_details))
+    pre_exec.extend(get_commands(pre_task_details, shared_path, project))
     cud.pre_exec = pre_exec
 
 
     # Now, do main executable
-    exe, args = get_executable_arguments(main_task_details)
+    exe, args = get_executable_arguments(main_task_details, shared_path, project)
     cud.executable = str(exe)
     cud.arguments = args
 
@@ -302,7 +314,7 @@ def generate_pythontask_cud(task_desc, db, shared_path, project):
 
     # Get all post-execution steps
     post_exec = list()
-    post_exec.extend(get_commands(post_task_details))
+    post_exec.extend(get_commands(post_task_details, shared_path, project))
     cud.post_exec = post_exec
     
     # Get core count, support MPI
@@ -348,13 +360,16 @@ def generate_trajectorygenerationtask_cud(task_desc, db, shared_path, project):
 
     # Next, get pre execution steps
     pre_exec = list()
-    pre_exec = ['mkdir -p traj']
-    pre_exec.extend(get_commands(pre_task_details))
+    pre_exec = [
+        'mkdir -p traj',
+        'mkdir -p extension',
+    ]
+    pre_exec.extend(get_commands(pre_task_details, shared_path, project))
     cud.pre_exec = pre_exec
 
 
     # Now, do main executable
-    exe, args = get_executable_arguments(main_task_details)
+    exe, args = get_executable_arguments(main_task_details, shared_path, project)
     cud.executable = str(exe)
     cud.arguments = args
 
@@ -368,7 +383,7 @@ def generate_trajectorygenerationtask_cud(task_desc, db, shared_path, project):
 
     # Get all post-execution steps
     post_exec = list()
-    post_exec.extend(get_commands(post_task_details))
+    post_exec.extend(get_commands(post_task_details, shared_path, project))
     cud.post_exec = post_exec
     
 

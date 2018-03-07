@@ -84,7 +84,7 @@ class TestDatabase(unittest.TestCase):
         of 'created' tasks and that the list is of size '4'"""
         task_descriptions = self.db.get_task_descriptions()
         self.assertEquals(type(task_descriptions), list)
-        self.assertEquals(len(task_descriptions), 4)
+        self.assertEquals(len(task_descriptions), 5)
 
     def test_task_descriptions_success(self):
         """Test that the task descriptions method returns a list
@@ -162,6 +162,32 @@ class TestDatabase(unittest.TestCase):
         self.assertIsNotNone(file)
         self.assertIsNotNone(file['created'])
         self.assertIsNotNone(file['created'] > 0)
+
+    def test_file_removed(self):
+        """Test that the output file was marked
+        as removed for TrajectoryExtensionTask"""
+        task_id = '24888d76-219e-11e8-8f6d-000000000118'
+        file_id = '24888d76-219e-11e8-8f6d-00000000006a'
+        self.assertTrue(
+            self.db.file_removed(id=task_id))
+        mongo_db = self.db.client[self.store_name]
+        files_col = mongo_db[self.db.file_collection]
+        file = files_col.find_one({'_id': file_id})
+        self.assertIsNotNone(file)
+        self.assertIsNotNone(file['created'])
+        self.assertIsNotNone(file['created'] < 0)
+
+    def test_file_removed_non_extension(self):
+        """Test that the output file is not marked
+        as removed for a other task types"""
+        
+        # PythonTask
+        task_id = '04f01b52-8c69-11e7-9eb2-0000000000fe'
+        self.assertFalse(self.db.file_removed(id=task_id))
+
+        # TrajectoryGenerationTask
+        task_id = '04f01b52-8c69-11e7-9eb2-000000000164'
+        self.assertFalse(self.db.file_removed(id=task_id))
 
     def test_good_update_task_state(self):
         """Test that the task update state method returns
