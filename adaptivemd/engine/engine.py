@@ -301,7 +301,8 @@ class Trajectory(File):
         else:
             return None
 
-    def extend(self, length, export_path=None):
+    def extend(self, length, export_path=None, gpu_contexts=0,
+               resource_name=None, cpu_threads=1, mpi_rank=0):
         """
         Get a task to extend this trajectory if the engine is set
 
@@ -519,7 +520,7 @@ class TrajectoryExtensionTask(TrajectoryGenerationTask):
             'source'
         ]
 
-    def __init__(self, generator=None, trajectory=None, source=None,
+    def __init__(self, generator=None, trajectory=None, source=None, resource_name=None,
                  est_exec_time=5, cpu_threads=1, gpu_contexts=0, mpi_rank=0):
 
         super(TrajectoryExtensionTask, self).__init__(
