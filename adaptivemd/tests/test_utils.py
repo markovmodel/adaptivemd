@@ -33,6 +33,7 @@ class TestUtils(unittest.TestCase):
         """Initialize tests, just creates instance variables needed and the DB object.
         """
         super(TestUtils, cls).setUpClass()
+
         cls.db = Database(mongo_url=mongo_url,
                           project='{}_{}'.format(project, id_generator()))
 
@@ -73,6 +74,9 @@ class TestUtils(unittest.TestCase):
             for task_entry in data:
                 tasks_col.insert_one(task_entry)
 
+        cls.shared_path = '/home/test'
+        cls.project = cls.db.project
+
     @classmethod
     def tearDownClass(cls):
         """Destroy the database since we don't need it anymore"""
@@ -105,6 +109,36 @@ class TestUtils(unittest.TestCase):
             {"action":"Link","source":"pilot:///system.xml","target":"unit:///system.xml"},
             {"action":"Link","source":"pilot:///integrator.xml","target":"unit:///integrator.xml"},
             {"action":"Link","source":"pilot:///openmmrun.py","target":"unit:///openmmrun.py"}
+        ]
+
+        self.assertListEqual(staging_directives, actual)
+
+    def test_get_input_staging_TrajectoryExtensionTask(self):
+        """Test that the input staging directives are properly 
+        generated for a TrajectoryGenerationTask"""
+        task_descriptions = self.db.get_task_descriptions()
+        task_desc = dict()
+        for task in task_descriptions:
+            if task['_id'] == '24888d76-219e-11e8-8f6d-000000000118':
+                task_desc = task
+                break
+        # Get each component of the task
+        pre_task_details = task_desc['_dict'].get('pre', dict())
+        main_task_details = task_desc['_dict'].get('_main', dict())
+        
+        staging_directives = utils.get_input_staging(
+        task_details=pre_task_details, db=self.db, shared_path='/home/test', 
+        project=self.db.project, break_after_non_dict=False)
+        staging_directives.extend(utils.get_input_staging(
+        task_details=main_task_details, db=self.db, shared_path='/home/test', 
+        project=self.db.project, break_after_non_dict=True))
+        
+        actual = [
+            {"action":"Link","source":"pilot:///ntl9.pdb","target":"unit:///initial.pdb"},
+            {"action":"Link","source":"pilot:///system-2.xml","target":"unit:///system-2.xml"},
+            {"action":"Link","source":"pilot:///integrator-2.xml","target":"unit:///integrator-2.xml"},
+            {"action":"Link","source":"pilot:///openmmrun.py","target":"unit:///openmmrun.py"},
+            {"action":"Link","source":"/home/test//projects/test_analysis/trajs/00000000/","target":"unit:///source"}
         ]
 
         self.assertListEqual(staging_directives, actual)
@@ -156,14 +190,49 @@ class TestUtils(unittest.TestCase):
         shared_path='/home/test', project=self.db.project,
         continue_before_non_dict=True))
         
-        actual = [{
-            "action":"Move","source":"traj/protein.dcd",
-            "target":"/home/test//projects/rp_testing_modeller_1/trajs/00000004//protein.dcd"},
+        actual = [{"action":"Move","source":"traj/restart.npz",
+            "target":"/home/test//projects/rp_testing_modeller_1/trajs/00000004//restart.npz"},
             {"action":"Move","source":"traj/master.dcd",
             "target":"/home/test//projects/rp_testing_modeller_1/trajs/00000004//master.dcd"},
-            {"action":"Move","source":"traj/restart.npz",
-            "target":"/home/test//projects/rp_testing_modeller_1/trajs/00000004//restart.npz"
-        }]
+            {"action":"Move","source":"traj/protein.dcd",
+            "target":"/home/test//projects/rp_testing_modeller_1/trajs/00000004//protein.dcd"},
+        ]
+        
+        self.assertListEqual(staging_directives, actual)
+
+    def test_get_output_staging_TrajectoryExtensionTask(self):
+        """Test that the output staging directives are properly generated for a TrajectoryGenerationTask"""
+        task_descriptions = self.db.get_task_descriptions()
+        task_desc = dict()
+        for task in task_descriptions:
+            if task['_id'] == '24888d76-219e-11e8-8f6d-000000000118':
+                task_desc = task
+                break
+        # Get each component of the task
+        main_task_details = task_desc['_dict'].get('_main', dict())
+        post_task_details = task_desc['_dict'].get('post', dict())
+
+        staging_directives = utils.get_output_staging(
+        task_desc=task_desc, task_details=post_task_details, db=self.db,
+        shared_path='/home/test', project=self.db.project,
+        continue_before_non_dict=False)
+        staging_directives.extend(utils.get_output_staging(
+        task_desc=task_desc, task_details=main_task_details, db=self.db,
+        shared_path='/home/test', project=self.db.project,
+        continue_before_non_dict=True))
+
+        actual = [
+            {"action":"Move","source":"extension/protein.temp.dcd",
+            "target":"extension/protein.dcd"},
+            {"action":"Move","source":"extension/master.temp.dcd",
+            "target":"extension/allatoms.dcd"},
+            {"action":"Move","source":"extension/restart.npz",
+            "target":"/home/test//projects/test_analysis/trajs/00000000//restart.npz"},
+            {"action":"Move","source":"extension/allatoms.dcd",
+            "target":"/home/test//projects/test_analysis/trajs/00000000//allatoms.dcd"},
+            {"action":"Move","source":"extension/protein.dcd",
+            "target":"/home/test//projects/test_analysis/trajs/00000000//protein.dcd"},
+        ]
         
         self.assertListEqual(staging_directives, actual)
 
@@ -209,7 +278,7 @@ class TestUtils(unittest.TestCase):
         main_task_details = task_desc['_dict'].get('_main', dict())
         post_task_details = task_desc['_dict'].get('post', dict())
 
-        pre_commands = utils.get_commands(task_steps_list=pre_task_details)
+        pre_commands = utils.get_commands(task_steps_list=pre_task_details, shared_path=self.shared_path, project=self.project)
         actual = [
             "source /home/test/venv/bin/activate",
             "mdconvert -o input.pdb -i 3 -t initial.pdb source/allatoms.dcd"
@@ -217,12 +286,45 @@ class TestUtils(unittest.TestCase):
 
         self.assertListEqual(pre_commands, actual)
 
-        main_commands = utils.get_commands(task_steps_list=main_task_details)
+        main_commands = utils.get_commands(task_steps_list=main_task_details, shared_path=self.shared_path, project=self.project)
         actual = ["\nj=0\ntries=10\nsleep=1\n\ntrajfile=traj/allatoms.dcd\n\nwhile [ $j -le $tries ]; do if ! [ -s $trajfile ]; then python openmmrun.py -r --report-interval 1 -p CPU --types=\"{'protein':{'stride':1,'selection':'protein','name':null,'filename':'protein.dcd'},'master':{'stride':10,'selection':null,'name':null,'filename':'master.dcd'}}\" -t initial.pdb --length 100 traj/; fi; sleep 1; j=$((j+1)); done"]
         self.assertListEqual(main_commands, actual)
 
-        post_commands = utils.get_commands(task_steps_list=post_task_details)
+        post_commands = utils.get_commands(task_steps_list=post_task_details, shared_path=self.shared_path, project=self.project)
         actual = ["deactivate"]
+        self.assertListEqual(post_commands, actual)
+
+    def test_get_commands_TrajectoryExtensionTask(self):
+        """Test that the commands are properly captured for a TrajectoryGenerationTask"""
+        task_descriptions = self.db.get_task_descriptions()
+        task_desc = dict()
+        for task in task_descriptions:
+            if task['_id'] == '24888d76-219e-11e8-8f6d-000000000118':
+                task_desc = task
+                break
+        # Get each component of the task
+        pre_task_details = task_desc['_dict'].get('pre', dict())
+        main_task_details = task_desc['_dict'].get('_main', dict())
+        post_task_details = task_desc['_dict'].get('post', dict())
+
+        pre_commands = utils.get_commands(task_steps_list=pre_task_details, shared_path=self.shared_path, project=self.project)
+        actual = [
+            "module load python",
+            "source /lustre/atlas/proj-shared/bip149/jrossyra/admdrp/admdrpenv/bin/activate"
+        ]
+
+        self.assertListEqual(pre_commands, actual)
+
+        main_commands = utils.get_commands(task_steps_list=main_task_details, shared_path=self.shared_path, project=self.project)
+        actual = ["\nj=0\ntries=10\nsleep=1\n\ntrajfile=extension/protein.dcd\n\nwhile [ $j -le $tries ]; do if ! [ -s $trajfile ]; then python openmmrun.py -r -p CPU --types=\"{'protein':{'stride':2,'selection':'protein','name':null,'filename':'protein.dcd'},'master':{'stride':10,'selection':null,'name':null,'filename':'allatoms.dcd'}}\" -s system-2.xml -i integrator-2.xml --restart /home/test//projects/test_analysis/trajs/00000000/restart.npz -t initial.pdb --length 200 extension/; fi; sleep 1; j=$((j+1)); done"]
+        self.assertListEqual(main_commands, actual)
+
+        post_commands = utils.get_commands(task_steps_list=post_task_details, shared_path=self.shared_path, project=self.project)
+        actual = [
+            "mdconvert -o extension/protein.temp.dcd source/protein.dcd extension/protein.dcd",
+            "mdconvert -o extension/master.temp.dcd source/allatoms.dcd extension/allatoms.dcd",
+            "deactivate"
+        ]
         self.assertListEqual(post_commands, actual)
         
     def test_get_commands_PythonTask(self):
@@ -238,15 +340,15 @@ class TestUtils(unittest.TestCase):
         main_task_details = task_desc['_dict'].get('_main', dict())
         post_task_details = task_desc['_dict'].get('post', dict())
 
-        pre_commands = utils.get_commands(task_steps_list=pre_task_details)
+        pre_commands = utils.get_commands(task_steps_list=pre_task_details, shared_path=self.shared_path, project=self.project)
         actual = ["source /home/test/venv/bin/activate"]
         self.assertListEqual(pre_commands, actual)
 
-        main_commands = utils.get_commands(task_steps_list=main_task_details)
+        main_commands = utils.get_commands(task_steps_list=main_task_details, shared_path=self.shared_path, project=self.project)
         actual = ["python _run_.py"]
         self.assertListEqual(main_commands, actual)
 
-        post_commands = utils.get_commands(task_steps_list=post_task_details)
+        post_commands = utils.get_commands(task_steps_list=post_task_details, shared_path=self.shared_path, project=self.project)
         actual = ["deactivate"]
         self.assertListEqual(post_commands, actual)
 
@@ -263,6 +365,21 @@ class TestUtils(unittest.TestCase):
 
         environment = utils.get_environment_from_task(task_desc)
         actual = {"TEST1": "1", "TEST2": "2"}
+        self.assertDictEqual(environment, actual)
+
+    def test_get_environment_from_task_TrajectoryExtensionTask(self):
+        """Test that the environment variables for the TrajectoryGenerationTask are properly captured"""
+        task_descriptions = self.db.get_task_descriptions()
+        
+        # TrajectoryGenerationTask
+        task_desc = dict()
+        for task in task_descriptions:
+            if task['_id'] == '24888d76-219e-11e8-8f6d-000000000118':
+                task_desc = task
+                break
+
+        environment = utils.get_environment_from_task(task_desc)
+        actual = {"OPENMM_CPU_THREADS": "1", "TEST1": "1", "TEST2": "2", "TEST3": "hello"}
         self.assertDictEqual(environment, actual)
     
     def test_get_environment_from_task_PythonTask(self):
@@ -297,6 +414,24 @@ class TestUtils(unittest.TestCase):
             "/home/test/path2"
         ]
         self.assertListEqual(paths, actual)
+
+    def test_get_paths_from_task_TrajectoryExtensionTask(self):
+        """Test that the paths variables for the TrajectoryGenerationTask are properly captured"""
+        task_descriptions = self.db.get_task_descriptions()
+        
+        # TrajectoryGenerationTask
+        task_desc = dict()
+        for task in task_descriptions:
+            if task['_id'] == '24888d76-219e-11e8-8f6d-000000000118':
+                task_desc = task
+                break
+
+        paths = utils.get_paths_from_task(task_desc)
+        actual = [
+            "/home/test/path5",
+            "/home/test/path6"
+        ]
+        self.assertListEqual(paths, actual)
     
     def test_get_paths_from_task_PythonTask(self):
         """Test that the paths variables for PythonTask are properly captured"""
@@ -327,13 +462,36 @@ class TestUtils(unittest.TestCase):
                 task_desc = task
                 break
 
-        exe, args = utils.get_executable_arguments(task_desc['_dict']['_main'])
+        exe, args = utils.get_executable_arguments(task_desc['_dict']['_main'], self.shared_path, self.project)
         actual_exe = 'python'
         actual_args = [
             "openmmrun.py", "-r", "--report-interval", "1",
             "-p", "CPU", "--types",
             "{'protein':{'stride':1,'selection':'protein','name':null,'filename':'protein.dcd'},'master':{'stride':10,'selection':null,'name':null,'filename':'master.dcd'}}",
             "-t", "initial.pdb", "--length", "100", "traj/"
+        ]
+        self.assertEqual(exe, actual_exe)
+        for i in xrange(len(args)):
+            self.assertEqual(args[i], actual_args[i])
+
+    def test_get_executable_arguments_TrajectoryExtensionTask(self):
+        """Test that the executable and its arguments for TrajectoryGenerationTask are properly captured"""
+        task_descriptions = self.db.get_task_descriptions()
+        
+        # TrajectoryGenerationTask
+        task_desc = dict()
+        for task in task_descriptions:
+            if task['_id'] == '24888d76-219e-11e8-8f6d-000000000118':
+                task_desc = task
+                break
+
+        exe, args = utils.get_executable_arguments(task_desc['_dict']['_main'], self.shared_path, self.project)
+        actual_exe = 'python'
+        actual_args = [
+            "openmmrun.py", "-r", "-p", "CPU", "--types",
+            "{'protein':{'stride':2,'selection':'protein','name':null,'filename':'protein.dcd'},'master':{'stride':10,'selection':null,'name':null,'filename':'allatoms.dcd'}}",
+            "-s", "system-2.xml", "-i", "integrator-2.xml", "--restart", "/home/test//projects/test_analysis/trajs/00000000/restart.npz",
+            "-t", "initial.pdb", "--length", "200", "extension/"
         ]
         self.assertEqual(exe, actual_exe)
         for i in xrange(len(args)):
@@ -350,7 +508,7 @@ class TestUtils(unittest.TestCase):
                 task_desc = task
                 break
 
-        exe, args = utils.get_executable_arguments(task_desc['_dict']['_main'])
+        exe, args = utils.get_executable_arguments(task_desc['_dict']['_main'], self.shared_path, self.project)
         actual_exe = 'python'
         actual_args = ['_run_.py']
         self.assertEqual(exe, actual_exe)
@@ -405,7 +563,7 @@ class TestUtils(unittest.TestCase):
         actual = "/home/test/projects/{}//some/path.py".format(self.db.project)
         self.assertEquals(exp_path, actual)
 
-    def test_generate_trajectorygenerationtask_cud(self):
+    def test_generate_trajectorygenerationtask_generation_cud(self):
         """Test proper Compute Unit Description generation for TrajectoryGenerationTask"""
         task_descriptions = self.db.get_task_descriptions()
 
@@ -431,6 +589,7 @@ class TestUtils(unittest.TestCase):
         ]
         actual_cud.pre_exec = [
             'mkdir -p traj',
+            'mkdir -p extension',
             'source /home/test/venv/bin/activate',
             'mdconvert -o input.pdb -i 3 -t initial.pdb source/allatoms.dcd'
         ]
@@ -441,15 +600,87 @@ class TestUtils(unittest.TestCase):
             "{'protein':{'stride':1,'selection':'protein','name':null,'filename':'protein.dcd'},'master':{'stride':10,'selection':null,'name':null,'filename':'master.dcd'}}",
             "-t", "initial.pdb", "--length", "100", "traj/"
         ]
-        actual_cud.output_staging = [{
-            "action":"Move","source":"traj/protein.dcd",
-            "target":"/home/test//projects/rp_testing_modeller_1/trajs/00000004//protein.dcd"},
+        actual_cud.output_staging = [{"action":"Move","source":"traj/restart.npz",
+            "target":"/home/test//projects/rp_testing_modeller_1/trajs/00000004//restart.npz"},
             {"action":"Move","source":"traj/master.dcd",
             "target":"/home/test//projects/rp_testing_modeller_1/trajs/00000004//master.dcd"},
-            {"action":"Move","source":"traj/restart.npz",
-            "target":"/home/test//projects/rp_testing_modeller_1/trajs/00000004//restart.npz"
-        }]
+            {"action":"Move","source":"traj/protein.dcd",
+            "target":"/home/test//projects/rp_testing_modeller_1/trajs/00000004//protein.dcd"},
+            ]
         actual_cud.post_exec = ['deactivate']
+        actual_cud.mpi = False
+        actual_cud.cores = 1
+
+        # compare all parts of the cuds
+        self.maxDiff = None
+        self.assertEquals(cud.name, actual_cud.name)
+        self.assertDictEqual(cud.environment, actual_cud.environment)
+        self.assertListEqual(cud.input_staging, actual_cud.input_staging)
+        self.assertListEqual(cud.pre_exec, actual_cud.pre_exec)
+        self.assertEquals(cud.executable, actual_cud.executable)
+        self.assertListEqual(cud.arguments, actual_cud.arguments)
+        self.assertListEqual(cud.output_staging, actual_cud.output_staging)
+        self.assertListEqual(cud.post_exec, actual_cud.post_exec)
+        self.assertEquals(cud.mpi, actual_cud.mpi)
+        self.assertEquals(cud.cores, actual_cud.cores)
+
+    def test_generate_trajectorygenerationtask_extension_cud(self):
+        """Test proper Compute Unit Description generation for TrajectoryExtensionTask"""
+        task_descriptions = self.db.get_task_descriptions()
+
+        # PythonTask
+        task_desc = dict()
+        for task in task_descriptions:
+            if task['_id'] == "24888d76-219e-11e8-8f6d-000000000118":
+                task_desc = task
+                break
+
+        cud = utils.generate_trajectorygenerationtask_cud(task_desc, self.db, self.shared_path, self.project)
+        actual_cud = rp.ComputeUnitDescription()
+        actual_cud.name = "24888d76-219e-11e8-8f6d-000000000118"
+        actual_cud.environment = {
+            "OPENMM_CPU_THREADS": "1",
+            "TEST1": "1",
+            "TEST2": "2",
+            "TEST3": "hello"
+        }
+        actual_cud.input_staging = [
+            {"action":"Link","source":"pilot:///ntl9.pdb","target":"unit:///initial.pdb"},
+            {"action":"Link","source":"pilot:///system-2.xml","target":"unit:///system-2.xml"},
+            {"action":"Link","source":"pilot:///integrator-2.xml","target":"unit:///integrator-2.xml"},
+            {"action":"Link","source":"pilot:///openmmrun.py","target":"unit:///openmmrun.py"},
+            {"action":"Link","source":"/home/test//projects/test_analysis/trajs/00000000/","target":"unit:///source"}
+        ]
+        actual_cud.pre_exec = [
+            'mkdir -p traj',
+            'mkdir -p extension',
+            "module load python",
+            "source /lustre/atlas/proj-shared/bip149/jrossyra/admdrp/admdrpenv/bin/activate"
+        ]
+        actual_cud.executable = 'python'
+        actual_cud.arguments = [
+            "openmmrun.py", "-r", "-p", "CPU", "--types",
+            "{'protein':{'stride':2,'selection':'protein','name':null,'filename':'protein.dcd'},'master':{'stride':10,'selection':null,'name':null,'filename':'allatoms.dcd'}}",
+            "-s", "system-2.xml", "-i", "integrator-2.xml", "--restart", "/home/test//projects/test_analysis/trajs/00000000/restart.npz",
+            "-t", "initial.pdb", "--length", "200", "extension/"
+        ]
+        actual_cud.output_staging = [
+            {"action":"Move","source":"extension/protein.temp.dcd",
+            "target":"extension/protein.dcd"},
+            {"action":"Move","source":"extension/master.temp.dcd",
+            "target":"extension/allatoms.dcd"},
+            {"action":"Move","source":"extension/restart.npz",
+            "target":"/home/test//projects/test_analysis/trajs/00000000//restart.npz"},
+            {"action":"Move","source":"extension/allatoms.dcd",
+            "target":"/home/test//projects/test_analysis/trajs/00000000//allatoms.dcd"},
+            {"action":"Move","source":"extension/protein.dcd",
+            "target":"/home/test//projects/test_analysis/trajs/00000000//protein.dcd"},
+        ]
+        actual_cud.post_exec = [
+            "mdconvert -o extension/protein.temp.dcd source/protein.dcd extension/protein.dcd",
+            "mdconvert -o extension/master.temp.dcd source/allatoms.dcd extension/allatoms.dcd",
+            "deactivate"
+        ]
         actual_cud.mpi = False
         actual_cud.cores = 1
 
@@ -494,6 +725,7 @@ class TestUtils(unittest.TestCase):
         ]
         actual_cud.pre_exec = [
             'mkdir -p traj',
+            'mkdir -p extension',
             'echo \'{}\' > \'{}\''.format(json.dumps(inpu_json_data['contents']), inpu_json_data['target']), # stage input.json
             "source /home/test/venv/bin/activate"
         ]
