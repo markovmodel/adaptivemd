@@ -25,6 +25,7 @@ from __future__ import print_function, absolute_import
 import os
 
 import six
+import uuid
 
 from .file import File, JSONFile, FileTransaction
 from .util import get_function_source
@@ -870,6 +871,30 @@ class PrePostTask(Task):
         self.pre.append(transaction)
         return transaction.target
 
+    def post_put(self, f, target):
+        """
+        Put a file back and make it persistent
+
+        Corresponds to output_staging
+
+        Parameters
+        ----------
+        f : `File`
+            the file to be used
+        target : str or `File`
+            the target location. Need to contain a URL like `staging://` or
+            `file://` for application side files
+
+        Returns
+        -------
+        `Location`
+            the actual target location
+
+        """
+        transaction = f.move(target)
+        self.post.append(transaction)
+        return transaction.target
+
     @property
     def pre_exec(self):
         return (
@@ -1043,11 +1068,12 @@ class PythonTask(PrePostTask):
 
     _copy_attributes = PrePostTask._copy_attributes + [
         '_python_import', '_python_source_files', '_python_function_name',
-        '_python_args', '_python_kwargs',
+        '_python_args', '_python_kwargs', 'output_stored',
         '_rpc_input_file', '_rpc_output_file',
         'then_func_name', 'store_output']
 
     then_func = None
+    output_stored = SyncVariable('output_stored', lambda x: isinstance(x, bool))
 
     def __init__(self, generator=None, resource_name=None,
                  est_exec_time=5, cpu_threads=1, 
@@ -1062,6 +1088,7 @@ class PythonTask(PrePostTask):
         self._python_function_name = None
         self._python_args = None
         self._python_kwargs = None
+        self.output_stored = False
 
         # self.executable = 'python'
         # self.arguments = '_run_.py'
@@ -1100,6 +1127,31 @@ class PythonTask(PrePostTask):
         """
         self.post.append(File('output.json').copy(target))
 
+    def set_output_stored(self, project, is_stored):
+        my_id = str(uuid.UUID(int=self.__uuid__))
+        project.storage.tasks._document.update_one({"_id": my_id},
+            {"$set": {"_dict.output_stored": is_stored}})
+
+   ### @property
+   ### def output_stored(self):
+   ###     return self._output_stored
+
+   ### @output_stored.setter
+   ### #def output_stored(self, project_isstored):
+   ### def output_stored(self, is_stored):
+   ###     # TODO WHY can't we just do this:
+   ###     print(is_stored, is_stored.__class__)
+   ###     assert isinstance(is_stored, bool)
+   ###     self._output_stored = is_stored
+   ###     #project, isstored = project_isstored
+   ###     #my_id = str(uuid.UUID(int=self.__uuid__))
+   ###     #project.storage.tasks._document.update_one({"_id": my_id},
+   ###     #    {"$set": {"_dict._output_stored": isstored}})
+   ### def mark_output_stored(self, project, is_stored):
+   ###     my_id = str(uuid.UUID(int=self.__uuid__))
+   ###     project.storage.tasks._document.update_one({"_id": my_id},
+   ###         {"$set": {"_dict._output_stored": is_stored}})
+   ###  
     def _cb_success(self, scheduler, path=None):
         # here is the logic to retrieve the result object
         # the output file is a JSON and these know how to load itself
@@ -1112,8 +1164,12 @@ class PythonTask(PrePostTask):
         data = self._rpc_output_file.get(scheduler, path)
 
         if self.generator is not None and hasattr(self.generator, self.then_func_name):
+
             getattr(self.generator, self.then_func_name)(
                 scheduler.project, self, data, self._python_kwargs)
+
+            #self.output_stored = tuple([scheduler.project, True])
+            self.set_output_stored(scheduler.project, True)
 
         # cleanup
         # mark as changed / deleted

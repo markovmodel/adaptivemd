@@ -511,7 +511,7 @@ class ObjectStore(StorableMixin):
     @property
     def last(self):
         """
-        Returns the last generated trajectory. Useful to continue a run.
+        Returns the last generated object. Useful to continue a run.
 
         Returns
         -------
@@ -606,7 +606,7 @@ class ObjectStore(StorableMixin):
         idx = self._document.find_one(dct)['_id']
         return self.load(int(UUID(idx)))
 
-    def load(self, idx, builder=None):
+    def load(self, idx, builder=None, force_load=False):
         """
         Returns an object from the storage.
 
@@ -637,14 +637,20 @@ class ObjectStore(StorableMixin):
                 '(only str and long)') % type(idx).__name__
             )
 
-        # if it is in the cache, return it
-        try:
-            obj = self.cache[idx]
-            logger.debug('Found IDX #' + str(idx) + ' in cache. Not loading!')
-            return obj
+        if not force_load:
+            # if it is in the cache, return it
+            try:
+                obj = self.cache[idx]
+                logger.debug('Found IDX #' + str(idx) + ' in cache. Not loading!')
+                return obj
 
-        except KeyError:
-            pass
+            except KeyError:
+                pass
+
+        else:
+            logger.debug(
+                'Forcing load of object #%d of class %s' %
+                (idx, self.content_class.__name__))
 
         logger.debug(
             'Calling load object of type `%s` @ IDX #%d' %

@@ -189,8 +189,9 @@ class OpenMMEngine(Engine):
         target = source.clone()
         target.length = len(source) + length
 
-        t = TrajectoryExtensionTask(self, target, source, cpu_threads,
-                                    gpu_contexts, mpi_rank)
+        t = TrajectoryExtensionTask(self, target, source, cpu_threads=cpu_threads,
+                                    gpu_contexts=gpu_contexts, mpi_rank=mpi_rank,
+                                    )#resource_name=resource_name, export_path=export_path)
 
         if resource_name is None:
             resource_name = list()
@@ -244,19 +245,20 @@ class OpenMMEngine(Engine):
         for ty, desc in self.types.items():
             # stride = desc['stride']
 
-            t.append('mdconvert -o {output} {source} {extension}'.format(
-                output=extension.file('extension.dcd'),
+            outname = ty + '.temp.dcd'
+            t.post.append('mdconvert -o {output} {source} {extension}'.format(
+                output=extension.file(outname),
                 source=source_link.outputs(ty),
                 extension=extension.outputs(ty)
             ))
 
             # rename joined extended.dcd into output.dcd
-            t.append(extension.file('extension.dcd').move(extension.outputs(ty)))
+            t.post.append(extension.file(outname).move(extension.outputs(ty)))
 
         # now extension/ should contain all files as expected
         # move extended trajectory to target place (replace old) files
         # this will also register the new trajectory folder as existent
-        t.put(extension, target)
+        t.post_put(extension, target)
 
         return t
 

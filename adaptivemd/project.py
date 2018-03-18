@@ -20,7 +20,7 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with MDTraj. If not, see <http://www.gnu.org/licenses/>.
 ##############################################################################
-from __future__ import absolute_import, print_function
+#from __future__ import absolute_import, print_function
 
 
 import threading
@@ -124,6 +124,10 @@ class Project(object):
     """
 
     @classmethod
+    def set_dburl(cls, dburl):
+        MongoDBStorage._db_url = dburl
+
+    @classmethod
     def set_dblocation(cls, hostname, portnumber=None):
         '''
         Use this method to set the full address of the MongoDB
@@ -134,6 +138,13 @@ class Project(object):
             cls.set_dbport(portnumber)
         else:
             MongoDBStorage.set_location(hostname)
+
+    @classmethod
+    def set_dbport(cls, portnumber):
+        '''
+        Set the port number used by the MongoDB host
+        '''
+        MongoDBStorage.set_port(portnumber)
 
     @classmethod
     def set_dbhost(cls, hostname):
@@ -183,14 +194,14 @@ class Project(object):
                 self._current_configuration = cur
 
             else:
-                print("Current configuration pattern must match a single item\n"
+                logger.warning("Current configuration pattern must match a single item\n"
                       "Arbitrarily selecting the last matching entry: Configuration.name=={0}"
                       .format(cfg[-1].name))
 
                 self.set_current_configuration(cfg[-1])
 
         else:
-            print("Did not set a new current configuration")
+            logger.error("Did not set a new current configuration")
 
     def read_configurations(self, configuration_file=None, default_configuration=None):
         '''
@@ -209,15 +220,12 @@ class Project(object):
 
         self.set_current_configuration(default_configuration)
 
-    @classmethod
-    def set_dbport(cls, portnumber):
-        '''
-        Set the port number used by the MongoDB host
-        '''
-        MongoDBStorage.set_port(portnumber)
-
     def __init__(self, name):
         self.name = name
+
+        dburl = os.environ.get("ADMD_DBURL")
+        if dburl:
+            self.set_dburl(dburl)
 
         #del#self.session = None
         self.schedulers = set()
@@ -681,8 +689,8 @@ class Project(object):
 
             state_picks = np.random.choice(np.arange(len(q)), size=n_pick, p=q)
 
-            print("Using probability vector for states q:\n", q)
-            print("...we have chosen these states:\n", [(s, q[s]) for s in state_picks])
+            logger.info("Using probability vector for states q:\n{}".format(q))
+            logger.info("...we have chosen these states:\n {}".format([(s, q[s]) for s in state_picks]))
 
             filelist = data['input']['trajectories']
 
@@ -696,13 +704,13 @@ class Project(object):
 
         elif len(self.trajectories) > 0:
             # otherwise pick random
-            print("Using random vector to select new frames")
+            logger.info("Using random vector to select new frames")
             trajlist = [
                 self.trajectories.pick().pick() for _ in range(n_pick)]
         else:
             trajlist = []
 
-        print("Trajectory picks list:\n", trajlist)
+        logger.info("Trajectory picks list:\n{}".format(trajlist))
         return trajlist
 
     def new_ml_trajectory(self, engine, length, number=None, randomly=False):

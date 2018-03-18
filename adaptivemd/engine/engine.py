@@ -326,7 +326,8 @@ class Trajectory(File):
 
             x = self
             for l in length:
-                x = x.engine.extend(x, l, export_path=export_path)
+                x = x.engine.extend(x, l, export_path=export_path, gpu_contexts=gpu_contexts,
+                     resource_name=resource_name, cpu_threads=cpu_threads, mpi_rank=mpi_rank)
 
             return x
         else:
@@ -478,8 +479,8 @@ class TrajectoryGenerationTask(PrePostTask):
                  est_exec_time=5, cpu_threads=1, gpu_contexts=0, mpi_rank=0):
 
         super(TrajectoryGenerationTask, self).__init__(
-            generator, resource_name, est_exec_time,
-            cpu_threads, gpu_contexts, mpi_rank)
+            generator, resource_name=resource_name, est_exec_time=est_exec_time,
+            cpu_threads=cpu_threads, gpu_contexts=gpu_contexts, mpi_rank=mpi_rank)
 
         # set this engine to be run by this
         self.trajectory = trajectory
@@ -524,8 +525,8 @@ class TrajectoryExtensionTask(TrajectoryGenerationTask):
                  est_exec_time=5, cpu_threads=1, gpu_contexts=0, mpi_rank=0):
 
         super(TrajectoryExtensionTask, self).__init__(
-            generator, trajectory, resource_name, est_exec_time,
-            cpu_threads, gpu_contexts, mpi_rank)
+            generator, trajectory, resource_name=resource_name, est_exec_time=est_exec_time,
+            cpu_threads=cpu_threads, gpu_contexts=gpu_contexts, mpi_rank=mpi_rank)
 
         self.source = source
 

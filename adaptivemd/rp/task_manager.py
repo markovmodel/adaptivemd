@@ -45,7 +45,6 @@ class TaskManager(object):
 
                 if state in [rp.DONE, rp.UMGR_STAGING_OUTPUT_PENDING]:
                     
-                    print unit.name
                     done = self._db_obj.update_task_description_status(unit.name, 'success')
 
                     if done:

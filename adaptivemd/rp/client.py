@@ -49,7 +49,7 @@ class Client(object):
         for resource_reqs in processed_resource_reqs:
 
             resource_name = resource_reqs['resource']
-            print('Resource', resource_name)
+            #print('Resource', resource_name)
 
             matching_configs = get_matching_configurations(configurations=processed_configs, resource_name=resource_name)
 
