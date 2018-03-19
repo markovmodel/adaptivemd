@@ -145,6 +145,7 @@ class Client(object):
         finally:
 
             if self._rmgr:
+                # TODO what to do when _rmgs.pilot is None (ie pilot fails but we get here)?
                 self._rmgr.pilot.cancel()
                 self._rmgr.session.close(cleanup=False)
 
