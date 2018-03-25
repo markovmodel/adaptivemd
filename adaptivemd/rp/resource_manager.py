@@ -277,7 +277,8 @@ class ResourceManager(object):
         except KeyboardInterrupt:
 
             if self._session:
-                self._session.close()
+                #self._session.close()
+                self._session.close(download=True)
 
             self._logger.error('Execution interrupted by user (you probably hit Ctrl+C), '+
                                             'trying to exit callback thread gracefully...')
@@ -299,7 +300,7 @@ class ResourceManager(object):
         try:
 
             self._pilot.cancel()
-            self._session.close(cleanup=False)
+            self._session.close(download=True, cleanup=False)
 
         except KeyboardInterrupt:
 

@@ -268,7 +268,16 @@ class BaseBundle(object):
 
         """
         if self:
+            if hasattr(self, '_sest'):
+                if hasattr(self._set, 'pick'):
+                    #print("USING FASTPICK")
+                    return self._set.pick()
+
+            # TODO is there a genral replacement?
+            # creating a tuple of self is
+            # prohibitively slow when called many times
             return random.choice(tuple(self))
+
         else:
             return None
 

@@ -30,6 +30,8 @@ import logging
 from uuid import UUID
 from weakref import WeakValueDictionary
 
+from numpy.random import randint
+
 import six
 
 from .base import StorableMixin, long_t
@@ -535,7 +537,7 @@ class ObjectStore(StorableMixin):
     @property
     def one(self):
         """
-        Returns one random object.
+        Returns one object.
 
         Returns
         -------
@@ -544,6 +546,26 @@ class ObjectStore(StorableMixin):
         """
         idx = int(UUID(self._document.find_one()['_id']))
         return self.load(idx)
+
+    def pick(self):
+        '''
+        Return one random element
+
+        Returns
+        -------
+        
+        '''
+        # TODO use numpy.random.choice and optional
+        #       number argument to get multiple.
+        #       use/implement bulk pull&load for
+        #       for this
+        length = len(self)
+        if length:
+            idx = randint(length)
+            return self.load(self.index[idx])
+        else:
+            return None
+        
 
     @property
     def last(self):

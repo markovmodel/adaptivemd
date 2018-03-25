@@ -705,8 +705,26 @@ class Project(object):
         elif len(self.trajectories) > 0:
             # otherwise pick random
             logger.info("Using random vector to select new frames")
+            # TODO simplify fast-method interface for ViewBundles
+            #       to look like the (slow) pick methods
+            current_trajs_index = [t.__uuid__ for t in self.trajectories]
             trajlist = [
-                self.trajectories.pick().pick() for _ in range(n_pick)]
+                self.files._set.load(
+                        current_trajs_index[
+                        np.random.randint(len(current_trajs_index))]).pick()
+                        for _ in range(n_pick)]
+            # TOO SLOW
+            # makes new list of bundle for each inner pick
+            # "Full" bundles can use random selection on the
+            # index to speed up tremendously, but ViewBundles
+            # are filtered so we'd need to create the sub-index
+            # for selection (ie pick() with no args on
+            # ViewBundle might build its sub-index (make 1-time
+            # and later return as property), pass as subindex arg
+            # to its parent "Full" bundle, who then loads
+            # from the store with a random selected index
+            #trajlist = [ self.trajectories<ViewBundle>.pick().pick() ]
+                
         else:
             trajlist = []
 
