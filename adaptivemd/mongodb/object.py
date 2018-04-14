@@ -506,9 +506,38 @@ class ObjectStore(StorableMixin):
             self._cached_all = True
 
     def _save(self, obj):
-        dct = self.storage.simplifier.to_simple_dict(obj)
-        self._document.insert_one(dct)
-        obj.__store__ = self
+        """Save can recieve an object or group of objects to store.
+           The group can be `list`, `set`, or `tuple`.
+           The object will be simplified for storage and stored
+           with `pymongo.Collection.insert_many` method.
+        """
+        # TODO is there additional overhead for single inserts
+        #      when insert_many is used?
+        #      - just insert_one if object isn't a group
+        if not isinstance(obj, (tuple, list, set)):
+            obj = [obj]
+
+        else:
+
+            # mark as saved so circular dependencies will not cause infinite loops
+            next_idc = len(self.index)
+            [self.index.append(o.uuid) for o in obj]
+
+            logger.debug('Saving ' + str(type(obj)) + ' using IDX #' + str(uuid))
+
+            try:
+                l_dct = [self.storage.simplifier.to_simple_dict(o) for o in obj]
+                self._document.insert_many(l_dct)
+                [o.__store__ = self for o in obj]
+                [self.cache[o.uuid] for o in obj]
+
+            except:
+                # in case we did not succeed remove the mark as being saved
+                del self.index[next_idc:]
+                raise
+
+        return [self.reference(o) for o in obj]
+
 
     @property
     def last(self):
@@ -698,11 +727,33 @@ class ObjectStore(StorableMixin):
 
         return obj
 
+
     @staticmethod
     def reference(obj):
         return obj.__uuid__
 
+
     def save(self, obj):
+        """
+        Handler for saving objects to storage.
+        If `obj` is not a group (`tuple`, `list`, or `set`),
+        saving is delegated to `_save_one` method.
+        Otherwise, we handle the group of objects.
+        """
+        if not isinstance(obj, (tuple, list, set)):
+            return self._save_one(obj)
+        else:
+            return self._save_many(obj)
+        
+
+    def _save_many(self, l_obj):
+        e,s = self._part_onsaved(l_obj)
+        if s:
+            sv = self._save(sv)
+        return (e,sv)
+
+
+    def _save_one(self, obj):
         """
         Saves an object to the storage.
 
@@ -712,49 +763,79 @@ class ObjectStore(StorableMixin):
             the object to be stored
 
         """
-        uuid = obj.__uuid__
 
+        e,s = self._part_onsaved(obj)
+
+        if s:
+            # TODO remove this check after making test
+            if e:
+                raise Exception
+
+            e = self._save(*s)
+
+        return e[0]
+
+
+
+    def _part_onsaved(self, obj)
+
+        if not isinstance(obj, (tuple, set, list)):
+            obj = [obj]
+
+        e = []
+        s = []
+        for o in obj:
+
+            try:
+                exists = self._check_obj_exists(o)
+                if exists:
+                    e.append(exists)
+                else:
+                    s.append(o)
+            except:
+                # an objeect was targeted to wrong store
+                pass
+
+        return (e, s)
+
+
+    def _check_obj_exists(self, obj):
+        uuid = obj.__uuid__
         if uuid in self.index:
             # has been saved so quit and do nothing
-            return self.reference(obj)
+            return self.reference(o)
 
-        if isinstance(obj, LoaderProxy):
+        elif isinstance(obj, LoaderProxy):
             if obj._store is self:
                 # is a proxy of a saved object so do nothing
                 return uuid
-            else:
-                # it is stored but not in this store so we try storing the
-                # full attribute which might be still in cache or memory
-                # if that is not the case it will be stored again. This can
-                # happen when you load from one store save to another. And load
-                # again after some time while the cache has been changed and try
-                # to save again the loaded object. We will not explicitly store
-                # a table that matches objects between different storages.
-                return self.save(obj.__subject__)
 
-        if not isinstance(obj, self.content_class):
+            else:
+                print("DOES THIS EVER HAPPEN??")
+                print("FOUND LOADER PROXY NOT IN STORE TARGETED FOR SAVING")
+                print("NEED TO SEE IF ITS \"SAVED\"")
+                return self.save(o.__subject__)
+                # TODO which is correct?
+                #e.append(one)
+                #s.append(one)
+            #    # it is stored but not in this store so we try storing the
+            #    # full attribute which might be still in cache or memory
+            #    # if that is not the case it will be stored again. This can
+            #    # happen when you load from one store save to another. And load
+            #    # again after some time while the cache has been changed and try
+            #    # to save again the loaded object. We will not explicitly store
+            #    # a table that matches objects between different storages.
+            #    return self.save(o.__subject__)
+
+        elif not isinstance(obj, self.content_class):
             raise ValueError((
                 'This store can only store object of base type "%s". Given '
                 'obj is of type "%s". You might need to use another store.')
                 % (self.content_class, obj.__class__.__name__)
             )
+        else:
+            return False
 
-        # mark as saved so circular dependencies will not cause infinite loops
-        n_idx = len(self.index)
-        self.index.append(uuid)
-
-        logger.debug('Saving ' + str(type(obj)) + ' using IDX #' + str(uuid))
-
-        try:
-            self._save(obj)
-            self.cache[uuid] = obj
-
-        except:
-            # in case we did not succeed remove the mark as being saved
-            del self.index[n_idx]
-            raise
-
-        return self.reference(obj)
 
     def add_single_to_cache(self, idx, json):
         """

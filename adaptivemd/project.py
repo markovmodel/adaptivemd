@@ -343,7 +343,8 @@ class Project(object):
         r = Resource(total_cpus, total_time,
                      total_gpus, destination)
 
-        self.storage.save(r)
+        #self.storage.save(r)
+        self.resources.add(r)
         #return r
 
     def _open_db(self):
