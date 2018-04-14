@@ -503,7 +503,7 @@ class StoredBundle(Bundle):
 
     def add(self, item):
         """
-        Add an element to the bundle
+        Add an element or group of elements to the bundle.
 
         Parameters
         ----------
@@ -511,8 +511,14 @@ class StoredBundle(Bundle):
             the item to be added to the bundle
 
         """
-        if self._set is not None and item not in self._set:
-            logger.info('Added file of type `%s`' % item.__class__.__name__)
+        # NOTE there should be handling for item not in set downstream
+        if self._set is not None:# and item not in self._set:
+            if isinstance(item, (list, tuple, set)):
+                it = item[0]
+            else:
+                it = item
+
+            logger.info('Adding element of type `%s to store %s`' % (it.__class__.__name__, self._set.__name__)
             self._set.save(item)
 
     @property
