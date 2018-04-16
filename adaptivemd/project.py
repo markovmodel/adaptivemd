@@ -455,7 +455,7 @@ class Project(object):
 
         return fail
 
-    def queue(self, *task, **kwargs):#tasks, resource_name=None):
+    def queue(self, task, **kwargs):#tasks, resource_name=None):
         """
         Submit jobs to the worker queue
 

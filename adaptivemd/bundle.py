@@ -518,7 +518,7 @@ class StoredBundle(Bundle):
             else:
                 it = item
 
-            logger.info('Adding element of type `%s to store %s`' % (it.__class__.__name__, self._set.__name__)
+            logger.info('Adding element of type `%s to store %s`' % (it.__class__.__name__, self._set))
             self._set.save(item)
 
     @property

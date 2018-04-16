@@ -514,27 +514,29 @@ class ObjectStore(StorableMixin):
         # TODO is there additional overhead for single inserts
         #      when insert_many is used?
         #      - just insert_one if object isn't a group
-        if not isinstance(obj, (tuple, list, set)):
+
+        if isinstance(obj, (tuple, list, set)):
+            if not obj:
+                return []
+        else:
             obj = [obj]
 
-        else:
+        # mark as saved so circular dependencies will not cause infinite loops
+        next_idc = len(self.index)
+        [self.index.append(o.__uuid__) for o in obj]
 
-            # mark as saved so circular dependencies will not cause infinite loops
-            next_idc = len(self.index)
-            [self.index.append(o.uuid) for o in obj]
+        logger.debug('Saving objects of type ' + str(type(obj[0])) + ' using IDX #' + str(obj[0].__uuid__))
 
-            logger.debug('Saving ' + str(type(obj)) + ' using IDX #' + str(uuid))
+        try:
+            l_dct = [self.storage.simplifier.to_simple_dict(o) for o in obj]
+            self._document.insert_many(l_dct)
+            [setattr(o,'__store__',self) for o in obj]
+            [self.cache.update({o.__uuid__: o}) for o in obj]
 
-            try:
-                l_dct = [self.storage.simplifier.to_simple_dict(o) for o in obj]
-                self._document.insert_many(l_dct)
-                [o.__store__ = self for o in obj]
-                [self.cache[o.uuid] for o in obj]
-
-            except:
-                # in case we did not succeed remove the mark as being saved
-                del self.index[next_idc:]
-                raise
+        except Exception as e:
+            # in case we did not succeed remove the mark as being saved
+            del self.index[next_idc:]
+            raise
 
         return [self.reference(o) for o in obj]
 
@@ -748,8 +750,9 @@ class ObjectStore(StorableMixin):
 
     def _save_many(self, l_obj):
         e,s = self._part_onsaved(l_obj)
+        sv  = []
         if s:
-            sv = self._save(sv)
+            sv = self._save(s)
         return (e,sv)
 
 
@@ -777,22 +780,25 @@ class ObjectStore(StorableMixin):
 
 
 
-    def _part_onsaved(self, obj)
+    def _part_onsaved(self, obj):
 
         if not isinstance(obj, (tuple, set, list)):
             obj = [obj]
 
         e = []
         s = []
+
         for o in obj:
 
             try:
                 exists = self._check_obj_exists(o)
+
                 if exists:
                     e.append(exists)
                 else:
                     s.append(o)
-            except:
+
+            except Exception as e:
                 # an objeect was targeted to wrong store
                 pass
 
@@ -803,7 +809,7 @@ class ObjectStore(StorableMixin):
         uuid = obj.__uuid__
         if uuid in self.index:
             # has been saved so quit and do nothing
-            return self.reference(o)
+            return self.reference(obj)
 
         elif isinstance(obj, LoaderProxy):
             if obj._store is self:
@@ -811,10 +817,7 @@ class ObjectStore(StorableMixin):
                 return uuid
 
             else:
-                print("DOES THIS EVER HAPPEN??")
-                print("FOUND LOADER PROXY NOT IN STORE TARGETED FOR SAVING")
-                print("NEED TO SEE IF ITS \"SAVED\"")
-                return self.save(o.__subject__)
+                return self.save(obj.__subject__)
                 # TODO which is correct?
                 #e.append(one)
                 #s.append(one)
