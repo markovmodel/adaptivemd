@@ -515,10 +515,9 @@ class StoredBundle(Bundle):
         #       - and the __contains__ method iterates over bundle
         #         instead of index (likely fast) as is done downstream
         if self._set is not None:# and item not in self._set:
-            if isinstance(item, (list, tuple, set)):
-                it = item[0]
-            else:
-                it = item
+            if not isinstance(item, (list, tuple, set)):
+                item = [item]
+            it = item[0]
 
             logger.info('Adding element of type `%s to store %s`' % (it.__class__.__name__, self._set))
             [self._set.save(it) for it in item]
