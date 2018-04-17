@@ -134,7 +134,7 @@ class Configuration(StorableMixin):
 
 
     @classmethod
-    def read_configurations(cls, configuration_file=None, project_name=None):
+    def read_configurations(cls, configuration_file='', project_name=None):
         '''
         This method will read a given configuration file or one
         in a default location. The method returns a dict of
@@ -150,6 +150,8 @@ class Configuration(StorableMixin):
         f_cfg = None
         configurations = list()
         _ext = '.cfg'
+
+        configuration_file = os.path.expandvars(configuration_file)
 
         if configuration_file is None:
             locs = ['./' + project_name + _ext,]

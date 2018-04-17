@@ -511,8 +511,16 @@ class StoredBundle(Bundle):
             the item to be added to the bundle
 
         """
-        if self._set is not None and item not in self._set:
-            logger.info('Added file of type `%s`' % item.__class__.__name__)
+        # NOTE there should be handling for item not in set downstream
+        #       - and the __contains__ method iterates over bundle
+        #         instead of index (likely fast) as is done downstream
+        if self._set is not None:# and item not in self._set:
+            if isinstance(item, (list, tuple, set)):
+                it = item[0]
+            else:
+                it = item
+
+            logger.info('Adding element of type `%s to store %s`' % (it.__class__.__name__, self._set))
             self._set.save(item)
 
     @property
