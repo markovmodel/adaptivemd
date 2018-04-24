@@ -503,7 +503,7 @@ class StoredBundle(Bundle):
 
     def add(self, item):
         """
-        Add an element to the bundle
+        Add an element or group of elements to the bundle.
 
         Parameters
         ----------
@@ -512,15 +512,25 @@ class StoredBundle(Bundle):
 
         """
         # NOTE there should be handling for item not in set downstream
-        #       - and the __contains__ method iterates over bundle
-        #         instead of index (likely fast) as is done downstream
         if self._set is not None:# and item not in self._set:
-            if not isinstance(item, (list, tuple, set)):
-                item = [item]
-            it = item[0]
+            if isinstance(item, (list, tuple, set)):
+                it = item[0]
+            else:
+                it = item
 
             logger.info('Adding element of type `%s to store %s`' % (it.__class__.__name__, self._set))
+            self._set.save(item)
             [self._set.save(it) for it in item]
+=======
+        if self._set is not None:# and item not in self._set:
+            if isinstance(item, (list, tuple, set)):
+                it = item[0]
+            else:
+                it = item
+
+            logger.info('Adding element of type `%s to store %s`' % (it.__class__.__name__, self._set))
+            self._set.save(item)
+>>>>>>> bulk_taskqueue
 
     @property
     def last(self):

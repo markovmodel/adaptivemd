@@ -511,7 +511,12 @@ class File(Location):
             else:
                 path = self.path
 
-            path = os.path.expandvars(path)
+            # To get nice-looking paths without extra slashes
+            path = '/'.join(
+                [c for i,c in enumerate(os.path.expandvars(path).split('/'))
+                 if c or i<4]
+                )
+
             with open(path, 'r') as f:
                 self._file = DataDict(f.read())
 

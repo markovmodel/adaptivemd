@@ -151,9 +151,22 @@ class Configuration(StorableMixin):
         configurations = list()
         _ext = '.cfg'
 
-        configuration_file = os.path.expandvars(configuration_file)
+        # TODO replace/upgrade cfg parser to receive
+        #      an adaptivemd file object
+        configuration_file = os.path.normpath(
+            os.path.expandvars(configuration_file)
+            )
 
-        if configuration_file is None:
+        if not configuration_file:
+=======
+        # TODO replace/upgrade cfg parser to receive
+        #      an adaptivemd file object
+        configuration_file = os.path.normpath(
+            os.path.expandvars(configuration_file)
+            )
+
+        if not configuration_file:
+>>>>>>> bulk_taskqueue
             locs = ['./' + project_name + _ext,]
 
             if os.path.isfile(locs[0]):

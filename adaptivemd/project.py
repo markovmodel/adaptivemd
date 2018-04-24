@@ -343,7 +343,8 @@ class Project(object):
         r = Resource(total_cpus, total_time,
                      total_gpus, destination)
 
-        self.storage.save(r)
+        #self.storage.save(r)
+        self.resources.add(r)
         #return r
 
     def _open_db(self):
@@ -454,7 +455,7 @@ class Project(object):
 
         return fail
 
-    def queue(self, *tasks, **kwargs):#tasks, resource_name=None):
+    def queue(self, task, **kwargs):#tasks, resource_name=None):
         """
         Submit jobs to the worker queue
 
@@ -484,49 +485,22 @@ class Project(object):
 
         assert isinstance(resource_name, list)
 
-        for task in tasks:
+        _task = None
 
-            if isinstance(task, Task):
-                # TODO maybe include this here:
-                # if task.resource_name != resource_name:
-                #    task.resource_name = resource_name
-                self.tasks.add(task)
+        if isinstance(task, Task):
+            _task = task
 
-            elif isinstance(task, (list, tuple)):
-                #list(map(self.queue, task))
-                # TODO have it be like this:
-                #      list(map(self.queue, (task, resource_name)))
-                for ta in task:
-                    self.queue(ta, resource_name=resource_name)
+        elif isinstance(task, (list, tuple)):
+            # NOTE assuming homogenous list
+            #      - could add filter to handle inhomogenous
+            if isinstance(task[0], Trajectory):
+                if task[0].engine is not None:
+                    _task = [ta.run(resource_name) for ta in task]
 
-            elif isinstance(task, Trajectory):
-                if task.engine is not None:
-                    t = task.run(resource_name)
-                    if t is not None:
-                        self.tasks.add(t)
-
-            # try-except to be python 2 safe
-            # cant check if instance type "map"
-            # so ignore TypeError
             else:
-                try:
-                    if isinstance(task, map):
-                        for ta in task:
-                            # TODO this is should be fixed as above
-                            self.queue(ta, resource_name)
+                _task = task
 
-                except TypeError:
-                    pass
-
-            # else:
-            #     # if the engines can handle some object we parse these into tasks
-            #     for cls, gen in self.file_generators.items():
-            #         if isinstance(task, cls):
-            #             return self.queue(gen(task))
-
-            # we do not allow iterators, too dangerous
-            # elif hasattr(task, '__iter__'):
-            #     map(self.tasks.add, task)
+        self.tasks.add(_task)
 
     # @property
     # def file_generators(self):
