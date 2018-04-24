@@ -59,7 +59,6 @@ class Configuration(StorableMixin):
     matching entry in the Radical Pilot resource configurations. If
     the "shared_path" is not defined, it is set to $HOME/adaptivemd,
     which is likely not a good working a data directory on an HPC.
-
     Notes
     -----
     Configurations can be read from a file. Example format is given in
@@ -69,36 +68,28 @@ class Configuration(StorableMixin):
     python session. ie if you are running a project named
     "fun_project", the Configuration object will look for a file
     "fun_project.cfg" to read.
-
     The configurations file can pack multiple entries into the fields
     'queue' and 'cores_per_node'. If there is more than 1 queue listed,
     the number of 'cores_per_node' either needs to be 1 or match the
     number of queues. Likewise for the opposite case.
-
     Attributes
     ----------
     name : `str`
         Unique identifier for the particular configuration object
-
     shared_path : `str`
         Path to use as data storage and working directory home
         on the execution resource
-
     queue : `str`
         String specifying the queue name to use for
         execution of tasks on a resource
-
     allocation : `str`
         If required, name of the account to be charged for task execution
-
     cores_per_node : `int`
         Number of cores/threads on each node. This should correspond
         to the specifications of nodes in the requested queues.
-
     resource_name : `rp.resource`
         A string corresponding to a resource that is defined within
         Radical Pilot
-
     """
     _fields = [('shared_path',str), ('queues',str),
                ('allocation',str), ('cores_per_node',int),
@@ -142,7 +133,6 @@ class Configuration(StorableMixin):
         is a given name. The keys in each configuration dict
         are fields read from the configuration file with values
         read from the file.
-
         See adaptivemd/examples/configurations.txt for an example
         of the format.
         '''
@@ -158,15 +148,6 @@ class Configuration(StorableMixin):
             )
 
         if not configuration_file:
-=======
-        # TODO replace/upgrade cfg parser to receive
-        #      an adaptivemd file object
-        configuration_file = os.path.normpath(
-            os.path.expandvars(configuration_file)
-            )
-
-        if not configuration_file:
->>>>>>> bulk_taskqueue
             locs = ['./' + project_name + _ext,]
 
             if os.path.isfile(locs[0]):
