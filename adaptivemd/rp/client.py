@@ -8,6 +8,8 @@ from utils import *
 from time import sleep
 from exceptions import *
 import traceback
+from pprint import pformat
+
 
 class Client(object):
 
@@ -31,9 +33,11 @@ class Client(object):
         self._dburl = dburl
         self._project = project
 
+        self._cb_buffer = CB_Buffer()
 
         # Process related data
         self._proc = None
+        self._cb_proc = None
         self._terminate = None
         self._rmgr = None
         self._tmgr = None
@@ -41,6 +45,43 @@ class Client(object):
     # ------------------------------------------------------------------------------------------------------------------
     # Private methods
     # ------------------------------------------------------------------------------------------------------------------
+
+    def _cb_watcher(self):
+        try:
+            while not self._terminate.is_set():
+                self._cb_check()
+                time.sleep(10)
+
+        except Exception as ex:
+            pass
+
+        finally:
+            if self._cb_buffer:
+                self._logger.warning(
+                    'Client process ended before callbacks cleared:\n%s'%pprint.pformat(self._cb_buffer))
+
+    # TODO utilize the 'xxx_many' methods
+    #      in pymongo (requires downstream
+    #      changes and lumping 'updates')
+    def _cb_check(self):
+
+        for col,updates in self._cb_buffer.items():
+
+            if col == 'tasks':
+                # Going to update a task state
+                while updates:
+                    uid,state = updates.pop()
+                    self._db.update_task_description_status(uid, state)
+
+            elif col == 'files':
+                # Going to update traj file timestamps
+                while updates:
+                    uid,directive = updates.pop()
+                    if directive == 'create':
+                        self._db.file_created(uid)
+                    elif directive == 'remove':
+                        self._db.file_removed(uid)
+
 
     def _get_resource_desc_for_pilot(self, processed_configs, processed_resource_reqs):
 
@@ -50,7 +91,6 @@ class Client(object):
 
             resource_name = resource_reqs['resource']
             #print('Resource', resource_name)
-
             matching_configs = get_matching_configurations(configurations=processed_configs, resource_name=resource_name)
 
             for matched_configs in matching_configs:
@@ -105,10 +145,11 @@ class Client(object):
                 self._rmgr = ResourceManager(resource_desc = resource_desc_for_pilot, db=self._db)
                 self._rmgr.submit_resource_request()
 
-                self._tmgr = TaskManager(session=self._rmgr.session, db_obj=self._db)
+                self._tmgr = TaskManager(session=self._rmgr.session,
+                                         db_obj=self._db,
+                                         cb_buffer=self._cb_buffer)
 
                 #print self._tmgr
-
                 while not self._terminate.is_set():
 
                     task_descs = self._db.get_task_descriptions()
@@ -164,6 +205,9 @@ class Client(object):
             self._terminate = Event()
             self._proc.start()
 
+            self._cb_proc = Process(target=self._cb_watcher, args=())
+            self._cb_proc.start()
+
         except Exception as ex:
 
             self._logger.error("Error starting RP process, error: %s"%ex)
@@ -183,6 +227,7 @@ class Client(object):
                 if not self._terminate.is_set():
                     self._terminate.set()
 
+                self._cb_proc.join()
                 self._proc.join()
 
         except Exception as ex:
@@ -191,3 +236,23 @@ class Client(object):
             raise Error(msg=ex)
 
     # ------------------------------------------------------------------------------------------------------------------
+
+class CB_Buffer(dict):
+    '''
+    Callback buffer is a dict with exactly 2 fields
+    that can't be deleted. It is 'empty' when both
+    sets of values are empty.
+    '''
+    def __init__(self):
+        super(CB_Buffer, self).__init__({'tasks': list(), 'files': list()})
+    def __nonzero__(self):
+        return self.__bool__()
+    def update(self, *args):
+        pass
+    def __delitem__(self, *args):
+        pass
+    def __setitem__(self, *args):
+        pass
+    def __bool__(self):
+        return any([bool(l) for l in self.itervalues()])
+

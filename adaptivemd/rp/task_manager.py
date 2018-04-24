@@ -16,14 +16,13 @@ class TaskManager(object):
         :db_obj: Instance of the Database object as created via .database.py
     """
 
-    def __init__(self, session, db_obj):
+    def __init__(self, session, db_obj, cb_buffer):
 
         self._uid           = ru.generate_id('task_manager.rp')
         self._logger        = ru.get_logger('task_manager.rp')
-
-        self._session = session
-        self._db_obj = db_obj
-
+        self._session       = session
+        self._db_obj        = db_obj
+        self._cb_buffer     = cb_buffer
         self._running_tasks = list()
 
         self._initialize()
@@ -43,13 +42,16 @@ class TaskManager(object):
                 if state == rp.NEW:
                     self._db_obj.update_task_description_status(unit.name, 'running')
 
-                if state in [rp.DONE, rp.UMGR_STAGING_OUTPUT_PENDING]:
-                    
-                    done = self._db_obj.update_task_description_status(unit.name, 'success')
+                elif state in [rp.DONE, rp.UMGR_STAGING_OUTPUT_PENDING]:
 
-                    if done:
-                        self._db_obj.file_created(unit.name)
-                        self._db_obj.file_removed(unit.name)
+                    self._cb_buffer['tasks'].append((unit.name,'success'))
+                 #   done = self._db_obj.update_task_description_status(unit.name, 'success')
+
+                 #   if done:
+                 #       self._db_obj.file_created(unit.name)
+                 #       self._db_obj.file_removed(unit.name)
+                    self._cb_buffer['files'].append((unit.name,'create'))
+                    self._cb_buffer['files'].append((unit.name,'remove'))
 
                     self._running_tasks.remove(unit.uid)
 
