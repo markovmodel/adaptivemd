@@ -39,19 +39,28 @@ class TaskManager(object):
             # O(N) search, could make this an O(log N) search
             # or O(1) if we use hashing, since we assume uid's are unique
             if unit.uid in self._running_tasks:
+
+                # TODO this doesn't get used
+                #       - updated to running state when cud is made
                 if state == rp.NEW:
-                    self._db_obj.update_task_description_status(unit.name, 'running')
+                 #   self._db_obj.update_task_description_status(unit.name, 'running')
+                    self._cb_buffer.append((unit.name, 'running'))
 
                 elif state in [rp.DONE, rp.UMGR_STAGING_OUTPUT_PENDING]:
 
-                    self._cb_buffer['tasks'].append((unit.name,'success'))
                  #   done = self._db_obj.update_task_description_status(unit.name, 'success')
 
                  #   if done:
                  #       self._db_obj.file_created(unit.name)
                  #       self._db_obj.file_removed(unit.name)
-                    self._cb_buffer['files'].append((unit.name,'create'))
-                    self._cb_buffer['files'].append((unit.name,'remove'))
+                   # self._cb_buffer['tasks'].append((unit.name,'success'))
+                   # self._cb_buffer['files'].append((unit.name,'create'))
+                   # self._cb_buffer['files'].append((unit.name,'remove'))
+                    self._cb_buffer.append(
+                            {unit.name:
+                             {'tasks': ['success'],
+                              'files': ['create','remove'],
+                            }})
 
                     self._running_tasks.remove(unit.uid)
 
