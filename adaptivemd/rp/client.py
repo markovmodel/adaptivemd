@@ -52,8 +52,11 @@ class Client(object):
         self._db = Database(self._dburl, self._project)
         try:
             while not self._terminate.is_set():
-                self._cb_check(cb_buffer)
-                sleep(10)
+
+                updates = self._cb_check(cb_buffer)
+
+                if not updates:
+                    sleep(10)
 
         except Exception as ex:
             print(traceback.format_exc())
@@ -69,7 +72,9 @@ class Client(object):
     #      changes and lumping 'updates')
     def _cb_check(self, cb_buffer):
 
+        updates = False
         while self._cb_buffer:
+            updates = True
             cb_dct = self._cb_buffer.pop()
             for uid,operations in cb_dct.items():
                 for col,updates in operations.items():
@@ -82,6 +87,8 @@ class Client(object):
                                 self._db.file_created(uid)
                             elif update == 'remove':
                                 self._db.file_removed(uid)
+
+        return updates
 
 
     def _get_resource_desc_for_pilot(self, processed_configs, processed_resource_reqs):

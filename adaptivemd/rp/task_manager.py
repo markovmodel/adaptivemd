@@ -21,6 +21,9 @@ class TaskManager(object):
         self._uid           = ru.generate_id('task_manager.rp')
         self._logger        = ru.get_logger('task_manager.rp')
         self._session       = session
+        # NOTE if the cu.uid update is moved then the db obj can be
+        #      entirely removed from the task manager since it
+        #      acts throught the buffer (ie move this update to buffer)
         self._db_obj        = db_obj
         self._cb_buffer     = cb_buffer
         self._running_tasks = list()
@@ -65,7 +68,8 @@ class TaskManager(object):
                     self._running_tasks.remove(unit.uid)
 
                 elif state == rp.FAILED:
-                    self._db_obj.update_task_description_status(unit.name, 'cancelled')
+                    #self._db_obj.update_task_description_status(unit.name, 'cancelled')
+                    self._cb_buffer.append({unit.name: {'tasks': ['cancelled']}})
                     self._running_tasks.remove(unit.uid)
 
 
@@ -87,6 +91,10 @@ class TaskManager(object):
         cus = self._umgr.submit_units(cuds)
         self._running_tasks.extend([cu.uid for cu in cus])
 
+        [self._db_obj.update_one({"_id": cu.name},
+                                 {"$set": {"cuid": cu.uid}}
+                                )
+        for cu in cus]
 
     def tasks_done(self):
 
