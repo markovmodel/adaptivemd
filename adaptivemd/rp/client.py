@@ -147,7 +147,8 @@ class Client(object):
 
                 self._tmgr = TaskManager(session=self._rmgr.session,
                                          db_obj=self._db,
-                                         cb_buffer=cb_buffer)
+                                         cb_buffer=cb_buffer,
+                                         scheduler='round_robin')#'hombre')#scheduler)
 
                 while not self._terminate.is_set():
 
