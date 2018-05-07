@@ -74,7 +74,8 @@ class Database():
         return configuration_descriptions
 
     def file_created(self, id=None):
-        """Marks the 'MOVE' command's target file as created with current timestamp
+        """
+        Marks the 'MOVE' command's target file as created with current timestamp
         :Parameters:
             - `id`: task id to look-up the 'MOVE' command
         """
@@ -169,20 +170,24 @@ class Database():
                 generator_files.append(val['_dict']['filename'])
         return generator_files
 
-    def update_task_description_status(self, id=None, state='success'):
+    def update_task_description_status(self, id=None, state='success', newfields=None):
         """Update a single task with specific id
         :Parameters:
             - `id`: task description 'id' to be updated
             - `state`: state desired
         """
         if id:
+            updates = {
+                       '_dict.state': state,
+                       'state': state
+                      }
+            if isinstance(newfields, dict):
+                updates.update(newfields)
             col = self.db[self.tasks_collection]
             # Updates both places where the 'state' value is on
             result = col.update_one({'_id': id},
-                                    {'$set': {
-                                        '_dict.state': state,
-                                        'state': state,
-                                    }})
+                                    {'$set': updates}
+                                   )
             if result.modified_count == 1:
                 return True
             else:

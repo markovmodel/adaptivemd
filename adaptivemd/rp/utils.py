@@ -248,7 +248,8 @@ def create_cud_from_task_def(task_descs, db, shared_path, project):
             else:
                 continue
 
-            db.update_task_description_status(task_desc['_id'], 'running')
+            # This confounds AdaptiveMD ability to manage task batches
+            db.update_task_description_status(task_desc['_id'], 'pending')
 
         return cuds
 

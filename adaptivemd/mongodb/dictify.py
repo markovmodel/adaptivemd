@@ -576,7 +576,8 @@ class UUIDObjectJSON(ObjectJSON):
                     store.save(obj)
                     return {
                         '_hex_uuid': hex(obj.__uuid__),
-                        '_store': store.name}
+                        '_store': store.name
+                        }
 
         return super(UUIDObjectJSON, self).simplify(obj, base_type)
 
