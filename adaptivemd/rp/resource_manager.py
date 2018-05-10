@@ -242,7 +242,7 @@ class ResourceManager(object):
                     'resource'  : self._resource,
                     'runtime'   : self._runtime,
                     'cores'     : self._cores,
-                    # 'gpus'     : self._gpus, # for later...
+                    #'gpus'      : self._gpus, # for later...
                     }
     
             if self._access_schema:

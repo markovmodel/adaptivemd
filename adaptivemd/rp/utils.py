@@ -270,23 +270,19 @@ def generate_pythontask_cud(task_desc, db, shared_path, project):
     post_task_details = task_desc['_dict'].get('post', list())
     resource_requirements = task_desc['_dict']['resource_requirements']
 
-    
     # First, extract environment variables
     cud.environment = get_environment_from_task(task_desc)
 
-    
     # Next, extract things we need to add to the PATH
     # TODO: finish adding path directive
     paths = get_paths_from_task(task_desc)
 
-    
     # Next, get input staging
     # We get "ALL" COPY/LINK/MOVE directives from the pre_exec
     staging_directives = get_input_staging(pre_task_details, db, shared_path, project, break_after_non_dict=False)
     # We get "ALL" COPY/LINK/MOVE directives from the main *before* the first non-dictionary entry
     staging_directives.extend(get_input_staging(main_task_details, db, shared_path, project))
     cud.input_staging = staging_directives
-
 
     # Next, get pre execution steps
     d = generate_pythontask_input(db, shared_path, task_desc, project)
@@ -299,12 +295,10 @@ def generate_pythontask_cud(task_desc, db, shared_path, project):
     pre_exec.extend(get_commands(pre_task_details, shared_path, project))
     cud.pre_exec = pre_exec
 
-
     # Now, do main executable
     exe, args = get_executable_arguments(main_task_details, shared_path, project)
     cud.executable = str(exe)
     cud.arguments = args
-
 
     # Now, get output staging steps
     # We get "ALL" COPY/LINK directives from the post_exec
@@ -327,6 +321,8 @@ def generate_pythontask_cud(task_desc, db, shared_path, project):
         cud.cores = resource_requirements.get('cpu_threads', 1)
 
     # TODO: cud.gpus...
+    #cud.gpu_processes = resource_requirements.get('gpu_contexts', 0)
+    #cud.gpu_thread_type = 'CUDA'
 
     return cud
 
@@ -341,23 +337,19 @@ def generate_trajectorygenerationtask_cud(task_desc, db, shared_path, project):
     post_task_details = task_desc['_dict'].get('post', list())
     resource_requirements = task_desc['_dict']['resource_requirements']
 
-    
     # First, extract environment variables
     cud.environment = get_environment_from_task(task_desc)
 
-    
     # Next, extract things we need to add to the PATH
     # TODO: finish adding path directive
     paths = get_paths_from_task(task_desc)
 
-    
     # Next, get input staging
     # We get "ALL" COPY/LINK directives from the pre_exec
     staging_directives = get_input_staging(pre_task_details, db, shared_path, project, break_after_non_dict=False)
     # We get "ALL" COPY/LINK directives from the main *before* the first non-dictionary entry
     staging_directives.extend(get_input_staging(main_task_details, db, shared_path, project))
     cud.input_staging = staging_directives
-
 
     # Next, get pre execution steps
     pre_exec = list()
@@ -368,12 +360,10 @@ def generate_trajectorygenerationtask_cud(task_desc, db, shared_path, project):
     pre_exec.extend(get_commands(pre_task_details, shared_path, project))
     cud.pre_exec = pre_exec
 
-
     # Now, do main executable
     exe, args = get_executable_arguments(main_task_details, shared_path, project)
     cud.executable = str(exe)
     cud.arguments = args
-
 
     # Now, get output staging steps
     # We get "ALL" COPY/LINK directives from the post_exec
@@ -386,7 +376,6 @@ def generate_trajectorygenerationtask_cud(task_desc, db, shared_path, project):
     post_exec = list()
     post_exec.extend(get_commands(post_task_details, shared_path, project))
     cud.post_exec = post_exec
-    
 
     # Get core count, support MPI
     if is_mpi(task_desc):
@@ -397,6 +386,8 @@ def generate_trajectorygenerationtask_cud(task_desc, db, shared_path, project):
         cud.cores = resource_requirements.get('cpu_threads', 1)
 
     # TODO: cud.gpus...
+    #cud.gpu_processes = resource_requirements.get('gpu_contexts', 0)
+    #cud.gpu_thread_type = 'CUDA'
 
     return cud
 
