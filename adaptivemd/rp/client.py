@@ -50,13 +50,17 @@ class Client(object):
 
     def _cb_watcher(self, cb_buffer):
         self._db = Database(self._dburl, self._project)
+        # Asynchronous task updates can lead to running
+        # state after CU cancellation, any cus in this
+        # list will recieve no further state updates
+        self._cancelled_cus = list()
         try:
             while not self._terminate.is_set():
 
                 updates = self._cb_check(cb_buffer)
 
                 if not updates:
-                    sleep(10)
+                    sleep(5)
 
         except Exception as ex:
             print(traceback.format_exc())
@@ -77,16 +81,19 @@ class Client(object):
             updates = True
             cb_dct = self._cb_buffer.pop()
             for uid,operations in cb_dct.items():
-                for col,updates in operations.items():
-                    while updates:
-                        update = updates.pop()
-                        if col == 'tasks':
-                            self._db.update_task_description_status(uid,update)
-                        elif col == 'files':
-                            if update == 'create':
-                                self._db.file_created(uid)
-                            elif update == 'remove':
-                                self._db.file_removed(uid)
+                if uid not in self._cancelled_cus:
+                    for col,updates in operations.items():
+                        while updates:
+                            update = updates.pop()
+                            if col == 'tasks':
+                                self._db.update_task_description_status(uid,update)
+                                if 'cancelled' in update:
+                                    self._cancelled_cus.append(uid)
+                            elif col == 'files':
+                                if update == 'create':
+                                    self._db.file_created(uid)
+                                elif update == 'remove':
+                                    self._db.file_removed(uid)
 
         return updates
 
@@ -148,11 +155,13 @@ class Client(object):
                 self._tmgr = TaskManager(session=self._rmgr.session,
                                          db_obj=self._db,
                                          cb_buffer=cb_buffer,
-                                         scheduler='round_robin')#'hombre')#scheduler)
+                                         )#scheduler='continuous')#'hombre')#scheduler)
 
                 while not self._terminate.is_set():
 
                     task_descs = self._db.get_task_descriptions()
+
+                    self._tmgr.cancel_stalled_tasks()
 
                     if task_descs:
                         cuds = create_cud_from_task_def(task_descs, self._db, resource_desc_for_pilot['shared_path'], self._project)
@@ -160,6 +169,7 @@ class Client(object):
 
                     else:
                         sleep(3)
+
 
             else:
                 raise Error(msg="No matching resource found in configuration file. Please check your configuration file and the resource object.")
@@ -172,10 +182,15 @@ class Client(object):
 
         finally:
 
+            if self._tmgr:
+                #print("CANCELLING TMGR checker")
+                self._tmgr.stop_checker()
+
             if self._rmgr:
                 # TODO what to do when _rmgs.pilot is None (ie pilot fails but we get here)?
                 self._rmgr.pilot.cancel()
                 self._rmgr.session.close(download=True, cleanup=False)
+
 
     # ------------------------------------------------------------------------------------------------------------------
     # Public methods
