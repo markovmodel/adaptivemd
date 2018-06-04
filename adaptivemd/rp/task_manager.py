@@ -6,7 +6,7 @@ import time
 
 from database import Database
 
-#from pprint import pformat
+from pprint import pformat, pprint
 
 from multiprocessing import Process, Manager, Event
 
@@ -61,7 +61,7 @@ class TaskManager(object):
 
         def unit_state_cb(unit, state):
 
-            #print "CALLBACK state: ", unit.uid, state
+            print "CALLBACK state: ", unit.uid, state
             # O(N) search, could make this an O(log N) search
             # or O(1) if we use hashing, since we assume uid's are unique
             if unit.uid in self._running_tasks:
@@ -142,6 +142,7 @@ class TaskManager(object):
                 #print "OUTSIDE  modification: ||| {0} || {1} |||".format(cuids, kills)
 
             time.sleep(3)
+            print "CHECKER is sleeping"
 
 
     # ------------------------------------------------------------------------------------------------------------------
@@ -150,9 +151,8 @@ class TaskManager(object):
 
 
     def cancel_stalled_tasks(self):
-        #print "I would cancel these tasks: "
         for times, (cuids,kills) in self._running_checklist.items():
-            #print "GONNA KILL THESE", kills
+            print "GONNA KILL THESE", kills
             if kills:
                 self._running_checklist[times] = [cuids, [] ]
                 self._umgr.cancel_units(kills)
@@ -175,12 +175,17 @@ class TaskManager(object):
                                    )
         for cu in cus]
 
+        print "PRINTING THE CU DESCRIPTIONS"
+        [pprint(cu.description) for cu in cus]
+
+
         # if after the wait time there are units not running
         # then these will be canceled. They should schedule
         # and start faster than 10 tasks / second.
+
         self._running_checklist[
                 (time.time(),
-                30 + len(cuds) / (8.))] = [[cu.uid for cu in cus], [] ]
+                90 + len(cuds) / (8.))] = [[cu.uid for cu in cus], [] ]
 
         #print "AFTER adding newlist: ", pformat(self._running_checklist)
 

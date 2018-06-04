@@ -927,7 +927,7 @@ class PrePostTask(Task):
             activate   = os.path.join(activate_prefix, activate)
             deactivate = os.path.join(activate_prefix, deactivate)
 
-        self.pre.append('source {a} {n}'.format(a=activate, n=name))
+        self.pre.insert(0,'source {a} {n}'.format(a=activate, n=name))
         self.post.append('source {d}'.format(d=deactivate))
 
     def add_virtualenv(self, activate_location):
@@ -941,7 +941,7 @@ class PrePostTask(Task):
         activate_location : 
             Full file location of the virtualenv activate script
         """
-        self.pre.append('source ' + activate_location)
+        self.pre.insert(0,'source ' + activate_location)
         self.post.append('deactivate')
 
 
