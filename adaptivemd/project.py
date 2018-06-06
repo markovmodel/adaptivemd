@@ -613,22 +613,27 @@ class Project(object):
         list of `Frame`
             the list of trajectories with the selected initial points.
         """
-        if not randomly and len(self.models) > 0:
+        def get_model():
+            if len(self.models) == 0:
+                return None
 
-            def get_model():
-                models = sorted(self.models, reverse=True,
-                                key=lambda m: m.__time__)
+            models = sorted(self.models, reverse=True,
+                            key=lambda m: m.__time__)
 
-                for model in models:
-                    assert(isinstance(model, Model))
-                    data = model.data
-                    c = data['msm']['C']
-                    s =  np.sum(c, axis=1)
-                    if 0 not in s:
-                        q = 1.0 / s
-                        return data, c, q
+            for model in models:
+                assert(isinstance(model, Model))
+                data = model.data
+                c = data['msm']['C']
+                s =  np.sum(c, axis=1)
+                if 0 not in s:
+                    q = 1.0 / s
+                    return data, c, q
 
-            data, c, q = get_model()
+        model = get_model()
+
+        if not randomly and model:
+
+            data, c, q = model
 
             # not a good method to get n_states
             # populated clusters in
@@ -738,6 +743,7 @@ class Project(object):
         if isinstance(length, list):
             if number is None:
                 number = len(length)
+
             trajectories = [self.new_trajectory(
                             frame, length[i], engine)
                             for i,frame in enumerate(
