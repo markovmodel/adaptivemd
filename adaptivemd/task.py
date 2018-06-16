@@ -905,6 +905,31 @@ class PrePostTask(Task):
     def main(self):
         return self.pre + self._main + self.post
 
+    def add_conda_env(self, name, activate_prefix=None):
+        #TODO sort out this resource.wrapper.append() business
+        #     clearly its not happening, is it possible?
+        #      - use as option
+        """
+        Add loading a conda env as the first command, with source
+        deactivate as the final command. Currently this is best done
+        as a final step in defining the task objects.
+
+        This calls `resource.wrapper.append('source activate {name}')`
+        Parameters
+        ----------
+        name : str
+            name of the conda environment
+
+        """
+        activate   = 'activate'
+        deactivate = 'deactivate'
+        if activate_prefix:
+            activate   = os.path.join(activate_prefix, activate)
+            deactivate = os.path.join(activate_prefix, deactivate)
+
+        self.pre.insert(0,'source {a} {n}'.format(a=activate, n=name))
+        self.post.append('source {d}'.format(d=deactivate))
+
     def add_virtualenv(self, activate_location):
         """
         Add activation of virtualenv as the first command, with deactivate
@@ -916,7 +941,7 @@ class PrePostTask(Task):
         activate_location : 
             Full file location of the virtualenv activate script
         """
-        self.pre.append('source ' + activate_location)
+        self.pre.insert(0,'source ' + activate_location)
         self.post.append('deactivate')
 
 

@@ -6,6 +6,7 @@ import radical.pilot as rp
 import radical.utils as ru
 from exceptions import *
 
+from pprint import pformat
 
 
 class ResourceManager(object):
@@ -242,7 +243,7 @@ class ResourceManager(object):
                     'resource'  : self._resource,
                     'runtime'   : self._runtime,
                     'cores'     : self._cores,
-                    #'gpus'      : self._gpus, # for later...
+                    'gpus'      : self._gpus, # for later...
                     }
     
             if self._access_schema:
@@ -256,6 +257,8 @@ class ResourceManager(object):
 
 
             # Create Compute Pilot with validated resource description
+            print pformat(pd_init)
+
             pdesc = rp.ComputePilotDescription(pd_init)
    
             # Launch the pilot

@@ -21,7 +21,8 @@
 ##############################################################################
 from __future__ import print_function, absolute_import
 
-import pip
+#import pip
+import pkg_resources
 import os
 import datetime
 
@@ -76,7 +77,8 @@ def get_function_source(func):
         a list of filenames necessary to be copied
 
     """
-    installed_packages = pip.get_installed_distributions()
+    #installed_packages = pip.get_installed_distributions()
+    installed_packages = [d for d in pkg_resources.working_set]
     inpip = func.__module__.split('.')[0] in [p.key for p in installed_packages]
     insubdir = os.path.realpath(
         func.__code__.co_filename).startswith(os.path.realpath(os.getcwd()))

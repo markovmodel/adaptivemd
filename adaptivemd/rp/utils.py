@@ -268,7 +268,7 @@ def generate_pythontask_cud(task_desc, db, shared_path, project):
     pre_task_details = task_desc['_dict'].get('pre', list())
     main_task_details = task_desc['_dict']['_main']
     post_task_details = task_desc['_dict'].get('post', list())
-    resource_requirements = task_desc['_dict']['resource_requirements']
+    #resource_requirements = task_desc['_dict']['resource_requirements']
 
     # First, extract environment variables
     cud.environment = get_environment_from_task(task_desc)
@@ -311,20 +311,34 @@ def generate_pythontask_cud(task_desc, db, shared_path, project):
     post_exec = list()
     post_exec.extend(get_commands(post_task_details, shared_path, project))
     cud.post_exec = post_exec
-    
+
+    describe_compute_setup(cud, task_desc)
+    return cud
+
+
+def describe_compute_setup(cud, task_desc):
+    resource_requirements = task_desc['_dict']['resource_requirements']
+    # TODO change language in resource_requirements for tasks
+    #       to get match for process / thread vocab
+    cud.cpu_threads      = 1
+    cud.gpu_processes    = resource_requirements.get('gpu_contexts', 0)
+    cud.cpu_thread_type  = 'POSIX'
+    cud.cpu_process_type = 'POSIX'
+
+    if cud.gpu_processes:
+        cud.gpu_thread_type  = 'CUDA'
+        cud.gpu_process_type = 'POSIX'
+        cud.gpu_threads      = 1
+
     # Get core count, support MPI
     if is_mpi(task_desc):
-        cud.mpi = True
-        cud.cores = resource_requirements.get('mpi_rank', 1) * resource_requirements.get('cpu_threads', 1)
-    else :
-        cud.mpi = False
-        cud.cores = resource_requirements.get('cpu_threads', 1)
-
-    # TODO: cud.gpus...
-    #cud.gpu_processes = resource_requirements.get('gpu_contexts', 0)
-    #cud.gpu_thread_type = 'CUDA'
+        cud.cpu_processes = resource_requirements.get('mpi_rank', 1) * resource_requirements.get('cpu_threads', 1)
+        cud.cpu_process_type = 'MPI'
+    else:
+        cud.cpu_processes = resource_requirements.get('cpu_threads', 1)
 
     return cud
+
 
 def generate_trajectorygenerationtask_cud(task_desc, db, shared_path, project):
     # Compute Unit Description
@@ -335,7 +349,7 @@ def generate_trajectorygenerationtask_cud(task_desc, db, shared_path, project):
     pre_task_details = task_desc['_dict'].get('pre', list())
     main_task_details = task_desc['_dict']['_main']
     post_task_details = task_desc['_dict'].get('post', list())
-    resource_requirements = task_desc['_dict']['resource_requirements']
+    #resource_requirements = task_desc['_dict']['resource_requirements']
 
     # First, extract environment variables
     cud.environment = get_environment_from_task(task_desc)
@@ -377,17 +391,7 @@ def generate_trajectorygenerationtask_cud(task_desc, db, shared_path, project):
     post_exec.extend(get_commands(post_task_details, shared_path, project))
     cud.post_exec = post_exec
 
-    # Get core count, support MPI
-    if is_mpi(task_desc):
-        cud.mpi = True
-        cud.cores = resource_requirements.get('mpi_rank', 1) * resource_requirements.get('cpu_threads', 1)
-    else :
-        cud.mpi = False
-        cud.cores = resource_requirements.get('cpu_threads', 1)
-
-    # TODO: cud.gpus...
-    #cud.gpu_processes = resource_requirements.get('gpu_contexts', 0)
-    #cud.gpu_thread_type = 'CUDA'
+    describe_compute_setup(cud, task_desc)
 
     return cud
 
