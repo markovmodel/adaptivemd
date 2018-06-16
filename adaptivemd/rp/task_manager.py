@@ -61,7 +61,7 @@ class TaskManager(object):
 
         def unit_state_cb(unit, state):
 
-            print "CALLBACK state: ", unit.uid, state
+            #print "CALLBACK state: ", unit.uid, state
             # O(N) search, could make this an O(log N) search
             # or O(1) if we use hashing, since we assume uid's are unique
             if unit.uid in self._running_tasks:
@@ -142,7 +142,6 @@ class TaskManager(object):
                 #print "OUTSIDE  modification: ||| {0} || {1} |||".format(cuids, kills)
 
             time.sleep(3)
-            print "CHECKER is sleeping"
 
 
     # ------------------------------------------------------------------------------------------------------------------
@@ -152,14 +151,13 @@ class TaskManager(object):
 
     def cancel_stalled_tasks(self):
         for times, (cuids,kills) in self._running_checklist.items():
-            print "GONNA KILL THESE", kills
+            #print "Scheduled for cancellation", kills
             if kills:
                 self._running_checklist[times] = [cuids, [] ]
                 self._umgr.cancel_units(kills)
 
 
     def stop_checker(self):
-        #print "STOPPING running checker"
         self._terminate.set()
         self._running_check_proc.join()
 
@@ -185,9 +183,7 @@ class TaskManager(object):
 
         self._running_checklist[
                 (time.time(),
-                90 + len(cuds) / (8.))] = [[cu.uid for cu in cus], [] ]
-
-        #print "AFTER adding newlist: ", pformat(self._running_checklist)
+                15 + ( len(cuds) - i/2. ) / (7.))] = [[cu.uid for i,cu in enumerate(cus)], [] ]
 
 
     def tasks_done(self):
