@@ -175,8 +175,8 @@ class TaskManager(object):
                                    )
         for cu in cus]
 
-        print "PRINTING THE CU DESCRIPTIONS"
-        [pprint(cu.description) for cu in cus]
+        #print "PRINTING THE CU DESCRIPTIONS"
+        #[pprint(cu.description) for cu in cus]
 
 
         # if after the wait time there are units not running
