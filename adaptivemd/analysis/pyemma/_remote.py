@@ -152,6 +152,9 @@ def remote_analysis(
     pdb = md.load(topfile)
     topology = pdb.topology
 
+    # Number of MSM Eigendimensions to save
+    d = 10
+
     if selection:
         topology = topology.subset(topology.select(selection_string=selection))
 
@@ -246,19 +249,23 @@ def remote_analysis(
             'n_features': inp.dimension(),
         },
         'tica': {
-            'dimension': tica_obj.dimension(),
-            'lagtime': tica_lag
+            'dimension':    tica_obj.dimension(),
+            'lagtime':      tica_lag,
+            'eigenvalues':  tica_obj.eigenvalues,
+            'eigenvectors': tica_obj.eigenvectors,
         },
         'clustering': {
-            'k': msm_states,
-            'dtrajs': [
-                t for t in cl.dtrajs
-            ]
+            'k':       msm_states,
+            'dtrajs':  [ t for t in cl.dtrajs ],
+            'centers': cl.clustercenters,
         },
         'msm': {
             'lagtime': msm_lag,
             'P': m.P,
             'C': m.count_matrix_full
+            'eigenvalues': m.eigenvalues(d),
+            'l_eigenvectors': m.eigenvectors_left(d),
+            'r_eigenvectors': m.eigenvectors_right(d),
         }
     }
 
