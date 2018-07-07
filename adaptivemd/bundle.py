@@ -4,6 +4,7 @@
 # Copyright 2017 FU Berlin and the Authors
 #
 # Authors: Jan-Hendrik Prinz
+#          John Ossyra
 # Contributors:
 #
 # `adaptiveMD` is free software: you can redistribute it and/or modify
@@ -141,6 +142,7 @@ class BaseBundle(object):
         '''
         Return a Bundle of all entries with a string attribute containing pattern.
         Set match to True to return entries matching pattern.
+
         Parameters
         ----------
         name_attr : `str`
@@ -150,6 +152,11 @@ class BaseBundle(object):
             The string pattern for matching.
         match : `bool`
             Only return Bundle elements who match pattern exactly
+
+        Returns
+        -------
+        `Bundle`
+            Bundle of only matching entries
         '''
         if match:
             hits = self.m(name_attr, value)
@@ -162,6 +169,19 @@ class BaseBundle(object):
     def m(self, name_attr, value):
         '''
         Return Bundle of the matching elements
+
+        Parameters
+        ----------
+        name_attr : `str`
+            An attribute name of the Bundle content class.
+            The attribute value must be of type `str`.
+        value : `str`
+            The value to match.
+
+        Returns
+        -------
+        `Bundle`
+            Bundle of only matching entries
         '''
         hits = filter(lambda x: getattr(x, name_attr) == value, list(self))
         return Bundle(hits)
@@ -169,10 +189,12 @@ class BaseBundle(object):
     def c(self, cls):
         """
         Return a view bundle on all entries that are instances of a class
+
         Parameters
         ----------
         cls : `type`
             a class to be filtered by
+
         Returns
         -------
         `ViewBundle`
@@ -226,15 +248,17 @@ class BaseBundle(object):
     def pick(self):
         """
         Pick a random element
+
         Returns
         -------
         object or None
             a random object if bundle is not empty
         """
         if self:
-            if hasattr(self, '_sest'):
+            # Look for more specific implementation
+            #  - have faster method in StoredBundle subclass
+            if hasattr(self, '_set'):
                 if hasattr(self._set, 'pick'):
-                    #print("USING FASTPICK")
                     return self._set.pick()
 
             # TODO is there a genral replacement?
@@ -456,7 +480,7 @@ class StoredBundle(Bundle):
         Add an element or group of elements to the bundle.
         Parameters
         ----------
-        item : object
+        item : `object`, `list`, `tuple`, or `set`
             the item to be added to the bundle
         """
         # NOTE there should be handling for item not in set downstream
@@ -466,7 +490,7 @@ class StoredBundle(Bundle):
             else:
                 it = item
 
-            logger.info('Adding element of type `%s to store %s`' % (it.__class__.__name__, self._set))
+            logger.info('Adding %s elements of type `%s to store %s`' % (len(item), it.__class__.__name__, self._set))
             self._set.save(item)
 
     @property

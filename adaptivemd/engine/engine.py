@@ -32,7 +32,8 @@ import six
 from adaptivemd.file import File
 from adaptivemd.generator import TaskGenerator
 from adaptivemd.mongodb import StorableMixin, ObjectSyncVariable
-from adaptivemd.task import Task, PrePostTask
+#from adaptivemd.task import Task
+from adaptivemd.task import PrePostTask
 
 
 class Engine(TaskGenerator):
@@ -64,6 +65,9 @@ class Engine(TaskGenerator):
     def run(self, target):
         """
         Create a task that returns a trajectory given in the input
+
+        This method should be implemented in subclasses that implement
+        `Engine` functionality for specific MD programs.
 
         Parameters
         ----------
@@ -284,7 +288,10 @@ class Trajectory(File):
     def run(self, resource_name=None, export_path=None,
             cpu_threads=1, gpu_contexts=0, mpi_rank=0):
         """
-        Return a task to run this engine
+        Return a task to run the engine for this trajectory
+
+        This method is used to link the `Trajectory` object
+        to an MD Program's AdaptiveMD Engine
 
         Returns
         -------

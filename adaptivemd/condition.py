@@ -73,17 +73,14 @@ class Condition(object):
 
     def __bool__(self):
         '''
-        Statements evaluating boolean values and the bool
-        function in Python 3 use this special method to
-        resolve a value.
+        Boolean evaluation in Python 3 use this special method.
         '''
         return self()
 
     def __nonzero__(self):
         '''
-        Statements evaluating boolean values and the bool
-        function in Python 2 use this special method to
-        resolve a value. It calls self.__bool__ internally.
+        Boolean evaluation in Python 2 uses this special method,
+        internally calls newer `self.__bool__`
         '''
         return self.__bool__()
 

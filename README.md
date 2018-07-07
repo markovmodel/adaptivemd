@@ -106,7 +106,7 @@ environment you will be working in when installing the packages:
 conda install jupyter
 
 # for adaptivemd only
-conda install ujson pyyaml pymongo=3.3 numpy
+conda install ujson pyyaml pymongo numpy
 
 # for simulations & analysis
 conda install pyemma openmm mdtraj
@@ -122,7 +122,7 @@ git clone https://github.com:markovmodel/adaptivemd.git
 
 # go to adativemd and install it
 cd adaptivemd/
-python install .
+python setup.py develop
 
 # see if it works
 python -c "import adaptivemd" || echo 'FAILED'

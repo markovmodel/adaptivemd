@@ -25,12 +25,11 @@ from __future__ import print_function
 # The remote function to be called py PyEMMAAnalysis
 
 
-# change name of clust_stride to msm_stride
-#  #TODO --> upgraded structure to accommodate
-#            model / analysis variations should
-#            use common set of pars when possible
-#            --> pull method: have required vars, optional vars
-#                --> pull vars from definition pool
+#  #TODO --> upgrade remote_analysis structure to accommodate
+#            model / analysis variations ...
+#            should take set of pars and func name args
+#            --> pull func: have required pars, optional pars
+#                --> pull pars from args pool
 def remote_analysis(
         trajectories,
         traj_name='output.dcd',
@@ -134,15 +133,17 @@ def remote_analysis(
     topfile : `File`
         a reference to the full topology `.pdb` file using in pyemma
     tica_lag : int
-        the lagtime used for tCIA
+        the lagtime used for tICA
     tica_dim : int
         number of dimensions using in tICA. This refers to the number of tIC used
+    tica_stride : int
+        a stride to be used in tICA calculation. Can speed up computation at reduced accuracy
     msm_states : int
         number of microstates used for the MSM
     msm_lag : int
         lagtime used for the MSM construction
-    stride : int
-        a stride to be used on the data. Can speed up computation at reduced accuracy
+    clust_stride : int
+        a stride to be used on when determining cluster centers. Can speed up computation at reduced accuracy
 
     Returns
     -------
@@ -167,10 +168,10 @@ def remote_analysis(
     feat = pyemma.coordinates.featurizer(topology)
 
     if features:
-        # TODO  this function needs more attention/documentation
+        # TODO  this function needs tests
         #       - it is super important to make the arguments
         #         available to the pyemma methods
-        def apply_feat_part(featurizer, parts, prepend=''):
+        def apply_feat_part(featurizer, parts):
             if isinstance(parts, dict):
 
                 items = list(parts.items())

@@ -23,7 +23,7 @@ from __future__ import absolute_import
 
 #from .brain import Brain
 # from event import StopEvent, Event, TasksFinished
-from .plan import ExecutionPlan
+#from .plan import ExecutionPlan
 # from condition import Condition, Now, Never
 from .file import (File, Directory, Location, JSONFile, MakeDir, Copy,
                    Transfer, Link, Move, Remove, Action, AddPathAction, FileAction,
@@ -63,4 +63,4 @@ from ._version import get_versions
 __version__ = get_versions()['version']
 del get_versions
 
-from .rp.client import Client
+#from .rp.client import Client
