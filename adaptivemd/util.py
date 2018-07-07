@@ -46,14 +46,19 @@ def parse_cfg_file(filepath):
                     if v[0][0] == '}':
                         reading_fields = False
                     else:
-                        print("End configuration block with single '}'")
-                        raise ValueError
+                        raise ValueError(
+                            "End configuration block with single '}'")
+
+                # PARSE A VALUE
                 elif len(v) == 2:
                     configurations_fields[reading_fields][v[0]] = v[1]
-                elif len(v) == 1 or len(v) > 2:
-                    print("Require one field and one value separated by space when reading entries from configuration file")
-                    raise ValueError
 
+                # NEED A SINGLE VALUE
+                elif len(v) == 1 or len(v) > 2:
+                    raise ValueError(
+                        "Require at least one value separated by space")
+
+            # START READING
             elif len(v) == 2 and v[1] == '{':
                 reading_fields = v[0]
                 configurations_fields[reading_fields] = dict()

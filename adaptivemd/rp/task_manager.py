@@ -183,7 +183,7 @@ class TaskManager(object):
 
         self._running_checklist[
                 (time.time(),
-                15 + ( len(cuds) - i/2. ) / (7.))] = [[cu.uid for i,cu in enumerate(cus)], [] ]
+                35 + ( len(cuds) - i/2. ) / (7.))] = [[cu.uid for i,cu in enumerate(cus)], [] ]
 
 
     def tasks_done(self):

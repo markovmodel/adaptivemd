@@ -265,7 +265,7 @@ def generate_pythontask_cud(task_desc, db, shared_path, project):
     cud.name = task_desc['_id']
 
     # Get each component of the task
-    pre_task_details = task_desc['_dict'].get('pre', list())
+    pre_task_details  = task_desc['_dict'].get('pre', list())
     main_task_details = task_desc['_dict']['_main']
     post_task_details = task_desc['_dict'].get('post', list())
     #resource_requirements = task_desc['_dict']['resource_requirements']
@@ -346,7 +346,7 @@ def generate_trajectorygenerationtask_cud(task_desc, db, shared_path, project):
     cud.name = task_desc['_id']
 
     # Get each component of the task
-    pre_task_details = task_desc['_dict'].get('pre', list())
+    pre_task_details  = task_desc['_dict'].get('pre', list())
     main_task_details = task_desc['_dict']['_main']
     post_task_details = task_desc['_dict'].get('post', list())
     #resource_requirements = task_desc['_dict']['resource_requirements']

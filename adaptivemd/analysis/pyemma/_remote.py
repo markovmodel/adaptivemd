@@ -25,6 +25,12 @@ from __future__ import print_function
 # The remote function to be called py PyEMMAAnalysis
 
 
+# change name of clust_stride to msm_stride
+#  #TODO --> upgraded structure to accommodate
+#            model / analysis variations should
+#            use common set of pars when possible
+#            --> pull method: have required vars, optional vars
+#                --> pull vars from definition pool
 def remote_analysis(
         trajectories,
         traj_name='output.dcd',
@@ -262,7 +268,7 @@ def remote_analysis(
         'msm': {
             'lagtime': msm_lag,
             'P': m.P,
-            'C': m.count_matrix_full
+            'C': m.count_matrix_full,
             'eigenvalues': m.eigenvalues(d),
             'l_eigenvectors': m.eigenvectors_left(d),
             'r_eigenvectors': m.eigenvectors_right(d),

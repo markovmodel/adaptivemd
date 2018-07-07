@@ -431,7 +431,7 @@ class Task(BaseTask):
             True if the task has finished its execution
 
         """
-        # TODO make final states from attributes
+        # TODO use final states attribute
         if self.state in ['fail', 'success', 'cancelled']:
             return True
 
@@ -1128,7 +1128,7 @@ class PythonTask(PrePostTask):
         # input args -> input.json
         self.pre.append(self._rpc_input_file.transfer('input.json'))
 
-        # output args -> output.json
+        # output data -> output.json
         self.post.append(File('output.json').transfer(self._rpc_output_file))
 
         f = File('staging:///_run_.py')
@@ -1190,6 +1190,7 @@ class PythonTask(PrePostTask):
 
         if self.generator is not None and hasattr(self.generator, self.then_func_name):
 
+            # Data given to DB Here with function named `then_func_name`
             getattr(self.generator, self.then_func_name)(
                 scheduler.project, self, data, self._python_kwargs)
 

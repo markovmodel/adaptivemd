@@ -37,6 +37,7 @@ from simtk.openmm.app import PDBFile, Simulation, DCDReporter, StateDataReporter
 
 
 
+
 def get_xml(xml_file):
     # TODO file access control
     attempt = 0
@@ -91,6 +92,7 @@ def get_pdbfile(topology_pdb):
                 time.sleep(5*random.random())
             else:
                 raise e
+
 
 def read_input(platform, pdbfile, system, integrator):
 
@@ -284,11 +286,13 @@ if __name__ == '__main__':
     if args.restart:
         arr = np.load(args.restart)
         simulation.context.setPositions(arr['positions'] * u.nanometers)
+
         simulation.context.setVelocities(arr['velocities'] * u.nanometers/u.picosecond)
         simulation.context.setPeriodicBoxVectors(*arr['box_vectors'] * u.nanometers)
+
     else:
         simulation.context.setPositions(pdb.positions)
-        pbv = pdb.getTopology().getPeriodicBoxVectors()
+        pbv = system.getDefaultPeriodicBoxVectors()
         simulation.context.setPeriodicBoxVectors(*pbv)
         # set velocities to temperature in integrator
         try:
@@ -303,6 +307,7 @@ if __name__ == '__main__':
 
     output = args.output
 
+    types = None
     if args.types:
         # seems like we have JSON
         types_str = args.types.replace("'", '"')
@@ -340,13 +345,19 @@ if __name__ == '__main__':
             r.report(simulation, state)
 
     if args.report and args.verbose:
+        output_stride = args.interval_store
+        if types:
+            output_stride = min([oty['stride'] for oty in types.values()])
         simulation.reporters.append(
             StateDataReporter(
                 stdout,
-                args.interval_report,
+                output_stride,
                 step=True,
                 potentialEnergy=True,
-                temperature=True))
+                temperature=True,
+                speed=True,
+                separator="  ||  ",
+            ))
 
     restart_file = os.path.join(output, 'restart.npz')
 
