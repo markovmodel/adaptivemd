@@ -65,7 +65,7 @@ def build_keyword_dictionary(prefs):
     return keywords
 
 
-# load settings from setup.py, easier to maintain, but not fully supported yet
+# load settings from setup.yaml
 with open('setup.yaml') as f:
     yaml_string = ''.join(f.readlines())
     preferences = yaml.load(yaml_string)
@@ -75,5 +75,4 @@ setup_args = build_keyword_dictionary(preferences)
 
 setup (**setup_args)
 
-os.system('rm -rf adaptivemd.egg-info')
-os.system('export RP_ENABLE_OLD_DEFINES=True')
+# TODO reintroduce versioneer
