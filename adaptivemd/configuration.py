@@ -22,14 +22,10 @@
 from __future__ import absolute_import, print_function
 
 import os
-from .mongodb import StorableMixin
+from .mongodb import StorableMixin, SyncVariable
 from .task import DummyTask
 from .util import parse_cfg_file
 
-
-# TODO
-# unrolling capability for listed entries
-# first thing, queues --> queue, but accept a list
 
 # TODO
 # Read this guy as function
@@ -37,24 +33,25 @@ from .util import parse_cfg_file
 # truncated names
 #from .rp import rp_resource_list
 
-# TODO
-# **** Want to add ability to grab specific nodes that aren't caught
-#      by specifying the queue name!!
-#
-# on Rhea:
-#           #PBS -lpartition=gpu
-
 # Where it came from now:
 #from radical.pilot import Session
 #s = Session()
-#resource_names = [k.split('_')[0] for k in s._resource_configs.keys()]
+#_resource_names = [k.split('_')[0] for k in s._resource_configs.keys()]
+
+# TODO
+# **** Want to add ability to grab specific nodes that aren't caught
+#      by specifying the queue name
+#
+# on Rhea:
+#           #PBS -lpartition=gpu
 
 
 
 class Configuration(StorableMixin):
     """
-    Configuration of the execution resource used to run an AdaptiveMD
-    workflow. This class is used to pass information about the resource
+    Object to store configuration of the execution resource.
+
+    This class is used to pass information about the resource
     when using Radical Pilot, so the field "resource_name" must have a
     matching entry in the Radical Pilot resource configurations. If
     the "shared_path" is not defined, it is set to $HOME/adaptivemd,
@@ -72,6 +69,7 @@ class Configuration(StorableMixin):
     'queue' and 'cores_per_node'. If there is more than 1 queue listed,
     the number of 'cores_per_node' either needs to be 1 or match the
     number of queues. Likewise for the opposite case.
+
     Attributes
     ----------
     name : `str`
@@ -84,13 +82,21 @@ class Configuration(StorableMixin):
         execution of tasks on a resource
     allocation : `str`
         If required, name of the account to be charged for task execution
+    current : `bool`
+        Flag for to signify the configuration is in or selected for use
     cores_per_node : `int`
         Number of cores/threads on each node. This should correspond
         to the specifications of nodes in the requested queues.
     resource_name : `rp.resource`
         A string corresponding to a resource that is defined within
         Radical Pilot
+
+    Methods
+    -------
+    read_configurations
+
     """
+    _ext = '.cfg'
     _fields = [('shared_path',str), ('queues',str),
                ('allocation',str), ('cores_per_node',int),
                ('resource_name',str), ('current', bool),
@@ -112,34 +118,83 @@ class Configuration(StorableMixin):
         'ncsa.bw', 'radical.two', 'xsede.stampede2'])
 
 
-    def update_resource_list(self):
-        '''
-        TODO Use this method to update list of resource names
-        '''
+    def get_resource_list(self):
+        # TODO Use this method to get list of resource names
         pass
 
 
-    @staticmethod
-    def parse_configurations_file(configuration_file):
-        return parse_cfg_file(configuration_file)
+    # TODO init from passed dict
+    def __init__(self, name, wrapper=None, **fields):
+        # Configuration initialization will only complete if all
+        # entries read from the configuration file entry correspond
+        # to valid fields, and the resource name is a known
+        # resource configured in Radical Pilot.
+        #  - verify this with test...
+        # TODO  conditional system that checks rp compatibility of a resource
+
+        for _field, _type in self._fields:
+            setattr(Configuration, _field, SyncVariable(_field, lambda f: isinstance(f, (type(None), _type))))
+
+        # Construction from file
+        if fields:
+            if fields['resource_name'] not in Configuration._resource_names:
+                raise ValueError("Resouce Name is not defined")
+
+            _dict = self.process_attributes(fields)
+            super(Configuration, self).__init__()
+            [setattr(self, field, val) for field, val in _dict.items()]
+            self.name = name
+
+        # Construction via from_dict from storage
+        else:
+            super(Configuration, self).__init__()
+
+        # TODO add default val to _fields tuples above
+        #      and set them here
+        unused = filter(lambda f: not hasattr(self, f), zip(*self._fields)[0])
+        [setattr(self, uu, None) for uu in unused]
+
+        if self.shared_path is None:
+            self.shared_path = '$HOME/adaptivemd/'
+
+        if self.current is None:
+            self.current = False
+
+        if wrapper is None:
+            wrapper = DummyTask()
+
+        self.wrapper = wrapper
 
 
+    # TODO remove extra filename field project_name
     @classmethod
     def read_configurations(cls, configuration_file='', project_name=None):
         '''
-        This method will read a given configuration file or one
-        in a default location. The method returns a dict of
-        configuration dicts. The key of each configuration dict
+        This method will read resource configurations from the given file
+
+        The method returns a list of `Configuration`
+        objects. The key of each configuration dict
         is a given name. The keys in each configuration dict
         are fields read from the configuration file with values
         read from the file.
+
         See adaptivemd/examples/configurations.txt for an example
         of the format.
+
+        Parameters
+        ----------
+        configuration_file : `str`
+            Path to configuration file
+        project_name : `str`
+            Name of file to get in cwd
+
+        Returns
+        -------
+        `list` of `Configuration`
         '''
 
         f_cfg = None
         configurations = list()
-        _ext = '.cfg'
 
         # TODO replace/upgrade cfg parser to receive
         #      an adaptivemd file object
@@ -147,21 +202,25 @@ class Configuration(StorableMixin):
             os.path.expandvars(configuration_file)
             )
 
+        # Look in other locations
         if not configuration_file:
-            locs = ['./' + project_name + _ext,]
+            locs = ['./' + project_name + cls._ext,]
 
             if os.path.isfile(locs[0]):
                 f_cfg = locs[0]
 
+        # Use given file
         elif os.path.isfile(configuration_file):
             f_cfg = configuration_file
 
+        # create configuration objects from parsed config
         if f_cfg:
-            configurations_fields = cls.parse_configurations_file(f_cfg)
+            configurations_fields = parse_cfg_file(f_cfg)
 
             for configuration, fields in configurations_fields.items():
                 configurations.append(cls(configuration, **fields))
 
+        # making configuration for localhost
         elif configuration_file and f_cfg is None:
             print("Could not locate the given configuration file: {0}\n"
                   .format(configuration_file,
@@ -174,68 +233,26 @@ class Configuration(StorableMixin):
 
         return configurations
 
+    @classmethod
+    def process_attributes(cls, fields):
+        _fields, _types = zip(*cls._fields)
+        _dict = dict()
+        for field, val in fields.items():
+            try:
+                idx = _fields.index(field)
+                _type = _types[idx]
+                _val = _type(val)
 
-    # TODO move this __init__ method higher and init from passed dict
-    def __init__(self, name, wrapper=None, **fields):
-        '''
-        Configuration initialization will only complete if all
-        entries read from the configuration file entry correspond
-        to valid fields, and the resource name is a known
-        resource configured in Radical Pilot.
-        ^^^ maybe this is not true, if it is...
-             - need a conditional system that checks rp compatibility of a resource
-        '''
+                assert isinstance(_val, _type)
+                _dict[field] = _val
 
-        # Construction from file
-        if fields:
-            _fields, _types = zip(*Configuration._fields)
-            _dict = dict()
+            except ValueError:
+                print("Listed field {0} is not a valid configuration field"
+                      .format(field))
 
-            for field, val in fields.items():
-                try:
-                    idx = _fields.index(field)
-                    _type = _types[idx]
-                    _val = _type(val)
+            except AssertionError:
+                print("Listed field {0} is not the required type {1}"
+                      .format(field, _type))
 
-                    assert isinstance(_val, _type)
-                    _dict[field] = _val
+        return _dict
 
-                except ValueError:
-                    print("Listed field {0} is not a valid configuration field"
-                          .format(field))
-
-                except AssertionError:
-                    print("Listed field {0} is not the required type {1}"
-                          .format(field, _type))
-
-            # TODO add default val to _fields tuples above
-            #      and set them here
-            if 'shared_path' not in _dict:
-                _dict['shared_path'] = '$HOME/adaptivemd/'
-
-            if 'current' not in _dict:
-                _dict['current'] = False
-
-            unused = set(_fields).difference(set(_dict.keys()))
-            [_dict.update({uu: None}) for uu in unused]
-
-            if fields['resource_name'] in Configuration._resource_names:
-                super(Configuration, self).__init__()
-
-                [setattr(self, field, val) for field, val in _dict.items()]
-                self.name = name
-
-                # TODO fix this ugliness with queue unroll
-                self.queues = [ self.queues ]
-
-            else:
-                raise ValueError("Resouce Name is not defined")
-
-        # Construction via from_dict
-        else:
-            super(Configuration, self).__init__()
-
-        if wrapper is None:
-            wrapper = DummyTask()
-
-        self.wrapper = wrapper

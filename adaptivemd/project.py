@@ -40,6 +40,9 @@ from .task import Task
 from .worker import Worker
 from .logentry import LogEntry
 from .plan import ExecutionPlan
+
+# TODO exec manager with multiprocessing
+# TODO attach main instances rp to project
 #from .rp import client
 
 from .configuration import Configuration
@@ -69,13 +72,8 @@ class Project(object):
     name : str
         a short descriptive name for the project. This name will be used in the
         database creation also.
-    #update#resource : `Resource`
-    #update#    a resource to run the project on. The resource specifies the memory
-    #update#    storage location. Not necessarily which cluster is used. An example is,
-    #update#    if at an institute several clusters (CPU, GPU) share the same shared FS.
-    #update#    If clusters use the same FS you can run simulations across clusters
-    #update#    without problems and so so this resource is the most top-level
-    #update#    limitation.
+    resource : `Resource`
+        a resource to run the project on. 
     files : :class:`Bundle`
         a set of file objects that are available in the project and are
         believed to be available within the resource as long as the project
@@ -93,7 +91,7 @@ class Project(object):
     models : `Bundle`
         a set of stored models in the DB
     configurations : `Bundle`
-        a set of the configurations availabe for executing tasks using the
+        a set of resource configurations availabe for executing tasks using the
         Radical Pilot execution manager
     tasks : `Bundle`
         a set of all queued `Task`s in the project
@@ -102,8 +100,6 @@ class Project(object):
     data : `Bundle`
         a set of `DataDict` objects that represent completely stored files in
         the database of arbitrary size
-    #del#schedulers : set of `Scheduler`
-    #del#    a set of attached schedulers with controlled shutdown and reference
     storage : `MongoDBStorage`
         the mongodb storage wrapper to access the database of the project
     _worker_dead_time : int
@@ -154,6 +150,19 @@ class Project(object):
         MongoDBStorage.set_host(hostname)
 
     def set_current_configuration(self, configuration=None):
+        '''
+        Set the configuration to use by default
+
+        If argument is `None`, will try to get best option
+        from previously stored configurations starting with
+        check for one marked for use. Can give name of
+        stored configuration object, resource_name it uses,
+        or a `Configuration` instance for manual changes.
+
+        Parameters
+        ----------
+        configuration : `None`, `str` or `Configuration`
+        '''
 
         cfg = None
 
@@ -180,7 +189,7 @@ class Project(object):
             if len(cfg) == 0:
                 cfg = list(self.configurations.a('resource_name', 'local.localhost'))
 
-        # TODO switch off last current?/always exactly 1 airtight?
+        # TODO always exactly 1 airtight?
         #      also - no rule for when reading from file and multiple
         #             configs try to set current to True
         #             - last one wins?
@@ -206,10 +215,22 @@ class Project(object):
     def read_configurations(self, configuration_file=None, default_configuration=None):
         '''
         Read in a configurations file to define supported resources.
-        If no argument is given, this method will try to read a
-        file with the given project name in the current working
-        directory, followed by the adaptivemd package directory
-        adaptivemd/configurations/.
+
+        Multiple configurations can be stored, with one specified
+        as a current default configuration. If no argument is given,
+        this method will try to read a file with the project's
+        name in the current working directory. Give configuration
+        name or instance to set as default.
+
+        See adaptivemd/examples/configurations.txt for an example
+        of the format.
+
+        Parameters
+        ----------
+        configuration_file : `str`
+            Path to configuration file
+        default_configuration : `str` or `Configuration`
+            Name or instance of configuration to use by default
         '''
         configurations = Configuration.read_configurations(
             configuration_file, self.name)
@@ -227,10 +248,11 @@ class Project(object):
         if dburl:
             self.set_dburl(dburl)
 
-        #del#self.session = None
-        self.schedulers = set()
-
+        # TODO reference to rp client here
+        # TODO control callbacks/watchers
+        #      here, delegate to rp if used
         #self.execution_manager = client()
+        self.schedulers = set()
 
         self.models = StoredBundle()
         self.generators = StoredBundle()
@@ -240,12 +262,9 @@ class Project(object):
         self.logs = StoredBundle()
         self.data = StoredBundle()
         self.configurations = StoredBundle()
-        # self.commands = StoredBundle()
-        #del#self.resource = None
         self.resources = StoredBundle()
 
         self._all_trajectories = self.files.c(Trajectory)
-        # TODO: is created different in semantics from exists?
         self.trajectories = self._all_trajectories.v(lambda x: x.exists)
 
         self._events = []
@@ -284,68 +303,89 @@ class Project(object):
         if len(self.configurations) > 0:
             self.set_current_configuration()
 
-    def initialize(self, configuration_file=None,
+    def initialize(self, configuration=None,
                    default_configuration=None):
         """
         Initialize a project
 
-        Notes
-        -----
         This should only be called to setup the project and only the very
-        first time.
+        first time. Later load different configurations with `read_configurations`
+        and `set_configurations` methods.
 
-        #del#Parameters
-        #del#----------
-        #del#resource : `Resource`
-        #del#    the resource used in this project
+        Parameters
+        ----------
+
 
         """
-        self.storage.close()
+        if len(self.storage.stores) == 0:
+            self.storage.close()
 
-        st = MongoDBStorage(self.name, 'w')
-        # st.create_store(ObjectStore('objs', None))
-        st.create_store(ObjectStore('generators', TaskGenerator))
-        st.create_store(ObjectStore('files', File))
-        st.create_store(ObjectStore('resources', Resource))
-        # TODO configurations is behaving different than all other stores
-        #      probably to do with Configuration objects and how they
-        #      are constructed. Fix:
-        #       - Configuration class
-        #       - storage insertion method (p.configurations.add)
-        #       - StoredBundle access mechanism (p.configurations)
-        #       - yep
-        st.create_store(ObjectStore('configurations', Configuration))
-        st.create_store(ObjectStore('models', Model))
-        st.create_store(ObjectStore('tasks', Task))
-        st.create_store(ObjectStore('workers', Worker))
-        st.create_store(ObjectStore('logs', LogEntry))
-        st.create_store(FileStore('data', DataDict))
-        # st.create_store(ObjectStore('commands', Command))
+            st = MongoDBStorage(self.name, 'w')
+            # st.create_store(ObjectStore('objs', None))
+            st.create_store(ObjectStore('generators', TaskGenerator))
+            st.create_store(ObjectStore('files', File))
+            st.create_store(ObjectStore('resources', Resource))
+            st.create_store(ObjectStore('configurations', Configuration))
+            st.create_store(ObjectStore('models', Model))
+            st.create_store(ObjectStore('tasks', Task))
+            st.create_store(ObjectStore('workers', Worker))
+            st.create_store(ObjectStore('logs', LogEntry))
+            st.create_store(FileStore('data', DataDict))
 
-        st.close()
+            st.close()
 
-        self._open_db()
+            self._open_db()
 
-        # this method will save configurations to the storage
-        # if a valid configuration file is found
-        self.read_configurations(configuration_file,
-                                 default_configuration)
+            # this method will save configurations to the storage
+            # if a valid configuration file is found
+            if isinstance(configuration, str):
+                self.read_configurations(configuration,
+                        default_configuration)
+            elif isinstance(configuration, dict):
+                self.configurations.add(Configuration('local', **configuration))
+            elif not configuration:
+                self.configurations.add(Configuration('local'))
+
+            if not self._current_configuration:
+                self.set_current_configuration(self.configurations.last)
+
+        else:
+            logger.warning("Not reinitializing project")
 
     def request_resource(self, total_cpus, total_time,
                          total_gpus=0, destination=''):
+        '''
+        Request to use a resource for Radical Pilot.
 
+        Instantiated Radical Pilot Clients can acquire the
+        description of a requested resource and submit a
+        Pilot Job on the Resource LRMS using the parameters.
+        given to this method. A workflow targeted to this
+        resource is then executed within this Pilot.
+
+        Parameters
+        ----------
+        total_cpus : `int`
+            Total cpus to request (n_nodes * cpu_per_node)
+        total_time : `int`
+            Total time to request in minutes
+        total_gpu : `int`
+            Total gpu to request
+        destination : `str`
+            Name of resource_configuration in Radical Pilot
+
+        '''
+
+        # TODO  resource requests should be marked as
+        #       unused,inuse,done, failed, instead
+        #       of current unmanaged model.
         if destination == 'current':
             destination = self._current_configuration.resource_name
 
-        # TODO regularize resource name generation
-        #nm_r = get_nm_r()
-        #name = 'res1'
         r = Resource(total_cpus, total_time,
                      total_gpus, destination)
 
-        #self.storage.save(r)
         self.resources.add(r)
-        #return r
 
     def _open_db(self):
         # open DB and load status
@@ -360,7 +400,6 @@ class Project(object):
             self.workers.set_store(self.storage.workers)
             self.logs.set_store(self.storage.logs)
             self.data.set_store(self.storage.data)
-            # self.commands.set_store(self.storage.commands)
             self.resources.set_store(self.storage.resources)
 
             self.storage.files.set_caching(True)
@@ -387,16 +426,6 @@ class Project(object):
     def _close_db(self):
         self.storage.close()
 
-    #del#def close_rp(self):
-    #del#    """
-    #del#    Close the RP session
-
-    #del#    Before using RP you need to re-open and then you will run in a
-    #del#    new session.
-
-    #del#    """
-    #del#    self._close_rp()
-
     @classmethod
     def list(cls):
         """
@@ -416,6 +445,8 @@ class Project(object):
         """
         Delete a complete project
 
+        All project data will be deleted from the database.
+
         Notes
         -----
         Attention!!!! This cannot be undone!!!!
@@ -434,7 +465,6 @@ class Project(object):
 
         """
         self.stop()
-        #self._close_rp()
         self._close_db()
 
     def __enter__(self):
@@ -467,11 +497,9 @@ class Project(object):
         """
 
         # TODO do a direct association with resource
-        #      enable for multiple methods such as:
-        #
+        #      to target multiple simultaneously:
         #      r.queue(tasks)
         #      p.queue(r, tasks)
-        #
         if 'resource_name' in kwargs:
             resource_name = kwargs['resource_name']
         else:
@@ -692,18 +720,7 @@ class Project(object):
                         current_trajs_index[
                         np.random.randint(len(current_trajs_index))]).pick()
                         for _ in range(n_pick)]
-            # TOO SLOW
-            # makes new list of bundle for each inner pick
-            # "Full" bundles can use random selection on the
-            # index to speed up tremendously, but ViewBundles
-            # are filtered so we'd need to create the sub-index
-            # for selection (ie pick() with no args on
-            # ViewBundle might build its sub-index (make 1-time
-            # and later return as property), pass as subindex arg
-            # to its parent "Full" bundle, who then loads
-            # from the store with a random selected index
-            #trajlist = [ self.trajectories<ViewBundle>.pick().pick() ]
-                
+
         else:
             trajlist = []
 
