@@ -336,7 +336,7 @@ class Task(BaseTask):
                           unit.stdout,
                           unit.stderr))
 
-    def _default_success(self, scheduler):
+    def _default_success(self, scheduler, path=None):
         """
         the default function executed when a task succeeds
 
@@ -1207,7 +1207,6 @@ class PythonTask(PrePostTask):
             self._rpc_input_file.modified()
 
     def _cb_submit(self, scheduler):
-        print("HELLO FROM {}._cb_submit".format(self.__class__))
         filename = scheduler.replace_prefix(self._rpc_input_file.url)
         with open(filename, 'w') as f:
             f.write(scheduler.simplifier.to_json(self._get_json(scheduler)))

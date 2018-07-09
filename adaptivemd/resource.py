@@ -24,21 +24,21 @@ from __future__ import absolute_import
 
 
 from .mongodb import StorableMixin
-#from .task import DummyTask
-#from .configuration import Configuration
 
 
 class Resource(StorableMixin):
     """
     Runtime parameters to specify execution resources
 
-    queue <str> :
+    Attributes
+    ----------
+    queue : `str`
         name of the queue to submit jobs to
 
-    total_cpus <int> :
+    total_cpus : `int`
         total number of nodes to be used
 
-    total_time <int> :
+    total_time : `int`
         total number of minutes for execution of a block of tasks
 
     """
@@ -66,15 +66,4 @@ class Resource(StorableMixin):
         assert isinstance(destination, str)
         self.destination = destination
 
-
-#del#    def __init__(self, shared_path=None, wrapper=None):
-#del#        super(Resource, self).__init__()
-#del#        if shared_path is None:
-#del#            shared_path = '$HOME/adaptivemd/'
-#del#
-#del#        self.shared_path = shared_path
-#del#        if wrapper is None:
-#del#            wrapper = DummyTask()
-#del#
-#del#        self.wrapper = wrapper
 

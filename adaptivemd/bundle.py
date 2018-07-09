@@ -487,10 +487,12 @@ class StoredBundle(Bundle):
         if self._set is not None:# and item not in self._set:
             if isinstance(item, (list, tuple, set)):
                 it = item[0]
+                n  = len(item)
             else:
                 it = item
+                n  = 1
 
-            logger.info('Adding %s elements of type `%s to store %s`' % (len(item), it.__class__.__name__, self._set))
+            logger.info('Adding %s elements of type `%s to store %s`' % (n, it.__class__.__name__, self._set))
             self._set.save(item)
 
     @property

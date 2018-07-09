@@ -72,7 +72,7 @@ def remote_analysis(
         call. All function calls are to the featurizer object! The
         dicts storing 'attrN' follow the same design as the outer method,
         since these dicts are used identically to call methods of
-        the MDFeaturizer object!
+        the MDFeaturizer object.
         If a list is given as in 4., each element is considered to be
         a feature descriptor. If None (default) all coordinates will be
         added as features (.add_all())
@@ -86,48 +86,6 @@ def remote_analysis(
         5. {methodname: {attr1: [ positionals ],
                          kwargs: {kwarg1: value1}},
             kwargs: {kwarg1: value1, kwarg2: value2}}
-
-
-        Examples
-
-            {'add_backbone_torsions': None}
-            -> feat.add_backbone_torsions()
-
-            {'add_distances': [ [[0,10], [2,20]] ]}
-            -> feat.add_distances([[0,10], [2,20]])
-
-            {'add_inverse_distances': [
-                { 'select_backbone': None } ]}
-            -> feat.add_inverse_distances(select_backbone())
-
-            {'add_residue_mindist': None,
-             'kwargs': {'threshold': 0.6, 'scheme': 'ca'}}
-            -> feat.add_residue_mindist(threshold=0.6, scheme='ca')
-
-            {'add_distances': [ [1,2,3,4] ],
-             'kwargs': {'indices2': [10,11,12,13]}}
-            -> feat.add_distances([1,2,3,4], indices2=[10,11,12,13])
-
-         These two are equivalent:
-
-            {'add_distances': {'select': None,
-                               'kwargs': {'selstring':
-                                          'resname GLN and (mass 11 to 17)'}},
-             'kwargs': {'indices2': [10,11,12,13]}}
-
-            {'add_distances': {'select': [ 'resname GLN and (mass 11 to 17)' ] },
-             'kwargs': {'indices2': [10,11,12,13]}}
-
-            -> feat.add_distances(select('resname GLN and (mass 11 to 17)'),
-                                  indices2=[10,11,12,13])
-
-         Ionic Contacts (Salt Bridges):
-
-            pos = 'rescode K or rescode R or rescode H'
-            neg = 'rescode D or rescode E'
-            {'add_distances': {'select': [ pos ]},
-             'kwargs': {'indices2': {'select': [ neg ] }}}
-
 
 
     topfile : `File`
@@ -150,6 +108,52 @@ def remote_analysis(
     `Model`
         a model object with a data attribute which is a dict and contains all relevant
         information about the computed MSM
+
+    Examples
+    --------
+
+    The features_dict has multiple structures to create different call signatures
+    on the PyEMMA MD Featurizer. Here are some examples showing a dict vs call.
+
+        {'add_backbone_torsions': None}
+        -> feat.add_backbone_torsions()
+
+        {'add_distances': [ [[0,10], [2,20]] ]}
+        -> feat.add_distances([[0,10], [2,20]])
+
+        {'add_inverse_distances': [
+            { 'select_backbone': None } ]}
+        -> feat.add_inverse_distances(select_backbone())
+
+        {'add_residue_mindist': None,
+         'kwargs': {'threshold': 0.6, 'scheme': 'ca'}}
+        -> feat.add_residue_mindist(threshold=0.6, scheme='ca')
+
+        {'add_distances': [ [1,2,3,4] ],
+         'kwargs': {'indices2': [10,11,12,13]}}
+        -> feat.add_distances([1,2,3,4], indices2=[10,11,12,13])
+
+     These two are equivalent:
+
+        {'add_distances': {'select': None,
+                           'kwargs': {'selstring':
+                                      'resname GLN and (mass 11 to 17)'}},
+         'kwargs': {'indices2': [10,11,12,13]}}
+
+        {'add_distances': {'select': [ 'resname GLN and (mass 11 to 17)' ] },
+         'kwargs': {'indices2': [10,11,12,13]}}
+
+        -> feat.add_distances(select('resname GLN and (mass 11 to 17)'),
+                              indices2=[10,11,12,13])
+
+     Ionic Contacts (Salt Bridges):
+
+        pos = 'rescode K or rescode R or rescode H'
+        neg = 'rescode D or rescode E'
+        {'add_distances': {'select': [ pos ]},
+         'kwargs': {'indices2': {'select': [ neg ] }}}
+
+
     """
     import os
 
