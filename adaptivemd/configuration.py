@@ -161,6 +161,9 @@ class Configuration(StorableMixin):
         if self.current is None:
             self.current = False
 
+        if not isinstance(self.queues, list):
+            self.queues = [self.queues]
+
         if wrapper is None:
             wrapper = DummyTask()
 
