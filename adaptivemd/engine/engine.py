@@ -474,8 +474,8 @@ class TrajectoryGenerationTask(PrePostTask):
             'trajectory'
         ]
 
-    def _default_success(self, scheduler):
-        super(TrajectoryGenerationTask, self)._default_success(scheduler)
+    def _default_success(self, scheduler, path=None):
+        super(TrajectoryGenerationTask, self)._default_success(scheduler, path)
 
         # # give the used engine the credit for making the trajectory
         # for t in self.targets:

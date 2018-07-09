@@ -138,8 +138,9 @@ class Configuration(StorableMixin):
 
         # Construction from file
         if fields:
-            if fields['resource_name'] not in Configuration._resource_names:
-                raise ValueError("Resouce Name is not defined")
+            if 'resource_name' in fields:
+                if fields['resource_name'] not in Configuration._resource_names:
+                    raise ValueError("Resouce Name is not defined")
 
             _dict = self.process_attributes(fields)
             super(Configuration, self).__init__()
