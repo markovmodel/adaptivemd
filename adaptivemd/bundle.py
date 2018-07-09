@@ -159,10 +159,11 @@ class BaseBundle(object):
             Bundle of only matching entries
         '''
         if match:
+            # This doesn't have to be string, but must match
             hits = self.m(name_attr, value)
         else:
-            hits = filter(lambda x: getattr(x, name_attr)
-                          .find(pattern) >= 0, self)
+            hits = filter(lambda x: getattr(x, name_attr).find(pattern) >= 0, filter(lambda x: isinstance(getattr(x,name_attr), str), self))
+
 
         return Bundle(hits)
 

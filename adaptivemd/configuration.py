@@ -102,6 +102,10 @@ class Configuration(StorableMixin):
                ('resource_name',str), ('current', bool),
                ('gpu_per_node',int)]
 
+    # TODO sync new vals, difficult with current implementation
+    #for _field, _type in _fields:
+        #setattr(Configuration, _field, SyncVariable(_field, lambda f: isinstance(f, _type)))
+
     _resource_names = set(['fub.allegro', 'xsede.supermic',
         'das4.fs2', 'osg.connect', 'xsede.stampede',
         'radical.tutorial', 'lumc.gb-ui', 'chameleon.cloud',
@@ -131,9 +135,6 @@ class Configuration(StorableMixin):
         # resource configured in Radical Pilot.
         #  - verify this with test...
         # TODO  conditional system that checks rp compatibility of a resource
-
-        for _field, _type in self._fields:
-            setattr(Configuration, _field, SyncVariable(_field, lambda f: isinstance(f, (type(None), _type))))
 
         # Construction from file
         if fields:
