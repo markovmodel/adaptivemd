@@ -127,9 +127,9 @@ class TestSimpleStrategy(unittest.TestCase):
                 yield task.is_done
 
         # TODO worker/MD running in subprocess thread horribly slow
-        #      - fix somehow and keep 2,2 for loops, trajs
-        n_loops = 1#2
-        trajs_per_loop = 1#2
+        #      - can it be made to run a bit faster?
+        n_loops = 2
+        trajs_per_loop = 2
         self.project.add_event(strategy(loops=n_loops, trajs_per_loop=trajs_per_loop))
         self.project.run()
         self.project.wait_until(self.project.on_ntraj(n_loops*trajs_per_loop))

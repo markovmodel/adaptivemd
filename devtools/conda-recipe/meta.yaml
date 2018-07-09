@@ -17,13 +17,13 @@ requirements:
     - pyyaml
     - python
     - numpy
-    - pymongo >=2.8
+    - pymongo
     - ujson
 
   run:
     - python
     - numpy
-    - pymongo >=2.8
+    - pymongo
     - ujson
 
 test:

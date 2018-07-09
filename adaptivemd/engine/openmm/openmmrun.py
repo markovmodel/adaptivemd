@@ -29,9 +29,12 @@ import socket
 import numpy as np
 import mdtraj as md
 
+import time, random
+
 import simtk.unit as u
 from simtk.openmm import Platform, XmlSerializer
 from simtk.openmm.app import PDBFile, Simulation, DCDReporter, StateDataReporter
+
 
 
 
@@ -66,7 +69,7 @@ def get_platform(platform_name):
                 platform = Platform.getPlatformByName(platform_name)
                 return platform
 
-            except IndexErrorError as e:
+            except IndexError as e:
                 if attempt < retries:
                     attempt += 1
                     time.sleep(5*random.random())
@@ -90,9 +93,8 @@ def get_pdbfile(topology_pdb):
             else:
                 raise e
 
+
 def read_input(platform, pdbfile, system, integrator):
-    import time
-    import random
 
     return_order = ['get_platform', 'get_pdbfile',
                     'get_system', 'get_integrator']
@@ -260,6 +262,8 @@ if __name__ == '__main__':
             platform,
             properties
         )
+        print("SIMULATION: ",simulation)
+
     except Exception:
         print('EXCEPTION', (socket.gethostname()))
         raise
@@ -282,11 +286,13 @@ if __name__ == '__main__':
     if args.restart:
         arr = np.load(args.restart)
         simulation.context.setPositions(arr['positions'] * u.nanometers)
+
         simulation.context.setVelocities(arr['velocities'] * u.nanometers/u.picosecond)
         simulation.context.setPeriodicBoxVectors(*arr['box_vectors'] * u.nanometers)
+
     else:
         simulation.context.setPositions(pdb.positions)
-        pbv = pdb.getTopology().getPeriodicBoxVectors()
+        pbv = system.getDefaultPeriodicBoxVectors()
         simulation.context.setPeriodicBoxVectors(*pbv)
         # set velocities to temperature in integrator
         try:
@@ -301,6 +307,7 @@ if __name__ == '__main__':
 
     output = args.output
 
+    types = None
     if args.types:
         # seems like we have JSON
         types_str = args.types.replace("'", '"')
@@ -338,13 +345,19 @@ if __name__ == '__main__':
             r.report(simulation, state)
 
     if args.report and args.verbose:
+        output_stride = args.interval_store
+        if types:
+            output_stride = min([oty['stride'] for oty in types.values()])
         simulation.reporters.append(
             StateDataReporter(
                 stdout,
-                args.interval_report,
+                output_stride,
                 step=True,
                 potentialEnergy=True,
-                temperature=True))
+                temperature=True,
+                speed=True,
+                separator="  ||  ",
+            ))
 
     restart_file = os.path.join(output, 'restart.npz')
 

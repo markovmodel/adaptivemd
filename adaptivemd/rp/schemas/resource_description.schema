@@ -1,0 +1,32 @@
+{
+  "$schema": "http://json-schema.org/draft-06/schema#",
+  "title": "ResourceDescription",
+  "description": "Schema of a resrouce description object",
+  "type": "object",
+  "properties": {
+    "resource": {
+      "type": "string"
+    },
+    "runtime": {
+      "type": "integer"
+    },
+    "cores": {
+      "type": "integer"
+    },
+    "project": {
+      "type": "string"
+    },
+    "access_schema": {
+      "type": "string"
+    },
+    "queue": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "resource",
+    "runtime",
+    "cores",
+    "project"
+  ]
+}

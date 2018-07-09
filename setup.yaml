@@ -1,18 +1,25 @@
-name: adaptivemd
+name: AdaptiveMD
+
 
 authors:
   - Jan-Hendrik Prinz
   - Frank Noe
+  - John Ossyra
+
 
 emails:
+  - jossyra@vols.utk.edu
   - jan-hendrik.prinz@fu-berlin.de
 
-description: 'A wrapper for radical.pilot to run adaptive MD'
+
+description: 'A Python framework to run Molecular Dynamics Simulations in Adaptive Sampling Workflows.'
+
 
 long_description: |
-  Adaptive-MD (adaptivemd) is a pure python package that facilitates
-  running adaptive MD simulations using the radical.pilot distributed
-  computing framework.
+  AdaptiveMD is a pure python package that implements a distributed
+  computing framework to facilitate running MD simulations that are
+  continually adapted using Markov State Models.
+
 
 classifiers: |
   Development Status :: 3 - Alpha
@@ -28,8 +35,10 @@ classifiers: |
   Operating System :: Unix
   Operating System :: MacOS
 
+
 download_url: https://github.com/markovmodel/adaptivemd
-url: https://github.com/markovmodel/adaptivemd
+url:          https://github.com/markovmodel/adaptivemd
+
 
 packages:
   - adaptivemd
@@ -38,24 +47,31 @@ packages:
   - adaptivemd.analysis.pyemma
   - adaptivemd.engine.openmm
   - adaptivemd.mongodb
-  - adaptivemd.misc
-  - adaptivemd.rp
+  #- adaptivemd.misc
+  #RP#- adaptivemd.rp
+
 
 platforms:
   - Linux
   - Mac OS X
-  - Windows
+
 
 released: false
+
 
 scripts:
   - adaptivemd/scripts/adaptivemdworker
 
-requires:
+
+install_requires:
   - python
+  - jsonschema
+  - pyyaml
+  - six
   - numpy
-  - pymongo>=2.8
   - ujson
+  #RP#- radical.pilot
+  - pymongo>=3.5
 
 
 include_package_data: true

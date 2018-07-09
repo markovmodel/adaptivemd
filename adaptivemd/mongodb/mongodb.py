@@ -48,6 +48,15 @@ class MongoDBStorage(object):
         #cls._db_url = cls._db_url.replace('localhost', host)
         cls._db_url = 'mongodb://' + host + ':27017/'
 
+    @classmethod
+    def set_location(cls, location):
+        cls._db_url = 'mongodb://' + location
+
+    @classmethod
+    def set_port(cls, port):
+        portstring = str(port) + '/'
+        cls._db_url = ':'.join(cls._db_url.split(':')[:-1]+[portstring])
+
     @property
     def version(self):
         from . import version
@@ -417,6 +426,7 @@ class MongoDBStorage(object):
             needed when loading the object to identify the correct storage
         """
 
+        # TODO isinstance these type checks
         if type(obj) is list:
             # a list of objects will be stored one by one
             return [self.save(part) for part in obj]

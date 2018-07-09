@@ -53,13 +53,13 @@ class SyncVariable(object):
                 {'_id': idx})
 
         return None
-    
+
     def read(self, instance):
         try:
             return getattr(instance, self.key)
         except AttributeError:
             return None
-        
+
     def write(self, instance, v):
         setattr(instance, self.key, v)
 

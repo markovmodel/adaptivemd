@@ -1,4 +1,7 @@
+[![Build Status](https://travis-ci.org/jrossyra/adaptivemd.svg?branch=master)](https://travis-ci.org/jrossyra/adaptivemd)
+
 # AdaptiveMD
+
 A Python framework to run adaptive MD simulations using Markov state model (MSM)
 analysis on HPC resources.
 
@@ -103,7 +106,7 @@ environment you will be working in when installing the packages:
 conda install jupyter
 
 # for adaptivemd only
-conda install ujson pyyaml pymongo=3.3 numpy
+conda install ujson pyyaml pymongo numpy
 
 # for simulations & analysis
 conda install pyemma openmm mdtraj

@@ -25,6 +25,11 @@ from __future__ import print_function
 # The remote function to be called py PyEMMAAnalysis
 
 
+#  #TODO --> upgrade remote_analysis structure to accommodate
+#            model / analysis variations ...
+#            should take set of pars and func name args
+#            --> pull func: have required pars, optional pars
+#                --> pull pars from args pool
 def remote_analysis(
         trajectories,
         traj_name='output.dcd',
@@ -67,7 +72,7 @@ def remote_analysis(
         call. All function calls are to the featurizer object! The
         dicts storing 'attrN' follow the same design as the outer method,
         since these dicts are used identically to call methods of
-        the MDFeaturizer object!
+        the MDFeaturizer object.
         If a list is given as in 4., each element is considered to be
         a feature descriptor. If None (default) all coordinates will be
         added as features (.add_all())
@@ -83,66 +88,72 @@ def remote_analysis(
             kwargs: {kwarg1: value1, kwarg2: value2}}
 
 
-        Examples
-
-            {'add_backbone_torsions': None}
-            -> feat.add_backbone_torsions()
-
-            {'add_distances': [ [[0,10], [2,20]] ]}
-            -> feat.add_distances([[0,10], [2,20]])
-
-            {'add_inverse_distances': [
-                { 'select_backbone': None } ]}
-            -> feat.add_inverse_distances(select_backbone())
-
-            {'add_residue_mindist': None,
-             'kwargs': {'threshold': 0.6, 'scheme': 'ca'}}
-            -> feat.add_residue_mindist(threshold=0.6, scheme='ca')
-
-            {'add_distances': [ [1,2,3,4] ],
-             'kwargs': {'indices2': [10,11,12,13]}}
-            -> feat.add_distances([1,2,3,4], indices2=[10,11,12,13])
-
-         These two are equivalent:
-
-            {'add_distances': {'select': None,
-                               'kwargs': {'selstring':
-                                          'resname GLN and (mass 11 to 17)'}},
-             'kwargs': {'indices2': [10,11,12,13]}}
-
-            {'add_distances': {'select': [ 'resname GLN and (mass 11 to 17)' ] },
-             'kwargs': {'indices2': [10,11,12,13]}}
-
-            -> feat.add_distances(select('resname GLN and (mass 11 to 17)'),
-                                  indices2=[10,11,12,13])
-
-         Ionic Contacts (Salt Bridges):
-
-            pos = 'rescode K or rescode R or rescode H'
-            neg = 'rescode D or rescode E'
-            {'add_distances': {'select': [ pos ]},
-             'kwargs': {'indices2': {'select': [ neg ] }}}
-
-
-
     topfile : `File`
         a reference to the full topology `.pdb` file using in pyemma
     tica_lag : int
-        the lagtime used for tCIA
+        the lagtime used for tICA
     tica_dim : int
         number of dimensions using in tICA. This refers to the number of tIC used
+    tica_stride : int
+        a stride to be used in tICA calculation. Can speed up computation at reduced accuracy
     msm_states : int
         number of microstates used for the MSM
     msm_lag : int
         lagtime used for the MSM construction
-    stride : int
-        a stride to be used on the data. Can speed up computation at reduced accuracy
+    clust_stride : int
+        a stride to be used on when determining cluster centers. Can speed up computation at reduced accuracy
 
     Returns
     -------
     `Model`
         a model object with a data attribute which is a dict and contains all relevant
         information about the computed MSM
+
+    Examples
+    --------
+
+    The features_dict has multiple structures to create different call signatures
+    on the PyEMMA MD Featurizer. Here are some examples showing a dict vs call.
+
+        {'add_backbone_torsions': None}
+        -> feat.add_backbone_torsions()
+
+        {'add_distances': [ [[0,10], [2,20]] ]}
+        -> feat.add_distances([[0,10], [2,20]])
+
+        {'add_inverse_distances': [
+            { 'select_backbone': None } ]}
+        -> feat.add_inverse_distances(select_backbone())
+
+        {'add_residue_mindist': None,
+         'kwargs': {'threshold': 0.6, 'scheme': 'ca'}}
+        -> feat.add_residue_mindist(threshold=0.6, scheme='ca')
+
+        {'add_distances': [ [1,2,3,4] ],
+         'kwargs': {'indices2': [10,11,12,13]}}
+        -> feat.add_distances([1,2,3,4], indices2=[10,11,12,13])
+
+     These two are equivalent:
+
+        {'add_distances': {'select': None,
+                           'kwargs': {'selstring':
+                                      'resname GLN and (mass 11 to 17)'}},
+         'kwargs': {'indices2': [10,11,12,13]}}
+
+        {'add_distances': {'select': [ 'resname GLN and (mass 11 to 17)' ] },
+         'kwargs': {'indices2': [10,11,12,13]}}
+
+        -> feat.add_distances(select('resname GLN and (mass 11 to 17)'),
+                              indices2=[10,11,12,13])
+
+     Ionic Contacts (Salt Bridges):
+
+        pos = 'rescode K or rescode R or rescode H'
+        neg = 'rescode D or rescode E'
+        {'add_distances': {'select': [ pos ]},
+         'kwargs': {'indices2': {'select': [ neg ] }}}
+
+
     """
     import os
 
@@ -152,52 +163,55 @@ def remote_analysis(
     pdb = md.load(topfile)
     topology = pdb.topology
 
+    # Number of MSM Eigendimensions to save
+    d = 10
+
     if selection:
         topology = topology.subset(topology.select(selection_string=selection))
 
     feat = pyemma.coordinates.featurizer(topology)
 
     if features:
-        # TODO  this function needs more attention/documentation
+        # TODO  this function needs tests
         #       - it is super important to make the arguments
         #         available to the pyemma methods
-        def apply_feat_part(featurizer, parts, prepend=''):
+        def apply_feat_part(featurizer, parts):
             if isinstance(parts, dict):
-        
+
                 items = list(parts.items())
                 if len(items) == 1:
                     func, attributes = items[0]
                     kwargs = dict()
-        
+
                 elif len(items) == 2:
                     if items[0][0] == 'kwargs':
                         func, attributes = items[1]
                         key, kwargs = items[0]
-        
+
                     elif items[1][0] == 'kwargs':
                         func, attributes = items[0]
                         key, kwargs = items[1]
-        
+
                     for k,v in kwargs.items():
                         if isinstance(v, dict):
-        
+
                             _func, _attr = list(v.items())[0]
                             _f = getattr(featurizer, _func)
                             if _attr is None:
                                 idc = _f()
-        
+
                             elif isinstance(_attr, (list, tuple)):
                                 idc = _f(*apply_feat_part(featurizer,
                                          _attr))
-        
+
                             kwargs[k] = idc
-        
+
                 assert isinstance(kwargs, dict)
                 f = getattr(featurizer, func)
-        
+
                 if attributes is None:
                     return f(**kwargs)
-        
+
                 elif isinstance(attributes, (list, tuple)):
                     return f(*apply_feat_part(featurizer, attributes),
                              **kwargs)
@@ -224,7 +238,7 @@ def remote_analysis(
     inp = pyemma.coordinates.source(files, feat)
 
     tica_obj = pyemma.coordinates.tica(inp, lag=tica_lag,
-                   dim=tica_dim, kinetic_map=False, stride=tica_stride)
+                   dim=tica_dim, kinetic_map=True, stride=tica_stride)
 
     y = tica_obj.get_output()
 
@@ -246,19 +260,23 @@ def remote_analysis(
             'n_features': inp.dimension(),
         },
         'tica': {
-            'dimension': tica_obj.dimension(),
-            'lagtime': tica_lag
+            'dimension':    tica_obj.dimension(),
+            'lagtime':      tica_lag,
+            'eigenvalues':  tica_obj.eigenvalues,
+            'eigenvectors': tica_obj.eigenvectors,
         },
         'clustering': {
-            'k': msm_states,
-            'dtrajs': [
-                t for t in cl.dtrajs
-            ]
+            'k':       msm_states,
+            'dtrajs':  [ t for t in cl.dtrajs ],
+            'centers': cl.clustercenters,
         },
         'msm': {
             'lagtime': msm_lag,
             'P': m.P,
-            'C': m.count_matrix_full
+            'C': m.count_matrix_full,
+            'eigenvalues': m.eigenvalues(d),
+            'l_eigenvectors': m.eigenvectors_left(d),
+            'r_eigenvectors': m.eigenvectors_right(d),
         }
     }
 

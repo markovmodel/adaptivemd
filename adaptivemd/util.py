@@ -21,9 +21,49 @@
 ##############################################################################
 from __future__ import print_function, absolute_import
 
-import pip
+#import pip
+import pkg_resources
 import os
 import datetime
+
+
+def parse_cfg_file(filepath):
+    def parse_line(line):
+        v = line.strip().split()
+        if len(v) > 0 and v[0][0] != '#':
+            return v
+        else:
+            return []
+
+    reading_fields = False
+    configurations_fields = dict()
+
+    with open(filepath, 'r') as f_cfg:
+        for line in f_cfg:
+            v = parse_line(line)
+            if reading_fields:
+                if len(v) == 1 and len(v[0]) == 1:
+                    if v[0][0] == '}':
+                        reading_fields = False
+                    else:
+                        raise ValueError(
+                            "End configuration block with single '}'")
+
+                # PARSE A VALUE
+                elif len(v) == 2:
+                    configurations_fields[reading_fields][v[0]] = v[1]
+
+                # NEED A SINGLE VALUE
+                elif len(v) == 1 or len(v) > 2:
+                    raise ValueError(
+                        "Require at least one value separated by space")
+
+            # START READING
+            elif len(v) == 2 and v[1] == '{':
+                reading_fields = v[0]
+                configurations_fields[reading_fields] = dict()
+
+    return configurations_fields
 
 
 def get_function_source(func):
@@ -42,7 +82,8 @@ def get_function_source(func):
         a list of filenames necessary to be copied
 
     """
-    installed_packages = pip.get_installed_distributions()
+    #installed_packages = pip.get_installed_distributions()
+    installed_packages = [d for d in pkg_resources.working_set]
     inpip = func.__module__.split('.')[0] in [p.key for p in installed_packages]
     insubdir = os.path.realpath(
         func.__code__.co_filename).startswith(os.path.realpath(os.getcwd()))

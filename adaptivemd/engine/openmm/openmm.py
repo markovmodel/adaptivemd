@@ -95,8 +95,22 @@ class OpenMMEngine(Engine):
 
         return '--types="%s"' % ujson.dumps(d).replace('"', "'")
 
-    def run(self, target):
-        t = TrajectoryGenerationTask(self, target)
+    def run(self, target, resource_name=None, export_path=None,
+            cpu_threads=1, gpu_contexts=0, mpi_rank=0):
+
+        t = TrajectoryGenerationTask(self, target, cpu_threads=cpu_threads, 
+                               gpu_contexts=gpu_contexts, mpi_rank=mpi_rank)
+
+        if resource_name is None:
+            resource_name = list()
+        elif isinstance(resource_name, str):
+            resource_name = [resource_name]
+
+        assert isinstance(resource_name, list)
+        t.resource_name = resource_name
+
+        if export_path:
+            t.append(export_path)
 
         initial_pdb = t.link(self['pdb_file_stage'], Location('initial.pdb'))
         t.link(self['system_file_stage'])
@@ -111,7 +125,7 @@ class OpenMMEngine(Engine):
             input_pdb = t.get(target.frame, loc)
 
         elif isinstance(target.frame, Frame):
-            input_traj = t.link(target.frame.trajectory, 'source/')
+            input_traj = t.pre_link(target.frame.trajectory, 'source/')
             input_pdb = File('input.pdb')
 
             # frame index is in canonical stride = 1
@@ -124,7 +138,7 @@ class OpenMMEngine(Engine):
                 # cannot use a trajectory where we do not have full coordinates
                 return
 
-            t.append('mdconvert -o {target} -i {index} -t {pdb} {source}'.format(
+            t.pre.append('mdconvert -o {target} -i {index} -t {pdb} {source}'.format(
                 target=input_pdb,  # input.pdb is used as starting structure
                 index=idx,         # the index from the source trajectory
                 pdb=initial_pdb,   # use the main pdb
@@ -142,17 +156,22 @@ class OpenMMEngine(Engine):
         # create the directory
         t.touch(output)
 
+        # TODO option for retry
+        # TODO use filenames from engine
         retry = '\nj=0\ntries=10\nsleep=1\n'
-        retry += '\ntrajfile=traj/allatoms.dcd\n\n'
+        retry += '\ntrajfile=traj/protein.dcd\n\n'
         retry += 'while [ $j -le $tries ]; do if ! [ -s $trajfile ]; then {0}; fi; sleep 1; j=$((j+1)); done'
 
-        cmd = 'python openmmrun.py {args} {types} -t {pdb} --length {length} {output}'.format(
+        cmd = 'python openmmrun.py {args} {types} -s {system} -i {integrator} -t {pdb} --length {length} {output}'.format(
             pdb=input_pdb,
             types=self._create_output_str(),
             length=target.length,
+            system=self['system_file'].basename,
+            integrator=self['integrator_file'].basename,
             output=output,
             args=self.args,
         )
+
         cmd = retry.format(cmd)
         t.append(cmd)
 
@@ -160,7 +179,9 @@ class OpenMMEngine(Engine):
 
         return t
 
-    def extend(self, source, length):
+    def extend(self, source, length, resource_name=None, export_path=None,
+               cpu_threads=1, gpu_contexts=0, mpi_rank=0):
+
         if length < 0:
             return []
 
@@ -168,7 +189,20 @@ class OpenMMEngine(Engine):
         target = source.clone()
         target.length = len(source) + length
 
-        t = TrajectoryExtensionTask(self, target, source)
+        t = TrajectoryExtensionTask(self, target, source, cpu_threads=cpu_threads,
+                                    gpu_contexts=gpu_contexts, mpi_rank=mpi_rank,
+                                    )#resource_name=resource_name, export_path=export_path)
+
+        if resource_name is None:
+            resource_name = list()
+        elif isinstance(resource_name, str):
+            resource_name = [resource_name]
+
+        assert isinstance(resource_name, list)
+        t.resource_name = resource_name
+
+        if export_path:
+            t.append(export_path)
 
         initial_pdb = t.link(self['pdb_file_stage'], Location('initial.pdb'))
         t.link(self['system_file_stage'])
@@ -186,19 +220,24 @@ class OpenMMEngine(Engine):
 
         t.touch(extension)
 
+        # TODO option for retry
+        # TODO use filenames from engine
         retry = '\nj=0\ntries=10\nsleep=1\n'
-        retry += '\ntrajfile=extension/allatoms.dcd\n\n'
+        retry += '\ntrajfile=extension/protein.dcd\n\n'
         retry += 'while [ $j -le $tries ]; do if ! [ -s $trajfile ]; then {0}; fi; sleep 1; j=$((j+1)); done'
 
-        cmd = ('python openmmrun.py {args} {types} --restart {restart} -t {pdb} '
+        cmd = ('python openmmrun.py {args} {types} -s {system} -i {integrator} --restart {restart} -t {pdb} '
                '--length {length} {output}').format(
             pdb=initial_pdb,
             restart=source.file('restart.npz'),  # todo: this is engine specific!
             length=target.length - source.length,
+            system=self['system_file'].basename,
+            integrator=self['integrator_file'].basename,
             output=extension,
             args=self.args,
             types=self._create_output_str()
         )
+
         cmd = retry.format(cmd)
         t.append(cmd)
 
@@ -206,19 +245,20 @@ class OpenMMEngine(Engine):
         for ty, desc in self.types.items():
             # stride = desc['stride']
 
-            t.append('mdconvert -o {output} {source} {extension}'.format(
-                output=extension.file('extension.dcd'),
+            outname = ty + '.temp.dcd'
+            t.post.append('mdconvert -o {output} {source} {extension}'.format(
+                output=extension.file(outname),
                 source=source_link.outputs(ty),
                 extension=extension.outputs(ty)
             ))
 
             # rename joined extended.dcd into output.dcd
-            t.append(extension.file('extension.dcd').move(extension.outputs(ty)))
+            t.post.append(extension.file(outname).move(extension.outputs(ty)))
 
         # now extension/ should contain all files as expected
         # move extended trajectory to target place (replace old) files
         # this will also register the new trajectory folder as existent
-        t.put(extension, target)
+        t.post_put(extension, target)
 
         return t
 
