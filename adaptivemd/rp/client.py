@@ -196,6 +196,16 @@ class Client(object):
     # Public methods
     # ------------------------------------------------------------------------------------------------------------------
 
+    @property
+    def running(self):
+        '''
+        Check if there is a running RP Client Process
+        '''
+        if not self._proc:
+            return False
+        else:
+            return self._proc.is_alive()
+
     def start(self):
 
         """
