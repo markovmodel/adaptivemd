@@ -5,6 +5,9 @@
 A Python framework to run adaptive MD simulations using Markov State Model (MSM)
 analysis on HPC resources.
 
+- See below for a simple installation
+- Configure & run `install_admd.sh` to deploy on HPC or cluster
+
 The generation of MSMs requires a huge amount of trajectory data to be analyzed.
 In most cases this leads to an enhanced understanding of the dynamics of the
 system, which can be used to make decisions about collecting more data to
@@ -12,32 +15,26 @@ achieve a desired accuracy or level of detail in the generated MSM. This
 alternating process between simulation to actively generate new observations
 & analysis is currently difficult and involves human decision along the path.
 
-This framework aims to simplify this process with the following design goals:
+AdaptiveMD aims to simplify this process with the following design goals:
 
 1. Ease of use: Simple system setup once an HPC resource has been added.
 2. Flexibility: Modular setup of multiple HPCs and different simulation engines
 3. Automatism: Create a user-defined adaptive strategy that is executed
 4. Compatibility: Build analysis tools and export to known formats
 
-
 After installation, you might want to start working with the examples in `examples/tutorials`. You will first learn the basics of how tasks are created and executed, and then more on composing workflows.
-
-Note** `AdaptiveMD` generates task descriptions that, when executed, create an adaptive sampling workflow. These task descriptions are instructions for MD simulations or analysis of MD simulation data, and can be executed using `workers` from the package or RADICAL-Pilot (RP). RP is a dedicated execution and resource management software framework. The instructions here and early tutorials show the use of `workers`, which is largely the same as using RP and informs on what RP does under the hood. There are less user-operations involved in executing with RP. 
 
 
 ## Prerequisites
 
 There are a few components we need to install for `AdaptiveMD` to work. If you are installing in a regular workstation environment, you can follow the instructions below or use the installer script. If you are installing in a cluster or HPC environment, we recommend you use the script `install_admd.sh`.  The instructions here in the README should give you the gist of what's going on in the installer, which sets up the same components but does more configuration of the environment used by`AdaptiveMD`.
- - **rp config details** 
- - **python config details**
- - **admd env config details**
- - **venv vs conda**
-- **db launcher**
+
+AdaptiveMD creates task descriptions that can be executed using a native `worker` object or via the RADICAL-Pilot execution framework. """RP install configuration on or off"""
 
 ### MongoDB
 
 `AdaptiveMD` needs access to a MongoDB. If you want to store project data locally
-you need to install MongoDB. Both your user machine and compute resource (where tasks are executed) must see a port used by the databse.
+you need to install MongoDB. Both your user machine and compute resource (where tasks are executed) must see a port used by the database.
 
 [MongoDB Community Edition](https://www.mongodb.com/download-center#community)
 will provide an installer for your OS, just download and follow the installation instructions. Depending on the compute resource network restrictions, it might be necessary to install the database in different locations for production workflows.
@@ -46,16 +43,12 @@ For linux systems:
 ```bash
 curl -O https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-debian81-3.4.2.tgz
 tar -zxvf mongodb-linux-x86_64-debian81-3.4.2.tgz
-
 mkdir ~/mongodb
 mv mongodb-linux-x86_64-debian81-3.4.2/ ~/mongodb
-
 # add mongodb binaries to PATH in .bashrc
 echo "export PATH=~/mongodb/mongodb-linux-x86_64-debian81-3.4.2/bin/:\$PATH" >> ~/.bashrc
-
 # create parent directory for database
 mkdir -p ~/mongodb/data/db
-
 # run a `mongod` deamon in the background
 mongod --quiet --dbpath ~/mongodb/data/db &
 ```
@@ -87,17 +80,18 @@ Install required packages now:
 ```bash
 # be sure the conda python version is fully updated
 conda install python
+# create a new conda environment for all the installations
+conda create -n admdenv python=2.7
+source activate admdenv
 ```
 
 Now installing adaptiveMD related packages. Note you must be inside the python environment you will be working in when installing the packages (or use: `conda install -n [packages...]`):
 
 ```bash
-# for using jupyter notebook with tutorials and project work
+# jupyter notebook for tutorials and project work
 conda install jupyter
-
 # to prep for adaptivemd install
-conda install ujson pyyaml
-
+conda install pyyaml
 # for simulations & analysis
 # since we're using same env for tasks
 conda install pyemma openmm
@@ -113,25 +107,22 @@ git clone https://github.com:markovmodel/adaptivemd.git
 
 # go to adativemd and install it
 cd adaptivemd/
-python setup.py develop
-
-# see if it works
+python setup.py install
+#OR
+#pip install .
+# see if we pass the import test
 python -c "import adaptivemd" || echo 'FAILED'
-
-# run the mongodb server if not running already
-mongod --dbpath={path_to_your_db_folder}
 
 # run a simple test
 cd adaptivemd/tests/
+#FIXME
 python test_simple.py
-
 ```
 
-`ujson`, `pyyaml`, `pymongo`, `numpy`, `pyemma`, `openmm`, and `mdtraj` should
-all be installed on the compute resource as well as the local machine. It is
+`pyemma` and `openmm` should
+be installed on the compute resource as well as the local machine. It is
 possible to exclude, say, `openmm` from the local install if simulations will
-only be run on the resource. Using a different install mechanism than `conda`
-is also possible, but this is the recommended setup.
+only be run on the resource. 
 
 That's it. Have fun running adaptive simulations.
 
