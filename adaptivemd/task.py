@@ -1264,7 +1264,6 @@ class PythonTask(PrePostTask):
         self.append('python _run_.py')
 
     def _get_json(self, scheduler):
-        print("HELLO FROM {}._get_json".format(self.__class__))
         dct = {
             'import': self._python_import,
             'function': self._python_function_name,
