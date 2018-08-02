@@ -15,11 +15,11 @@ requirements:
     - python
     - setuptools
     - pyyaml
-    - python
     - numpy
     - pymongo
     - ujson
     - six
+    - jsonschema
 
   run:
     - python

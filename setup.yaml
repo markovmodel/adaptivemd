@@ -12,7 +12,7 @@ emails:
   - jan-hendrik.prinz@fu-berlin.de
 
 
-description: 'A Python framework to run Molecular Dynamics Simulations in Adaptive Sampling Workflows.'
+description: 'A framework to run Molecular Dynamics Simulations in Adaptive Sampling Workflows.'
 
 
 long_description: |
@@ -71,7 +71,7 @@ install_requires:
   - numpy
   - ujson
   #RP#- radical.pilot
-  - pymongo>=3.5
+  - pymongo>=3.4
 
 
 include_package_data: true
