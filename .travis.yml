@@ -30,6 +30,7 @@ before_install:
 - conda config --set always_yes true
 - conda config --add channels omnia
 - conda config --add channels conda-forge
+- conda install conda-build
 #- conda install -q $common_py_deps
 
 script:
