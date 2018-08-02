@@ -20,6 +20,7 @@ requirements:
     - ujson
     - six
     - jsonschema
+    - radical.pilot
 
   run:
     - python
