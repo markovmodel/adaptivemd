@@ -15,8 +15,8 @@ requirements:
     - python
     - setuptools
     - pyyaml
-    - numpy
     - pymongo
+    - numpy
     - ujson
     - six
     - jsonschema
