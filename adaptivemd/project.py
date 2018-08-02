@@ -514,6 +514,7 @@ class Project(object):
         assert isinstance(resource_name, list)
 
         _task = list()
+        args  = list(args)
 
         if isinstance(task, Task):
             _task.append(task)
