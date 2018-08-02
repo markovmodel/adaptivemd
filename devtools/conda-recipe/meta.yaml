@@ -19,6 +19,7 @@ requirements:
     - numpy
     - pymongo
     - ujson
+    - six
 
   run:
     - python
