@@ -15,7 +15,6 @@ requirements:
     - python
     - setuptools
     - pyyaml
-    - pymongo
     - numpy
     - ujson
     - six
@@ -25,7 +24,7 @@ requirements:
   run:
     - python
     - numpy
-    - pymongo
+    - pymongo>=3.4
     - ujson
 
 test:
