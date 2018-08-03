@@ -22,20 +22,20 @@ env:
 
 before_install:
 - mongod --version
-- mkdir ~/db
-- nohup mongod -dbpath ~/db &
+- mkdir  ~/db
+- nohup  mongod -dbpath ~/db &
 
 
 - source devtools/ci/install.sh
-- conda config --set always_yes true
-- conda config --add channels omnia
-- conda config --add channels conda-forge
-- conda install conda-build
-- conda install conda-verify
-#- conda install -q $common_py_deps
+- conda  config --set always_yes true
+- conda  config --add channels omnia
+- conda  config --add channels conda-forge
+- conda  install conda-build
+- conda  install conda-verify
+#- conda  install -q $common_py_deps
 
 script:
-- conda build -q devtools/conda-recipe
+- conda  build -q devtools/conda-recipe
 
 #after_script:
 #- bash <(curl -s https://codecov.io/bash) -f $HOME/coverage.xml -e CONDA_PY,CONDA_NPY

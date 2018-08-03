@@ -47,8 +47,7 @@ packages:
   - adaptivemd.analysis.pyemma
   - adaptivemd.engine.openmm
   - adaptivemd.mongodb
-  #- adaptivemd.misc
-  - adaptivemd.rp
+  #- adaptivemd.rp
 
 
 platforms:
@@ -70,7 +69,7 @@ install_requires:
   - six
   - numpy
   - ujson
-  - radical.pilot
+  #- radical.pilot
   - pymongo>=3.4
 
 

@@ -15,17 +15,23 @@ requirements:
     - python
     - setuptools
     - pyyaml
+    - pymongo>=3.4
     - numpy
     - ujson
     - six
     - jsonschema
-    - radical.pilot
+    #- radical.utils
+    #- saga-python
+    #- radical.pilot
 
   run:
     - python
-    - numpy
     - pymongo>=3.4
+    - numpy
     - ujson
+    #- radical.utils
+    #- saga-python
+    #- radical.pilot
 
 test:
   requires:
@@ -41,6 +47,8 @@ test:
     - examples/*
 
   commands:
+    #- pip install radical.utils
+    #- pip install saga-python
     #- pip install radical.pilot
     - pip install pytest-timeout
     - py.test -v --pyargs adaptivemd --doctest-modules --timeout=500
@@ -49,4 +57,5 @@ test:
 about:
   home: https://github.com/markovmodel/adaptivemd
   license: LGPL 2.1 or later
-  summary: 'A wrapper for radical.pilot to run adaptive MD'
+  summary: 'A framework to run Molecular Dynamics Simulations in Adaptive Sampling Workflows.'
+   
