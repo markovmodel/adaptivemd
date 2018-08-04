@@ -3,7 +3,6 @@
 import os
 
 from adaptivemd import Project
-from adaptivemd import LocalResource
 
 from adaptivemd import OpenMMEngine
 from adaptivemd import PyEMMAAnalysis
@@ -24,7 +23,7 @@ if __name__ == '__main__':
     #   the instance to know about the place where we run simulations
     # --------------------------------------------------------------------------
 
-    project.initialize(LocalResource())
+    project.initialize({'shared_path':'$HOME'})
 
     # --------------------------------------------------------------------------
     # CREATE THE ENGINE
@@ -68,7 +67,7 @@ if __name__ == '__main__':
 
     # we are using only the scheduling and excution logic, not a real
     # separate worker task
-    scheduler = WorkerScheduler(project.resource)
+    scheduler = WorkerScheduler(project.configuration)
     scheduler.enter(project)
 
     scheduler(task)

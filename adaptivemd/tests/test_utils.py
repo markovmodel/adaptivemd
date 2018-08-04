@@ -8,7 +8,8 @@ import radical.pilot as rp
 from adaptivemd.rp.database import Database
 
 # Configuration Variables
-mongo_url = 'mongodb://user:user@two.radical-project.org:32770/'
+#mongo_url = 'mongodb://user:user@two.radical-project.org:32770/'
+mongo_url = 'mongodb://localhost:27017/'
 project = 'rp_testing'
 
 # Example JSON locations

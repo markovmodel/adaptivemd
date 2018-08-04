@@ -3,7 +3,6 @@ import os
 import unittest
 
 from adaptivemd import File, WorkerScheduler, Worker
-from adaptivemd import LocalResource
 from adaptivemd import OpenMMEngine
 from adaptivemd import Project
 from adaptivemd import PyEMMAAnalysis
@@ -25,7 +24,7 @@ class TestSimpleStrategy(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        # init project and resource
+        # init project with resource configuration
         import tempfile
         cls.proj_name = 'example-strategy-1'
         cls.shared_path = tempfile.mkdtemp(prefix="adaptivemd")
@@ -35,14 +34,14 @@ class TestSimpleStrategy(unittest.TestCase):
         # CREATE THE RESOURCE
         #   the instance to know about the place where we run simulations
         # ----------------------------------------------------------------------
-        resource = LocalResource(cls.shared_path)
+        cls.project.initialize({'shared_path':'$HOME'})
         if os.getenv('CONDA_BUILD', False):
             # activate the conda build test environment for workers
 
             cls.f_base = 'examples/files/alanine/'
             prefix = os.getenv('PREFIX')
             assert os.path.exists(prefix)
-            resource.wrapper.pre.insert(0,
+            project.configuration.wrapper.pre.insert(0,
                 'source activate {prefix}'.format(prefix=prefix))
 
             # TODO why does test_simple_wrapper not
@@ -55,10 +54,9 @@ class TestSimpleStrategy(unittest.TestCase):
             import sys
 
             cls.f_base = '../../examples/files/alanine/'
-            resource.wrapper.pre.insert(0, 'PATH={python_path}:$PATH'
+            project.configuration.wrapper.pre.insert(0, 'PATH={python_path}:$PATH'
                 .format(python_path=os.path.dirname(sys.executable)))
 
-        cls.project.initialize(resource)
         cls.worker_process = start_local_worker(cls.proj_name)
         return cls
 
