@@ -485,6 +485,10 @@ class Project(object):
 
         return fail
 
+    @property
+    def configuration(self):
+        return self._current_configuration
+
     def queue(self, task, *args, **kwargs):#tasks, resource_name=None):
         """
         Submit jobs to the worker queue
