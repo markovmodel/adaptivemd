@@ -22,7 +22,7 @@ requirements:
     - jsonschema
     #- radical.utils
     #- saga-python
-    #- radical.pilot
+    - radical.pilot
 
   run:
     - python
@@ -31,7 +31,7 @@ requirements:
     - ujson
     #- radical.utils
     #- saga-python
-    #- radical.pilot
+    - radical.pilot
 
 test:
   requires:

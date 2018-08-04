@@ -74,8 +74,6 @@ with open('setup.yaml') as f:
 
 setup_args = build_keyword_dictionary(preferences)
 
-pprint(setup_args)
-
 setup (**setup_args)
 
 # TODO reintroduce versioneer
