@@ -35,35 +35,35 @@ Some basic functions
 >>> fnc_view = bundle.v(lambda x: int(x) < 3)
 >>> print(sorted(fnc_view))
 [1, 2]
-Some `File` specific functions
+>>> # Some `File` specific functions
 >>> import adaptivemd as amd
 >>> bundle = Bundle([amd.File('0.dcd'), amd.File('a.pdb')])
 >>> file_view = bundle.f('*.dcd')
 >>> print(list(file_view))
 ['0.dcd']
-Logic operations produce view on the resulting bundle
+>>> # Logic operations produce view on the resulting bundle
 >>> and_bundle = str_view & fnc_view
 >>> print(list(and_bundle))
 []
 >>> and_bundle = str_view | fnc_view
 >>> print(list(and_bundle)) # doctest: +SKIP
 [1, 2, '10', '20']
-A `StorableBundle` is attached to a mongodb store (a stored object list).
-Adding will append the object to the store if not stored yet. All iteration
-and views will always be kept synced with the DB store content.
+>>> # A `StorableBundle` is attached to a mongodb store (a stored object list).
+>>> # Adding will append the object to the store if not stored yet. All iteration
+>>> # and views will always be kept synced with the DB store content.
 >>> p = amd.Project('test-project')
 >>> store = StoredBundle()  # new bundle
 >>> store.set_store(p.trajectories).__len__()  # attach to DB
 0
 >>> print(list(store)) # show all trajectories
 []
-Set do not have ordering so some functions do not make sense. As long as
-you are working with storable objects (subclassed from `StorableMixin`)
-you have some time-ordering (accurate to seconds)
-#move## Not a ViewBundle method
-#move##>>> print(store.last) # get the last created object
-#move## Not a ViewBundle method
-#move##>>> print(store.first) # get the earlist created object
+>>> # Set do not have ordering so some functions do not make sense. As long as
+>>> # you are working with storable objects (subclassed from `StorableMixin`)
+>>> # you have some time-ordering (accurate to seconds)
+>>> #move## Not a ViewBundle method
+>>> #move##>>> print(store.last) # get the last created object
+>>> #move## Not a ViewBundle method
+>>> #move##>>> print(store.first) # get the earlist created object
 >>> print(store.one) # get one (any) single object
 None
 >>> p.workers.first
@@ -74,10 +74,10 @@ None
 >>> wstore = StoredBundle()
 >>> wstore.set_store(p.workers).__len__()
 0
-A bundle is mostly meant to work with storable objects (but does not have to)
-To simplify access to certain attributes or apply function to all members you
-can use the `.all` attribute and get a _delegator_ that will apply and
-attribute or method to all objects
+>>> # A bundle is mostly meant to work with storable objects (but does not have to)
+>>> # To simplify access to certain attributes or apply function to all members you
+>>> # can use the `.all` attribute and get a _delegator_ that will apply and
+>>> # attribute or method to all objects
 >>> len_store = store.v(lambda x: len(x) > 10)  # all trajs with len > 10
 >>> print(list(len_store))
 []
@@ -85,10 +85,10 @@ attribute or method to all objects
 None
 >>> print(store.all.path) # print all path of all trajectories
 None
-#move#Since Bundle is empty there is no class or attached methods, thus get
-#move#NoneType not callable TypeError
-#move##>>> # call `.execute('shutdown') on all workers in the `.workers` bundle
-#move##>>> print(p.workers.all.execute('shutdown'))
+>>> #move#Since Bundle is empty there is no class or attached methods, thus get
+>>> #move#NoneType not callable TypeError
+>>> #move##>>> # call `.execute('shutdown') on all workers in the `.workers` bundle
+>>> #move##>>> print(p.workers.all.execute('shutdown'))
 """
 from __future__ import print_function, absolute_import
 

@@ -41,7 +41,7 @@ class TestSimpleStrategy(unittest.TestCase):
             cls.f_base = 'examples/files/alanine/'
             prefix = os.getenv('PREFIX')
             assert os.path.exists(prefix)
-            project.configuration.wrapper.pre.insert(0,
+            cls.project.configuration.wrapper.pre.insert(0,
                 'source activate {prefix}'.format(prefix=prefix))
 
             # TODO why does test_simple_wrapper not
@@ -54,7 +54,7 @@ class TestSimpleStrategy(unittest.TestCase):
             import sys
 
             cls.f_base = '../../examples/files/alanine/'
-            project.configuration.wrapper.pre.insert(0, 'PATH={python_path}:$PATH'
+            cls.project.configuration.wrapper.pre.insert(0, 'PATH={python_path}:$PATH'
                 .format(python_path=os.path.dirname(sys.executable)))
 
         cls.worker_process = start_local_worker(cls.proj_name)
@@ -85,7 +85,7 @@ class TestSimpleStrategy(unittest.TestCase):
                 self.f_base)).load(),
             integrator_file=File('file://{0}integrator.xml'.format(
                 self.f_base)).load(),
-            args='-r --report-interval 1 -p Reference --store-interval 1 -v'
+            args='-r --report-interval 1 -p CPU --store-interval 1 -v'
         ).named('openmm')
 
         # ----------------------------------------------------------------------
@@ -100,7 +100,7 @@ class TestSimpleStrategy(unittest.TestCase):
         self.project.generators.add(engine)
         self.project.generators.add(modeller)
 
-        def strategy(loops=2, trajs_per_loop=2, length=3):
+        def strategy(loops=2, trajs_per_loop=2, length=2):
             initial_traj = self.project.new_trajectory(frame=pdb_file, length=length)
             task = engine.run(initial_traj)
             self.project.queue(task)
