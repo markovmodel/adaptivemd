@@ -141,14 +141,15 @@ class Configuration(StorableMixin):
             [setattr(self, field, val) for field, val in _dict.items()]
             self.name = name
 
+            # currently only handle 1 given queue
+            # but must convert to list for RP
+            if not isinstance(self.queues, list):
+                self.queues = [self.queues]
+
+
         # Construction via from_dict from storage
         else:
             super(Configuration, self).__init__()
-
-        # currently only handle 1 given queue
-        # but must convert to list for RP
-        if not isinstance(self.queues, list):
-            self.queues = [self.queues]
 
         if wrapper is None:
             wrapper = DummyTask()
