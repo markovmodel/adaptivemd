@@ -36,7 +36,7 @@ class TestSimpleProject(unittest.TestCase):
             cls.f_base = 'examples/files/alanine/'
             prefix = os.getenv('PREFIX')
             assert os.path.exists(prefix)
-            project.configuration.wrapper.pre.insert(0,
+            cls.project.configuration.wrapper.pre.insert(0,
                 'source activate {prefix}'.format(prefix=prefix))
 
             # TODO why does test_simple_wrapper not
@@ -49,7 +49,7 @@ class TestSimpleProject(unittest.TestCase):
             import sys
 
             cls.f_base = '../../examples/files/alanine/'
-            project.configuration.wrapper.pre.insert(0, 'PATH={python_path}:$PATH'
+            cls.project.configuration.wrapper.pre.insert(0, 'PATH={python_path}:$PATH'
                 .format(python_path=os.path.dirname(sys.executable)))
 
         return cls
@@ -76,7 +76,7 @@ class TestSimpleProject(unittest.TestCase):
                 self.f_base)).load(),
             integrator_file=File('file://{0}integrator.xml'.format(
                 self.f_base)).load(),
-            args='-r --report-interval 1 -p Reference --store-interval 1'
+            args='-r --report-interval 1 -p CPU --store-interval 1'
         ).named('openmm')
 
         # ----------------------------------------------------------------------
