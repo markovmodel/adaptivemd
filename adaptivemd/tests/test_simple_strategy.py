@@ -34,7 +34,7 @@ class TestSimpleStrategy(unittest.TestCase):
         # CREATE THE RESOURCE
         #   the instance to know about the place where we run simulations
         # ----------------------------------------------------------------------
-        cls.project.initialize({'shared_path':'$HOME'})
+        cls.project.initialize({'shared_path':cls.shared_path})
         if os.getenv('CONDA_BUILD', False):
             # activate the conda build test environment for workers
 
@@ -69,6 +69,9 @@ class TestSimpleStrategy(unittest.TestCase):
         shutil.rmtree(cls.shared_path)
         cls.project.delete(cls.proj_name)
         os.chdir('/')
+
+    def runTest(self):
+        self.test()
 
     def test(self):
         # ----------------------------------------------------------------------
