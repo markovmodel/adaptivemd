@@ -47,7 +47,7 @@ class TestSimpleProject(unittest.TestCase):
         cls.shared_path = tempfile.mkdtemp(prefix="adaptivemd")
         Project.delete('test-skeleton')
         cls.project = Project('test-skeleton')
-        cls.project.initialize({'shared_path':'$HOME'})
+        cls.project.initialize({'shared_path':cls.shared_path})
         # ----------------------------------------------------------------------
         # CREATE THE RESOURCE
         #   the instance to know about the place where we run simulations

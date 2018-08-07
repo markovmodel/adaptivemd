@@ -29,7 +29,7 @@ class TestSimpleProject(unittest.TestCase):
         # CREATE THE RESOURCE
         #   the instance to know about the place where we run simulations
         # ----------------------------------------------------------------------
-        cls.project.initialize({'shared_path':'$HOME'})
+        cls.project.initialize({'shared_path':cls.shared_path})
         if os.getenv('CONDA_BUILD', False):
             # activate the conda build test environment for workers
 
@@ -120,6 +120,7 @@ class TestSimpleProject(unittest.TestCase):
             print("stderr from worker task: \n%s" % task.stderr)
             print("stdout from worker task: \n%s" % task.stdout)
             raise
+
         print("stdout of worker:\n%s" % task.stdout)
 
         # FIXME: the worker space is cleared, so the trajectory paths are not valid anymore.

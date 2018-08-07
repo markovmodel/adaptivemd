@@ -103,7 +103,7 @@ class TestSimpleStrategy(unittest.TestCase):
         self.project.generators.add(engine)
         self.project.generators.add(modeller)
 
-        def strategy(loops=2, trajs_per_loop=2, length=2):
+        def strategy(loops=1, trajs_per_loop=1, length=1):
             initial_traj = self.project.new_trajectory(frame=pdb_file, length=length)
             task = engine.run(initial_traj)
             self.project.queue(task)
@@ -129,8 +129,8 @@ class TestSimpleStrategy(unittest.TestCase):
 
         # TODO worker/MD running in subprocess thread horribly slow
         #      - can it be made to run a bit faster?
-        n_loops = 2
-        trajs_per_loop = 2
+        n_loops = 1
+        trajs_per_loop = 1
         self.project.add_event(strategy(loops=n_loops, trajs_per_loop=trajs_per_loop))
         self.project.run()
         self.project.wait_until(self.project.on_ntraj(n_loops*trajs_per_loop))
