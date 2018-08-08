@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/jrossyra/adaptivemd.svg?branch=master)](https://travis-ci.org/jrossyra/adaptivemd)
+[![Build Status](https://travis-ci.org/jrossyra/adaptivemd.svg?branch=rp_integration)](https://travis-ci.org/jrossyra/adaptivemd)
 
 # AdaptiveMD
 
