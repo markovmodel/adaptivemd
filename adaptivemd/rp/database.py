@@ -85,7 +85,7 @@ class Database():
             file_col = self.db[self.file_collection]
             task = task_col.find_one({'_id': id})
             if task:
-                for directive in task['_dict']['_main'] + task['_dict']['post']:
+                for directive in task['_dict']['_main'] + task['_dict'].get('post', []):
                     if (isinstance(directive, dict)):
                         if (str(directive.get('_cls', '')).lower() == 'move'):
                             if '_hex_uuid' in directive['_dict']['target'] \
