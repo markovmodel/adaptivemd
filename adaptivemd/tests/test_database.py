@@ -7,7 +7,8 @@ from adaptivemd.rp.database import Database
 from adaptivemd.rp.utils import generate_pythontask_input
 
 # Configuration Variables
-mongo_url = 'mongodb://user:user@two.radical-project.org:32770/'
+#mongo_url = 'mongodb://user:user@two.radical-project.org:32770/'
+mongo_url = 'mongodb://localhost:27017/'
 project = 'rp_testing'
 
 # Example JSON locations

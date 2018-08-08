@@ -42,6 +42,8 @@ def get_xml(xml_file):
     # TODO file access control
     attempt = 0
     retries = 500
+    if not xml_file.endswith('.xml'):
+        raise IOError("{} must end in '.xml' for reading as XML file".format(xml_file))
     while True:
         try:
             with open(xml_file) as f:
@@ -81,6 +83,8 @@ def get_pdbfile(topology_pdb):
     # TODO file access control
     attempt = 0
     retries = 500
+    if not topology_pdb.endswith('.pdb'):
+        raise IOError("{} must end in '.pdb' for reading as PDB file".format(topology_pdb))
     while True:
         try:
             pdb = PDBFile(topology_pdb)

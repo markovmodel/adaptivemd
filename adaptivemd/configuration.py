@@ -28,17 +28,6 @@ from .util import parse_cfg_file
 
 
 # TODO
-# Read this guy as function
-# and eliminate the (incorrect) use of
-# truncated names
-#from .rp import rp_resource_list
-
-# Where it came from now:
-#from radical.pilot import Session
-#s = Session()
-#_resource_names = [k.split('_')[0] for k in s._resource_configs.keys()]
-
-# TODO
 # **** Want to add ability to grab specific nodes that aren't caught
 #      by specifying the queue name
 #
@@ -97,14 +86,14 @@ class Configuration(StorableMixin):
 
     """
     _ext = '.cfg'
-    _fields = [('shared_path',str), ('queues',str),
-               ('allocation',str), ('cores_per_node',int),
-               ('resource_name',str), ('current', bool),
-               ('gpu_per_node',int)]
-
-    # TODO sync new vals, difficult with current implementation
-    #for _field, _type in _fields:
-        #setattr(Configuration, _field, SyncVariable(_field, lambda f: isinstance(f, _type)))
+    _fields = {'shared_path'   : (str, '$HOME'),
+               'resource_name' : (str, 'local.localhost'),
+               'queues'        : (str, ''),
+               'allocation'    : (str, ''),
+               'cores_per_node': (int, 1),
+               'gpu_per_node'  : (int, 0),
+               'current'       : (bool,False),
+              }
 
     _resource_names = set(['fub.allegro', 'xsede.supermic',
         'das4.fs2', 'osg.connect', 'xsede.stampede',
@@ -124,6 +113,11 @@ class Configuration(StorableMixin):
 
     def get_resource_list(self):
         # TODO Use this method to get list of resource names
+        # Read this guy as function
+        # and eliminate the (incorrect) use of
+        # truncated names
+        # make sure to do import test for RP
+        #from .rp import rp_resource_list
         pass
 
 
@@ -147,23 +141,15 @@ class Configuration(StorableMixin):
             [setattr(self, field, val) for field, val in _dict.items()]
             self.name = name
 
+            # currently only handle 1 given queue
+            # but must convert to list for RP
+            if not isinstance(self.queues, list):
+                self.queues = [self.queues]
+
+
         # Construction via from_dict from storage
         else:
             super(Configuration, self).__init__()
-
-        # TODO add default val to _fields tuples above
-        #      and set them here
-        unused = filter(lambda f: not hasattr(self, f), zip(*self._fields)[0])
-        [setattr(self, uu, None) for uu in unused]
-
-        if self.shared_path is None:
-            self.shared_path = '$HOME/adaptivemd/'
-
-        if self.current is None:
-            self.current = False
-
-        if not isinstance(self.queues, list):
-            self.queues = [self.queues]
 
         if wrapper is None:
             wrapper = DummyTask()
@@ -240,13 +226,11 @@ class Configuration(StorableMixin):
 
     @classmethod
     def process_attributes(cls, fields):
-        _fields, _types = zip(*cls._fields)
         _dict = dict()
         for field, val in fields.items():
             try:
-                idx = _fields.index(field)
-                _type = _types[idx]
-                _val = _type(val)
+                _type = cls._fields[field][0]
+                _val  = _type(val)
 
                 assert isinstance(_val, _type)
                 _dict[field] = _val
@@ -258,6 +242,9 @@ class Configuration(StorableMixin):
             except AssertionError:
                 print("Listed field {0} is not the required type {1}"
                       .format(field, _type))
+
+        unused = filter(lambda f: f not in _dict, cls._fields)
+        [_dict.update({uu: cls._fields[uu][1]}) for uu in unused]
 
         return _dict
 

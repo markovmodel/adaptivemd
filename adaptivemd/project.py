@@ -485,7 +485,11 @@ class Project(object):
 
         return fail
 
-    def queue(self, task, **kwargs):#tasks, resource_name=None):
+    @property
+    def configuration(self):
+        return self._current_configuration
+
+    def queue(self, task, *args, **kwargs):#tasks, resource_name=None):
         """
         Submit jobs to the worker queue
 
@@ -513,37 +517,28 @@ class Project(object):
 
         assert isinstance(resource_name, list)
 
-        _task = None
+        _task = list()
+        args  = list(args)
 
         if isinstance(task, Task):
-            _task = task
+            _task.append(task)
+
+        elif isinstance(task, Trajectory):
+            _task.append(task.run(resource_name))
 
         elif isinstance(task, (list, tuple)):
-            # NOTE assuming homogenous list
-            #      - could add filter to handle inhomogenous
-            if isinstance(task[0], Trajectory):
-                if task[0].engine is not None:
-                    _task = [ta.run(resource_name) for ta in task]
+            args.extend(task)
 
-            else:
-                _task = task
+        for ta in args:
+            # DON'T need to check for analysis
+            # since they must come as task
+            if isinstance(ta, Trajectory):
+                if ta.engine is not None:
+                    _task.append(ta.run(resource_name))
+            elif isinstance(ta, Task):
+                    _task.append(ta)
 
         self.tasks.add(_task)
-
-    # @property
-    # def file_generators(self):
-    #     """
-    #     Return a list of file generators the convert certain objects into task
-    #
-    #     Returns
-    #     -------
-    #     dict object : function -> (list of) `Task`
-    #     """
-    #     d = {}
-    #     for gen in self.generators:
-    #         d.update(gen.file_generators())
-    #
-    #     return d
 
     def new_trajectory(self, frame, length, engine=None, number=1):
         """

@@ -12,7 +12,7 @@ emails:
   - jan-hendrik.prinz@fu-berlin.de
 
 
-description: 'A Python framework to run Molecular Dynamics Simulations in Adaptive Sampling Workflows.'
+description: 'A framework to run Molecular Dynamics Simulations in Adaptive Sampling Workflows.'
 
 
 long_description: |
@@ -47,14 +47,11 @@ packages:
   - adaptivemd.analysis.pyemma
   - adaptivemd.engine.openmm
   - adaptivemd.mongodb
-  #- adaptivemd.misc
-  #RP#- adaptivemd.rp
-
+  #- adaptivemd.rp
 
 platforms:
   - Linux
   - Mac OS X
-
 
 released: false
 
@@ -70,8 +67,8 @@ install_requires:
   - six
   - numpy
   - ujson
-  #RP#- radical.pilot
-  - pymongo>=3.5
+  #- radical.pilot
+  - pymongo>=3
 
 
 include_package_data: true

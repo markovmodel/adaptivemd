@@ -63,4 +63,13 @@ from ._version import get_versions
 __version__ = get_versions()['version']
 del get_versions
 
-#from .rp.client import Client
+
+import imp
+try: 
+    # Only layer I've found that works
+    # this way to indicate an RP install
+    imp.find_module('saga')
+    from .rp.client import Client
+except ImportError:
+    pass
+

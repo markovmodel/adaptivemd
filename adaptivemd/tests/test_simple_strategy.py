@@ -3,7 +3,6 @@ import os
 import unittest
 
 from adaptivemd import File, WorkerScheduler, Worker
-from adaptivemd import LocalResource
 from adaptivemd import OpenMMEngine
 from adaptivemd import Project
 from adaptivemd import PyEMMAAnalysis
@@ -25,7 +24,7 @@ class TestSimpleStrategy(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        # init project and resource
+        # init project with resource configuration
         import tempfile
         cls.proj_name = 'example-strategy-1'
         cls.shared_path = tempfile.mkdtemp(prefix="adaptivemd")
@@ -35,14 +34,14 @@ class TestSimpleStrategy(unittest.TestCase):
         # CREATE THE RESOURCE
         #   the instance to know about the place where we run simulations
         # ----------------------------------------------------------------------
-        resource = LocalResource(cls.shared_path)
+        cls.project.initialize({'shared_path':cls.shared_path})
         if os.getenv('CONDA_BUILD', False):
             # activate the conda build test environment for workers
 
             cls.f_base = 'examples/files/alanine/'
             prefix = os.getenv('PREFIX')
             assert os.path.exists(prefix)
-            resource.wrapper.pre.insert(0,
+            cls.project.configuration.wrapper.pre.insert(0,
                 'source activate {prefix}'.format(prefix=prefix))
 
             # TODO why does test_simple_wrapper not
@@ -55,10 +54,9 @@ class TestSimpleStrategy(unittest.TestCase):
             import sys
 
             cls.f_base = '../../examples/files/alanine/'
-            resource.wrapper.pre.insert(0, 'PATH={python_path}:$PATH'
+            cls.project.configuration.wrapper.pre.insert(0, 'PATH={python_path}:$PATH'
                 .format(python_path=os.path.dirname(sys.executable)))
 
-        cls.project.initialize(resource)
         cls.worker_process = start_local_worker(cls.proj_name)
         return cls
 
@@ -71,6 +69,9 @@ class TestSimpleStrategy(unittest.TestCase):
         shutil.rmtree(cls.shared_path)
         cls.project.delete(cls.proj_name)
         os.chdir('/')
+
+    def runTest(self):
+        self.test()
 
     def test(self):
         # ----------------------------------------------------------------------
@@ -87,7 +88,7 @@ class TestSimpleStrategy(unittest.TestCase):
                 self.f_base)).load(),
             integrator_file=File('file://{0}integrator.xml'.format(
                 self.f_base)).load(),
-            args='-r --report-interval 1 -p Reference --store-interval 1 -v'
+            args='-r --report-interval 1 -p CPU --store-interval 1 -v'
         ).named('openmm')
 
         # ----------------------------------------------------------------------
@@ -102,7 +103,7 @@ class TestSimpleStrategy(unittest.TestCase):
         self.project.generators.add(engine)
         self.project.generators.add(modeller)
 
-        def strategy(loops=2, trajs_per_loop=2, length=3):
+        def strategy(loops=1, trajs_per_loop=1, length=1):
             initial_traj = self.project.new_trajectory(frame=pdb_file, length=length)
             task = engine.run(initial_traj)
             self.project.queue(task)
@@ -128,8 +129,8 @@ class TestSimpleStrategy(unittest.TestCase):
 
         # TODO worker/MD running in subprocess thread horribly slow
         #      - can it be made to run a bit faster?
-        n_loops = 2
-        trajs_per_loop = 2
+        n_loops = 1
+        trajs_per_loop = 1
         self.project.add_event(strategy(loops=n_loops, trajs_per_loop=trajs_per_loop))
         self.project.run()
         self.project.wait_until(self.project.on_ntraj(n_loops*trajs_per_loop))

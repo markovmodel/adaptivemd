@@ -4,7 +4,6 @@ import unittest
 import os
 
 from adaptivemd import Project
-from adaptivemd import LocalResource
 
 from adaptivemd import OpenMMEngine
 from adaptivemd import PyEMMAAnalysis
@@ -30,14 +29,14 @@ class TestSimpleProject(unittest.TestCase):
         # CREATE THE RESOURCE
         #   the instance to know about the place where we run simulations
         # ----------------------------------------------------------------------
-        resource = LocalResource(cls.shared_path)
+        cls.project.initialize({'shared_path':cls.shared_path})
         if os.getenv('CONDA_BUILD', False):
             # activate the conda build test environment for workers
 
             cls.f_base = 'examples/files/alanine/'
             prefix = os.getenv('PREFIX')
             assert os.path.exists(prefix)
-            resource.wrapper.pre.insert(0,
+            cls.project.configuration.wrapper.pre.insert(0,
                 'source activate {prefix}'.format(prefix=prefix))
 
             # TODO why does test_simple_wrapper not
@@ -50,10 +49,9 @@ class TestSimpleProject(unittest.TestCase):
             import sys
 
             cls.f_base = '../../examples/files/alanine/'
-            resource.wrapper.pre.insert(0, 'PATH={python_path}:$PATH'
+            cls.project.configuration.wrapper.pre.insert(0, 'PATH={python_path}:$PATH'
                 .format(python_path=os.path.dirname(sys.executable)))
 
-        cls.project.initialize(resource)
         return cls
 
     @classmethod
@@ -69,8 +67,6 @@ class TestSimpleProject(unittest.TestCase):
         #   the instance to create trajectories
         # ----------------------------------------------------------------------
 
-
-
         pdb_file = File('file://{0}alanine.pdb'.format(
             self.f_base)).named('initial_pdb').load()
 
@@ -80,7 +76,7 @@ class TestSimpleProject(unittest.TestCase):
                 self.f_base)).load(),
             integrator_file=File('file://{0}integrator.xml'.format(
                 self.f_base)).load(),
-            args='-r --report-interval 1 -p Reference --store-interval 1'
+            args='-r --report-interval 1 -p CPU --store-interval 1'
         ).named('openmm')
 
         # ----------------------------------------------------------------------
@@ -108,7 +104,7 @@ class TestSimpleProject(unittest.TestCase):
         pdb = md.load('{0}alanine.pdb'.format(self.f_base))
 
         # this part fakes a running worker without starting the worker process
-        worker = WorkerScheduler(self.project.resource, verbose=True)
+        worker = WorkerScheduler(self.project.configuration, verbose=True)
         worker.enter(self.project)
 
         worker.submit(task)
@@ -124,6 +120,7 @@ class TestSimpleProject(unittest.TestCase):
             print("stderr from worker task: \n%s" % task.stderr)
             print("stdout from worker task: \n%s" % task.stdout)
             raise
+
         print("stdout of worker:\n%s" % task.stdout)
 
         # FIXME: the worker space is cleared, so the trajectory paths are not valid anymore.

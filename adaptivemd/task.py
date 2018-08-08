@@ -310,7 +310,7 @@ class Task(BaseTask):
 
         return True
 
-    def _default_fail(self, scheduler):
+    def _default_fail(self, scheduler, path=None):
         """
         the default function executed when a task fails
 
@@ -1206,7 +1206,7 @@ class PythonTask(PrePostTask):
             os.remove(scheduler.get_path(self._rpc_input_file))
             self._rpc_input_file.modified()
 
-    def _cb_submit(self, scheduler):
+    def _cb_submit(self, scheduler, path=None):
         filename = scheduler.replace_prefix(self._rpc_input_file.url)
         with open(filename, 'w') as f:
             f.write(scheduler.simplifier.to_json(self._get_json(scheduler)))
@@ -1264,7 +1264,6 @@ class PythonTask(PrePostTask):
         self.append('python _run_.py')
 
     def _get_json(self, scheduler):
-        print("HELLO FROM {}._get_json".format(self.__class__))
         dct = {
             'import': self._python_import,
             'function': self._python_function_name,

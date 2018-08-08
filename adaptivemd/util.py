@@ -27,6 +27,66 @@ import os
 import datetime
 
 
+prefixline = '    >>>   '
+formatline = lambda l: '\n'.join(
+    [prefixline+ls if ls else '' for ls in l.split('\n')] +
+    ( [''] if len(l.split('\n'))>1 else [])
+    )
+
+def get_logger(logname, logfile=False):
+
+    import logging
+
+    _loglevel = os.environ.get('ADMD_LOGLEVEL',"WARNING")
+
+    try:
+        if _loglevel.lower() == 'info':
+            loglevel = logging.INFO
+        elif _loglevel.lower() == 'debug':
+            loglevel = logging.DEBUG
+        elif _loglevel.lower() == 'warning':
+            loglevel = logging.WARNING
+        elif _loglevel.lower() == 'error':
+            loglevel = logging.ERROR
+        # catch attempted set values as WARNING level
+        elif isinstance(_loglevel, str):
+            loglevel = logging.WARNING
+        else:
+            loglevel = logging.WARNING
+
+    # catch None's for not set
+    except:
+        loglevel = logging.WARNING
+
+    formatter = logging.Formatter(
+        '%(asctime)s ::::: %(name)s ::::: %(levelname)s |||||   %(message)s'
+        )
+
+    logging.basicConfig(level=loglevel)#, format=formatter)
+    logger  = logging.getLogger(logname)
+
+    ch = logging.StreamHandler()
+    #ch = logging.StreamHandler(sys.stdout)
+    ch.setLevel(loglevel)
+    ch.setFormatter(formatter)
+
+    logger.addHandler(ch)
+
+    if logfile:
+        logfilename = 'adaptivemd'
+        if isinstance(logfile, str):
+            logfilename = logfile
+        logfile = logfilename + '.' + logname + '.log'
+        fh = logging.FileHandler(logfile)
+        fh.setLevel(loglevel)
+        fh.setFormatter(formatter)
+        logger.addHandler(fh)
+
+    logger.propagate = False
+
+    return logger
+
+
 def parse_cfg_file(filepath):
     def parse_line(line):
         v = line.strip().split()

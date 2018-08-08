@@ -7,10 +7,9 @@ from adaptivemd import Project
 from adaptivemd import OpenMMEngine
 from adaptivemd import File
 
-#from adaptivemd import LocalResource
-#from adaptivemd import PyEMMAAnalysis
-#from adaptivemd import WorkerScheduler
-#import mdtraj as md
+from adaptivemd import PyEMMAAnalysis
+from adaptivemd import WorkerScheduler
+import mdtraj as md
 
 
 class TestSimpleProject(unittest.TestCase):
@@ -48,6 +47,7 @@ class TestSimpleProject(unittest.TestCase):
         cls.shared_path = tempfile.mkdtemp(prefix="adaptivemd")
         Project.delete('test-skeleton')
         cls.project = Project('test-skeleton')
+        cls.project.initialize({'shared_path':cls.shared_path})
         # ----------------------------------------------------------------------
         # CREATE THE RESOURCE
         #   the instance to know about the place where we run simulations
@@ -59,7 +59,7 @@ class TestSimpleProject(unittest.TestCase):
             prefix = os.getenv('PREFIX')
             assert os.path.exists(prefix)
 
-            resource.wrapper.pre.insert(0,
+            cls.project.configuration.wrapper.pre.insert(0,
                 'source activate {prefix}'.format(prefix=prefix))
 
             # TODO why does test_simple_wrapped not
@@ -75,10 +75,9 @@ class TestSimpleProject(unittest.TestCase):
             import sys
 
             cls.f_base = '../../examples/files/alanine/'
-            resource.wrapper.pre.insert(0, 'PATH={python_path}:$PATH'
+            cls.project.configuration.wrapper.pre.insert(0, 'PATH={python_path}:$PATH'
                 .format(python_path=os.path.dirname(sys.executable)))
 
-        cls.project.initialize(resource)
         return cls
 
     @classmethod
@@ -109,7 +108,7 @@ class TestSimpleProject(unittest.TestCase):
                 self.f_base)).load(),
             integrator_file=File('file://{0}integrator.xml'.format(
                 self.f_base)).load(),
-            args='-r --report-interval 1 -p Reference --store-interval 1'
+            args='-r --report-interval 1 -p CPU --store-interval 1'
         ).named('openmm')
 
         # ----------------------------------------------------------------------
@@ -128,7 +127,7 @@ class TestSimpleProject(unittest.TestCase):
         # CREATE THE CLUSTER
         #   the instance that runs the simulations on the resource
         # ----------------------------------------------------------------------
-        traj_len = 3
+        traj_len = 1
         trajectory = self.project.new_trajectory(engine['pdb_file'], traj_len, engine)
         task = engine.run(trajectory)
 
@@ -137,7 +136,7 @@ class TestSimpleProject(unittest.TestCase):
         pdb = md.load('{0}alanine.pdb'.format(self.f_base))
 
         # this part fakes a running worker without starting the worker process
-        worker = WorkerScheduler(self.project.resource, verbose=True)
+        worker = WorkerScheduler(self.project.configuration, verbose=True)
         worker.enter(self.project)
 
         worker.submit(task)

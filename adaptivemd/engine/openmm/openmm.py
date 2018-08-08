@@ -112,10 +112,10 @@ class OpenMMEngine(Engine):
         if export_path:
             t.append(export_path)
 
-        initial_pdb = t.link(self['pdb_file_stage'], Location('initial.pdb'))
-        t.link(self['system_file_stage'])
-        t.link(self['integrator_file_stage'])
-        t.link(self['_executable_file_stage'])
+        initial_pdb = t.pre_link(self['pdb_file_stage'], Location('initial.pdb'))
+        t.pre_link(self['system_file_stage'])
+        t.pre_link(self['integrator_file_stage'])
+        t.pre_link(self['_executable_file_stage'])
 
         if target.frame in [self['pdb_file'], self['pdb_file_stage']]:
             input_pdb = initial_pdb

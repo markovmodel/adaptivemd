@@ -8,7 +8,8 @@ import radical.pilot as rp
 from adaptivemd.rp.database import Database
 
 # Configuration Variables
-mongo_url = 'mongodb://user:user@two.radical-project.org:32770/'
+#mongo_url = 'mongodb://user:user@two.radical-project.org:32770/'
+mongo_url = 'mongodb://localhost:27017/'
 project = 'rp_testing'
 
 # Example JSON locations
@@ -608,8 +609,15 @@ class TestUtils(unittest.TestCase):
             "target":"/home/test//projects/rp_testing_modeller_1/trajs/00000004//protein.dcd"},
             ]
         actual_cud.post_exec = ['deactivate']
-        actual_cud.mpi = False
-        actual_cud.cores = 1
+
+        actual_cud.cpu_process_type  = 'POSIX'
+        #actual_cud.gpu_process_type  = 'POSIX'
+        actual_cud.cpu_thread_type   = 'POSIX'
+        #actual_cud.gpu_thread_type   = 'CUDA'
+        actual_cud.cpu_processes = 1
+        #actual_cud.gpu_processes = 1
+        actual_cud.cpu_threads   = 1
+        #actual_cud.gpu_threads   = 1
 
         # compare all parts of the cuds
         self.maxDiff = None
@@ -621,8 +629,11 @@ class TestUtils(unittest.TestCase):
         self.assertListEqual(cud.arguments, actual_cud.arguments)
         self.assertListEqual(cud.output_staging, actual_cud.output_staging)
         self.assertListEqual(cud.post_exec, actual_cud.post_exec)
-        self.assertEquals(cud.mpi, actual_cud.mpi)
-        self.assertEquals(cud.cores, actual_cud.cores)
+
+        self.assertEquals(cud.cpu_process_type, actual_cud.cpu_process_type)
+        self.assertEquals(cud.cpu_thread_type, actual_cud.cpu_thread_type)
+        self.assertEquals(cud.cpu_processes, actual_cud.cpu_processes)
+        self.assertEquals(cud.cpu_threads, actual_cud.cpu_threads)
 
     def test_generate_trajectorygenerationtask_extension_cud(self):
         """Test proper Compute Unit Description generation for TrajectoryExtensionTask"""
@@ -681,8 +692,15 @@ class TestUtils(unittest.TestCase):
             "mdconvert -o extension/master.temp.dcd source/allatoms.dcd extension/allatoms.dcd",
             "deactivate"
         ]
-        actual_cud.mpi = False
-        actual_cud.cores = 1
+        actual_cud.cpu_process_type  = 'POSIX'
+        actual_cud.gpu_process_type  = 'POSIX'
+        actual_cud.cpu_thread_type   = 'POSIX'
+        actual_cud.gpu_thread_type   = 'CUDA'
+        actual_cud.cpu_processes = 1
+        actual_cud.gpu_processes = 1
+        actual_cud.cpu_threads   = 1
+        actual_cud.gpu_threads   = 1
+
 
         # compare all parts of the cuds
         self.maxDiff = None
@@ -694,8 +712,11 @@ class TestUtils(unittest.TestCase):
         self.assertListEqual(cud.arguments, actual_cud.arguments)
         self.assertListEqual(cud.output_staging, actual_cud.output_staging)
         self.assertListEqual(cud.post_exec, actual_cud.post_exec)
-        self.assertEquals(cud.mpi, actual_cud.mpi)
-        self.assertEquals(cud.cores, actual_cud.cores)
+
+        self.assertEquals(cud.cpu_process_type, actual_cud.cpu_process_type)
+        self.assertEquals(cud.cpu_thread_type, actual_cud.cpu_thread_type)
+        self.assertEquals(cud.cpu_processes, actual_cud.cpu_processes)
+        self.assertEquals(cud.cpu_threads, actual_cud.cpu_threads)
 
     def test_generate_pythontask_cud(self):
         """Test proper Compute Unit Description generation for PythonTask"""
@@ -737,8 +758,15 @@ class TestUtils(unittest.TestCase):
             "target": "/home/example/projects/{}//models/model.0x4f01b528c6911e79eb20000000000feL.json".format(self.db.project)
         }]
         actual_cud.post_exec = ["deactivate"]
-        actual_cud.mpi = False
-        actual_cud.cores = 10
+
+        actual_cud.cpu_process_type  = 'POSIX'
+        actual_cud.gpu_process_type  = 'POSIX'
+        actual_cud.cpu_thread_type   = 'POSIX'
+        actual_cud.gpu_thread_type   = 'CUDA'
+        actual_cud.cpu_processes = 10
+        actual_cud.gpu_processes = 1
+        actual_cud.cpu_threads   = 1
+        actual_cud.gpu_threads   = 1
 
         # compare all parts of the cuds
         self.maxDiff = None
@@ -750,8 +778,11 @@ class TestUtils(unittest.TestCase):
         self.assertListEqual(cud.arguments, actual_cud.arguments)
         self.assertListEqual(cud.output_staging, actual_cud.output_staging)
         self.assertListEqual(cud.post_exec, actual_cud.post_exec)
-        self.assertEquals(cud.mpi, actual_cud.mpi)
-        self.assertEquals(cud.cores, actual_cud.cores)
+
+        self.assertEquals(cud.cpu_process_type, actual_cud.cpu_process_type)
+        self.assertEquals(cud.cpu_thread_type, actual_cud.cpu_thread_type)
+        self.assertEquals(cud.cpu_processes, actual_cud.cpu_processes)
+        self.assertEquals(cud.cpu_threads, actual_cud.cpu_threads)
 
 
 if __name__ == '__main__':

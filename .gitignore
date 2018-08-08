@@ -1,5 +1,8 @@
-# RP working directories
+# RP working directories from Tutorial
 examples/rp/rp.session*
+
+# Files for different systems
+examples/files/
 
 # Jupyter Notebooks
 **/**ipynb
