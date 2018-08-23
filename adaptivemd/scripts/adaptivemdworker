@@ -87,8 +87,18 @@ if __name__ == '__main__':
 
     parser.add_argument(
         '-d', '--dbhost', dest='dbhost',
-        type=str, default='localhost', nargs='?',#TODO nargs='+',
+        type=str, default='localhost', nargs='?',
         help='specify the IP or host name and address for remotely hosted MongoDB')
+
+    parser.add_argument(
+        '-p', '--dbport',
+        type=str, default='27017', nargs='?',
+        help="specify the mongodb port number on its host")
+
+    parser.add_argument(
+        '-l', '--dblocation', 
+        type=str, default='', nargs='?',
+        help='specify the full database location')
 
     parser.add_argument(
         '--heartbeat', dest='heartbeat',
@@ -97,15 +107,23 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    # TODO:
-    # port specification option along with host address
-    # -- incorporate with nargs='+'
-    #    -- then have {hostname, port} as possible
-    #       arguments. try: int(arg)-->port
-    #                  else/except: arg-->hostname
+    if args.dblocation:
+        if args.dbhost != 'localhost' or args.dbport != '27017':
+            print("Cannot set database host or port if you use the full location option")
+            raise Exception
+        elif args.dblocation.startswith('mongodb://'):
+            MongoDBStorage._db_url = args.dblocation
+        else:
+            MongoDBStorage.set_location(args.dblocation) 
 
-    if args.dbhost != 'localhost':
-        MongoDBStorage.set_host(args.dbhost)
+    else:
+        if args.dbhost != 'localhost':
+            MongoDBStorage.set_host(args.dbhost)
+
+        if args.dbport != '27017':
+            MongoDBStorage.set_port(args.dbport)
+
+    print("This worker is using database URL: {}".format(MongoDBStorage._db_url))
 
     project = Project(args.project)
 
