@@ -50,8 +50,8 @@ class Location(StorableMixin):
 
         if isinstance(location, Location):
             self.location = location.location
-        elif isinstance(location, str):
-            self.location = location
+        elif isinstance(location, (unicode, str)):
+            self.location = str(location)
         else:
             raise ValueError('location can only be a `File` or a string.')
 
@@ -141,7 +141,7 @@ class Location(StorableMixin):
             the file basename
 
         """
-        return os.path.basename(self.path)
+        return os.path.basename(self.path.rstrip('/'))
 
     @property
     def is_folder(self):
@@ -507,8 +507,15 @@ class File(Location):
         if self.drive == 'file':
             if scheduler is not None:
                 path = scheduler.replace_prefix(self.url)
+
             else:
                 path = self.path
+
+            # To get nice-looking paths without extra slashes
+            path = '/'.join(
+                [c for i,c in enumerate(os.path.expandvars(path).split('/'))
+                 if c or i<4]
+                )
 
             with open(path, 'r') as f:
                 self._file = DataDict(f.read())
@@ -627,15 +634,15 @@ class JSONFile(File):
 
         return None
 
-    def load(self, scheduler=None):
+    def load(self, scheduler=None, path=None):
         if self._data is None:
-            s = self.get(scheduler)
+            s = self.get(scheduler, path)
             if s is not None:
                 self._data = s
 
         return self
 
-    def get(self, scheduler=None):
+    def get(self, scheduler=None, path=None):
         """
         Read data from the JSON file at the files location without storing
 
@@ -653,13 +660,12 @@ class JSONFile(File):
         if self._data is not None:
             return self._data
 
-        path = None
+        if not path:
+            if self.drive == 'file':
+                path = self.path
 
-        if self.drive == 'file':
-            path = self.path
-
-        if scheduler is not None:
-            path = scheduler.get_path(self)
+            if scheduler is not None:
+                path = scheduler.get_path(self)
 
         if path:
             with open(path, 'r') as f:

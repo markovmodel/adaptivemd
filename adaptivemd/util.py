@@ -21,9 +21,109 @@
 ##############################################################################
 from __future__ import print_function, absolute_import
 
-import pip
+#import pip
+import pkg_resources
 import os
 import datetime
+
+
+prefixline = '    >>>   '
+formatline = lambda l: '\n'.join(
+    [prefixline+ls if ls else '' for ls in l.split('\n')] +
+    ( [''] if len(l.split('\n'))>1 else [])
+    )
+
+def get_logger(logname, logfile=False):
+
+    import logging
+
+    _loglevel = os.environ.get('ADMD_LOGLEVEL',"WARNING")
+
+    try:
+        if _loglevel.lower() == 'info':
+            loglevel = logging.INFO
+        elif _loglevel.lower() == 'debug':
+            loglevel = logging.DEBUG
+        elif _loglevel.lower() == 'warning':
+            loglevel = logging.WARNING
+        elif _loglevel.lower() == 'error':
+            loglevel = logging.ERROR
+        # catch attempted set values as WARNING level
+        elif isinstance(_loglevel, str):
+            loglevel = logging.WARNING
+        else:
+            loglevel = logging.WARNING
+
+    # catch None's for not set
+    except:
+        loglevel = logging.WARNING
+
+    formatter = logging.Formatter(
+        '%(asctime)s ::::: %(name)s ::::: %(levelname)s |||||   %(message)s'
+        )
+
+    logging.basicConfig(level=loglevel)#, format=formatter)
+    logger  = logging.getLogger(logname)
+
+    ch = logging.StreamHandler()
+    #ch = logging.StreamHandler(sys.stdout)
+    ch.setLevel(loglevel)
+    ch.setFormatter(formatter)
+
+    logger.addHandler(ch)
+
+    if logfile:
+        logfilename = 'adaptivemd'
+        if isinstance(logfile, str):
+            logfilename = logfile
+        logfile = logfilename + '.' + logname + '.log'
+        fh = logging.FileHandler(logfile)
+        fh.setLevel(loglevel)
+        fh.setFormatter(formatter)
+        logger.addHandler(fh)
+
+    logger.propagate = False
+
+    return logger
+
+
+def parse_cfg_file(filepath):
+    def parse_line(line):
+        v = line.strip().split()
+        if len(v) > 0 and v[0][0] != '#':
+            return v
+        else:
+            return []
+
+    reading_fields = False
+    configurations_fields = dict()
+
+    with open(filepath, 'r') as f_cfg:
+        for line in f_cfg:
+            v = parse_line(line)
+            if reading_fields:
+                if len(v) == 1 and len(v[0]) == 1:
+                    if v[0][0] == '}':
+                        reading_fields = False
+                    else:
+                        raise ValueError(
+                            "End configuration block with single '}'")
+
+                # PARSE A VALUE
+                elif len(v) == 2:
+                    configurations_fields[reading_fields][v[0]] = v[1]
+
+                # NEED A SINGLE VALUE
+                elif len(v) == 1 or len(v) > 2:
+                    raise ValueError(
+                        "Require at least one value separated by space")
+
+            # START READING
+            elif len(v) == 2 and v[1] == '{':
+                reading_fields = v[0]
+                configurations_fields[reading_fields] = dict()
+
+    return configurations_fields
 
 
 def get_function_source(func):
@@ -42,7 +142,8 @@ def get_function_source(func):
         a list of filenames necessary to be copied
 
     """
-    installed_packages = pip.get_installed_distributions()
+    #installed_packages = pip.get_installed_distributions()
+    installed_packages = [d for d in pkg_resources.working_set]
     inpip = func.__module__.split('.')[0] in [p.key for p in installed_packages]
     insubdir = os.path.realpath(
         func.__code__.co_filename).startswith(os.path.realpath(os.getcwd()))

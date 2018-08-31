@@ -21,9 +21,9 @@
 ##############################################################################
 from __future__ import absolute_import
 
-from .brain import Brain
+#from .brain import Brain
 # from event import StopEvent, Event, TasksFinished
-from .plan import ExecutionPlan
+#from .plan import ExecutionPlan
 # from condition import Condition, Now, Never
 from .file import (File, Directory, Location, JSONFile, MakeDir, Copy,
                    Transfer, Link, Move, Remove, Action, AddPathAction, FileAction,
@@ -31,7 +31,8 @@ from .file import (File, Directory, Location, JSONFile, MakeDir, Copy,
 from .bundle import (Bundle, SortedBundle, ViewBundle, AndBundle,
                      BaseBundle, BundleDelegator, FunctionDelegator, LogicBundle,
                      OrBundle, StoredBundle)
-from .resource import AllegroCluster, LocalResource
+#from .resource import LocalResource
+from .configuration import Configuration
 from .task import Task, PythonTask, DummyTask
 from .project import Project
 from .scheduler import Scheduler
@@ -61,3 +62,14 @@ from .util import DT
 from ._version import get_versions
 __version__ = get_versions()['version']
 del get_versions
+
+
+import imp
+try: 
+    # Only layer I've found that works
+    # this way to indicate an RP install
+    imp.find_module('saga')
+    from .rp.client import Client
+except ImportError:
+    pass
+

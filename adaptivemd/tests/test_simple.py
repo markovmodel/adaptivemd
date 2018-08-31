@@ -3,7 +3,6 @@
 import os
 
 from adaptivemd import Project
-from adaptivemd import LocalResource
 
 from adaptivemd import OpenMMEngine
 from adaptivemd import PyEMMAAnalysis
@@ -24,7 +23,7 @@ if __name__ == '__main__':
     #   the instance to know about the place where we run simulations
     # --------------------------------------------------------------------------
 
-    project.initialize(LocalResource())
+    project.initialize({'shared_path':'$HOME'})
 
     # --------------------------------------------------------------------------
     # CREATE THE ENGINE
@@ -66,24 +65,27 @@ if __name__ == '__main__':
     pdb = md.load('../../examples/files/alanine/alanine.pdb')
     cwd = os.getcwd()
 
-    # this part fakes a running worker without starting the worker process
-    worker = WorkerScheduler(project.resource)
-    worker.enter(project)
+    # we are using only the scheduling and excution logic, not a real
+    # separate worker task
+    scheduler = WorkerScheduler(project.configuration)
+    scheduler.enter(project)
 
-    worker.submit(task)
+    scheduler(task)
 
     assert(len(project.trajectories) == 0)
 
     while not task.is_done():
-        worker.advance()
+        scheduler.advance()
 
     assert(len(project.trajectories) == 1)
 
     traj_path = os.path.join(
-        worker.path,
-        'workers',
-        'worker.' + hex(task.__uuid__),
-        worker.replace_prefix(project.trajectories.one.url)
+        scheduler.path,
+        'projects',
+        'example-simple-1',
+        'trajs',
+        '00000000',
+        'output.dcd'
     )
 
     assert(os.path.exists(traj_path))
@@ -91,7 +93,8 @@ if __name__ == '__main__':
     # go back to the place where we ran the test
     traj = md.load(traj_path, top=pdb)
 
-    assert(len(traj) == 100)
+    # 100 simulation steps + initial one should be 101 frames long
+    assert(len(traj) == 101)
 
     # well, we have a 100 step trajectory which matches the size of the initial PDB
     # that is a good sign
@@ -99,18 +102,18 @@ if __name__ == '__main__':
     # extend the trajectory by 50
     task2 = task.extend(50)
 
-    worker.submit(task2)
+    scheduler.submit(task2)
 
     while not task2.is_done():
-        worker.advance()
+        scheduler.advance()
 
     # should still be one, since we have the same trajectory
     assert(len(project.trajectories) == 1)
 
     traj = md.load(traj_path, top=pdb)
 
-    assert (len(traj) == 150)
+    assert (len(traj) == 151)
 
-    # after extension it is 150 frames. Excellent
+    # after extension it is 101 + 50 = 151 frames. Excellent
 
     project.close()

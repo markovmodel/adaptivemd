@@ -52,11 +52,6 @@ if __name__ == '__main__':
         help='minutes until the worker shuts down. If 0 (default) it will run indefinitely')
 
     parser.add_argument(
-        '-d', '--mongodb', dest='mongo_db_path',
-        type=str, default='mongodb://ensembletk.imp.fu-berlin.de:27017/adaptivemd', nargs='?',
-        help='the mongodb url to the db server')
-
-    parser.add_argument(
         '-g', '--generators', dest='generators',
         type=str, default=None, nargs='?',
         help='a comma separated list of generator names used to dispatch the tasks. '
@@ -72,29 +67,11 @@ if __name__ == '__main__':
              'Example: --wrappers=add_path("something"),add_cuda_module()')
 
     parser.add_argument(
-        '-l', '--local',
-        dest='local', action='store_true',
-        default=False,
-        help='if true then the DB is set to the default local port')
-
-    parser.add_argument(
         '-v', '--verbose',
         dest='verbose', action='store_true',
         default=False,
         help='if true then stdout and stderr of subprocesses will be rerouted. '
              'Use for debugging.')
-
-    parser.add_argument(
-        '-a', '--allegro',
-        dest='allegro', action='store_true',
-        default=False,
-        help='if true then the DB is set to the default allegro setting')
-
-    parser.add_argument(
-        '--sheep',
-        dest='sheep', action='store_true',
-        default=False,
-        help='if true then the DB is set to the default sheep setting')
 
     parser.add_argument(
         '-s', '--sleep', dest='sleep',
@@ -109,22 +86,44 @@ if __name__ == '__main__':
     #          'queue up to this number of tasks and reserve it for execution.')
 
     parser.add_argument(
+        '-d', '--dbhost', dest='dbhost',
+        type=str, default='localhost', nargs='?',
+        help='specify the IP or host name and address for remotely hosted MongoDB')
+
+    parser.add_argument(
+        '-p', '--dbport',
+        type=str, default='27017', nargs='?',
+        help="specify the mongodb port number on its host")
+
+    parser.add_argument(
+        '-l', '--dblocation', 
+        type=str, default='', nargs='?',
+        help='specify the full database location')
+
+    parser.add_argument(
         '--heartbeat', dest='heartbeat',
         type=int, default=10, nargs='?',
         help='heartbeat interval in seconds. Default is 10 seconds.')
 
     args = parser.parse_args()
 
-    if args.allegro:
-        db_path = "mongodb://ensembletk.imp.fu-berlin.de:27017/"
-    elif args.sheep:
-        db_path = "mongodb://sheep:27017/"
-    elif args.local:
-        db_path = "mongodb://localhost:27017/"
-    else:
-        db_path = args.mongo_db_path
+    if args.dblocation:
+        if args.dbhost != 'localhost' or args.dbport != '27017':
+            print("Cannot set database host or port if you use the full location option")
+            raise Exception
+        elif args.dblocation.startswith('mongodb://'):
+            MongoDBStorage._db_url = args.dblocation
+        else:
+            MongoDBStorage.set_location(args.dblocation) 
 
-    MongoDBStorage._db_url = db_path
+    else:
+        if args.dbhost != 'localhost':
+            MongoDBStorage.set_host(args.dbhost)
+
+        if args.dbport != '27017':
+            MongoDBStorage.set_port(args.dbport)
+
+    print("This worker is using database URL: {}".format(MongoDBStorage._db_url))
 
     project = Project(args.project)
 
@@ -175,8 +174,6 @@ if __name__ == '__main__':
 
         print('Using general wrapper:')
         print(wrapper.description)
-
-    print('Worker running @ %s' % db_path)
 
     if args.generators:
         print('[limited to generators `%s`]' % ', '.join(worker.generators))

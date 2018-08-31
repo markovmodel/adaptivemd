@@ -1,14 +1,23 @@
-"""Adaptive-MD
-"""
-from __future__ import print_function
-from setuptools import setup
-import sys
+from pprint import pprint
+import sys, os, shutil
 
-# experimental yaml support to read the settings
-import yaml
+try:
+    from setuptools import setup, Command, find_packages
+except ImportError as e:
+    print("Needs setuptools to install")
+    sys.exit(1)
 
-sys.path.insert(0, '.')
+try:
+    import yaml
+except ImportError as e:
+    print("Needs pyyaml to install")
+    sys.exit(1)
 
+
+
+# +-----------------------------------------------------------------------------
+# | CONSTRUCT PARAMETERS FOR setuptools
+# +-----------------------------------------------------------------------------
 
 def trunc_lines(s):
     parts = s.split('\n')
@@ -22,9 +31,6 @@ def trunc_lines(s):
 
     return ''.join(parts)
 
-# +-----------------------------------------------------------------------------
-# | CONSTRUCT PARAMETERS FOR setuptools
-# +-----------------------------------------------------------------------------
 
 def build_keyword_dictionary(prefs):
     keywords = {}
@@ -32,8 +38,8 @@ def build_keyword_dictionary(prefs):
     for key in [
         'name', 'license', 'url', 'download_url', 'packages',
         'package_dir', 'platforms', 'description', 'install_requires',
-        'long_description', 'package_data', 'include_package_data', 'scripts'
-    ]:
+        'long_description', 'package_data', 'include_package_data', 'scripts']:
+
         if key in prefs:
             keywords[key] = prefs[key]
 
@@ -60,18 +66,14 @@ def build_keyword_dictionary(prefs):
     return keywords
 
 
-# load settings from setup.py, easier to maintain, but not fully supported yet
+# load settings from setup.yaml
 with open('setup.yaml') as f:
     yaml_string = ''.join(f.readlines())
     preferences = yaml.load(yaml_string)
 
-print(preferences)
 
-setup_keywords = build_keyword_dictionary(preferences)
+setup_args = build_keyword_dictionary(preferences)
 
+setup (**setup_args)
 
-if __name__ == '__main__':
-    import versioneer
-    setup(version=versioneer.get_version(),
-          cmdclass=versioneer.get_cmdclass(),
-          **setup_keywords)
+# TODO reintroduce versioneer

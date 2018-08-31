@@ -4,6 +4,8 @@
 # Copyright 2017 FU Berlin and the Authors
 #
 # Authors: Jan-Hendrik Prinz
+#          John Ossyra
+#
 # Contributors:
 #
 # `adaptiveMD` is free software: you can redistribute it and/or modify
@@ -79,7 +81,7 @@ class WorkerScheduler(Scheduler):
         Parameters
         ----------
         resource : `Resource`
-            the resourse this scheduler should use.
+            the resource this scheduler should use.
         verbose : bool
             if True the worker will report lots of stuff
         """
@@ -98,7 +100,7 @@ class WorkerScheduler(Scheduler):
 
     @property
     def path(self):
-        return self.resource.shared_path.replace('$HOME', self.home_path)
+        return os.path.expandvars(self.resource.shared_path)
 
     @property
     def staging_area_location(self):
@@ -121,7 +123,8 @@ class WorkerScheduler(Scheduler):
         """
 
         # create a task that wraps errands from resource and scheduler
-        wrapped_task = task >> self.wrapper >> self.project.resource.wrapper
+        #wrapped_task = task >> self.wrapper >> self.project.resource.wrapper
+        wrapped_task = task >> self.wrapper >> self.resource.wrapper
 
         # call the reducer that interpretes task actions
         reducer = StrFilterParser() >> PrefixParser() >> WorkerParser() >> BashParser()
@@ -573,7 +576,7 @@ class Worker(StorableMixin):
         return obj
 
     def create(self, project):
-        scheduler = WorkerScheduler(project.resource, self.verbose)
+        scheduler = WorkerScheduler(project._current_configuration, self.verbose)
         scheduler._state_cb = self._state_cb
         self._scheduler = scheduler
         self._project = project
@@ -705,9 +708,25 @@ class Worker(StorableMixin):
                             scheduler.advance()
                             if scheduler.is_idle:
                                 for _ in range(self.prefetch):
-                                    tasklist = scheduler(
-                                        project.storage.tasks.modify_test_one(
-                                            task_test, 'state', 'created', 'queued'))
+                                    done = False
+                                    attempt = 0
+                                    retries = 10
+                                    while not done:
+
+                                        try:
+                                            tasklist = scheduler(
+                                                project.storage.tasks.modify_test_one(
+                                                 task_test, 'state', 'created', 'queued'))
+                                            done = True
+
+                                        except RuntimeError as e:
+                                            if attempt < retries:
+                                                print("Connection Timeout #{0} ignored"
+                                                      .format(attempt))
+                                                attempt += 1
+                                                time.sleep(2)
+                                            else:
+                                                raise e
 
                                     for task in tasklist:
                                         task.worker = self
