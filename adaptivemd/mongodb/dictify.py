@@ -24,7 +24,7 @@
 # <http://www.openpathsampling.org> or
 # <http://github.com/openpathsampling/openpathsampling
 # for details and license
-
+from __future__ import absolute_import, print_function
 
 import base64
 import importlib
@@ -34,14 +34,14 @@ import math
 import abc
 from uuid import UUID
 
+import six
 import ujson
 
 import marshal
 import types
 import opcode
-import __builtin__
 
-from base import StorableMixin
+from .base import StorableMixin, long_t
 
 __author__ = 'Jan-Hendrik Prinz'
 
@@ -58,7 +58,7 @@ class ObjectJSON(object):
     prevent_unsafe_modules = False
 
     allowed_storable_atomic_types = [
-        int, float, bool, long, str,
+        int, float, bool, long_t, str,
         np.float32, np.float64,
         np.int8, np.int16, np.int32, np.int64,
         np.uint8, np.uint16, np.uint32, np.uint64,
@@ -90,7 +90,7 @@ class ObjectJSON(object):
             cls.__name__: cls for cls in self.allowed_storable_atomic_types}
         self.type_names.update(self.class_list)
         self.type_classes = {
-            cls: name for name, cls in self.type_names.iteritems()}
+            cls: name for name, cls in self.type_names.items()}
 
     def simplify_object(self, obj):
         return {
@@ -123,7 +123,7 @@ class ObjectJSON(object):
             return {
                 '_integer': str(obj)}
 
-        elif obj.__class__.__module__ != '__builtin__':
+        elif obj.__class__.__module__ not in ('__builtin__', 'builtins'):
             # if obj.__class__ is units.Quantity:
             #     # This is number with a unit so turn it into a list
             #     if self.unit_system is not None:
@@ -187,12 +187,12 @@ class ObjectJSON(object):
                 result = {
                     '_dict': [
                         self.simplify(tuple([key, o]))
-                        for key, o in obj.iteritems()
+                        for key, o in obj.items()
                         if key not in self.excluded_keys
                     ]}
             else:
                 result = {
-                    key: self.simplify(o) for key, o in obj.iteritems()
+                    key: self.simplify(o) for key, o in obj.items()
                     if key not in self.excluded_keys
                 }
 
@@ -206,10 +206,11 @@ class ObjectJSON(object):
 
     @staticmethod
     def _unicode2str(s):
-        if type(s) is unicode:
-            return s.encode('utf8')
-        else:
-            return s
+        res = s
+        # we only want to transform python2 unicode objects to str.
+        if six.PY2 and type(s) is unicode:
+            res = s.encode('utf8')
+        return res
 
     def build(self, obj):
         if type(obj) is dict:
@@ -222,7 +223,7 @@ class ObjectJSON(object):
 
             elif '_numpy' in obj:
                 return np.frombuffer(
-                    base64.decodestring(obj['_data']),
+                    base64.b64decode(obj['_data']),
                     dtype=np.dtype(obj['_dtype'])).reshape(
                         self.build(obj['_numpy'])
                 )
@@ -286,13 +287,14 @@ class ObjectJSON(object):
             else:
                 return {
                     self._unicode2str(key): self.build(o)
-                    for key, o in obj.iteritems()
+                    for key, o in obj.items()
                 }
 
         elif type(obj) is list:
             return [self.build(o) for o in obj]
 
-        elif type(obj) is unicode:
+        # unicode in py2 and str in py3
+        elif type(obj) is six.text_type:
             return self._unicode2str(obj)
 
         else:
@@ -351,8 +353,8 @@ class ObjectJSON(object):
             # use marshal
             global_vars = ObjectJSON._find_var(c, opcode.opmap['LOAD_GLOBAL'])
             import_vars = ObjectJSON._find_var(c, opcode.opmap['IMPORT_NAME'])
-
-            builtins = dir(__builtin__)
+            import builtin
+            builtins = dir(builtin)
 
             global_vars = list(set(
                 [var for var in global_vars if var not in builtins]))
@@ -370,25 +372,25 @@ class ObjectJSON(object):
                 err += '\n1. be replaced by constants'
                 err += '\n2. be defined inside your function,' + \
                        '\n\n' + '\n'.join(
-                           map(lambda x: ' ' * 8 + x + '= ...', global_vars)
+                           [' ' * 8 + x + '= ...' for x in global_vars]
                        ) + '\n'
                 err += '\n3. imports need to be "re"-imported inside your ' \
                        'function' + \
                        '\n\n' + '\n'.join(
-                           map(lambda x: ' ' * 8 + 'import ' + x, global_vars)
+                           [' ' * 8 + 'import ' + x for x in global_vars]
                        ) + '\n'
                 err += '\n4. be passed as an external parameter ' \
                        '(not for imports!)'
                 err += '\n\n        my_cv = FunctionCV("cv_name", ' + \
-                       c.func_name + ', \n' + \
+                       c.__name__ + ', \n' + \
                        ',\n'.join(
-                           map(lambda x: ' ' * 20 + x + '=' + x, global_vars)
+                           [' ' * 20 + x + '=' + x for x in global_vars]
                        ) + ')' + '\n'
                 err += '\n    and change your function definition like this'
                 err += '\n\n        def ' + \
-                       c.func_name + '(snapshot, ...,  ' + \
+                       c.__name__ + '(snapshot, ...,  ' + \
                        '\n' + ',\n'.join(
-                           map(lambda x: ' ' * 16 + x, global_vars)
+                           [' ' * 16 + x for x in global_vars]
                        ) + '):'
 
             unsafe_modules = [
@@ -406,7 +408,7 @@ class ObjectJSON(object):
                 err += 'You can change the list of safe modules using '
                 err += '\n\n        ObjectJSON.safe_modules.extend(['
                 err += '\n' + ',\n'.join(
-                       map(lambda x: ' ' * 12 + x, unsafe_modules)
+                       [' ' * 12 + x for x in unsafe_modules]
                 )
                 err += '\n        ])'
                 err += '\n\n'
@@ -420,7 +422,7 @@ class ObjectJSON(object):
 
             return {
                 '_marshal': base64.b64encode(
-                    marshal.dumps(c.func_code)),
+                    marshal.dumps(c.__code__)),
                 '_global_vars': global_vars,
                 '_module_vars': import_vars
             }
@@ -481,7 +483,7 @@ class ObjectJSON(object):
         """
 
         # TODO: Clean this up. It now works only for codes that use co_names
-        opcodes = code.func_code.co_code
+        opcodes = code.__code__.co_code
         i = 0
         ret = []
         while i < len(opcodes):
@@ -494,7 +496,7 @@ class ObjectJSON(object):
             else:
                 i += 3
 
-        return [code.func_code.co_names[i[1]] for i in ret]
+        return [code.__code__.co_names[i[1]] for i in ret]
 
     def to_json(self, obj, base_type=''):
         simplified = self.simplify(obj, base_type)
@@ -520,7 +522,7 @@ class ObjectJSON(object):
     # def unit_from_json(self, json_string):
     #     return self.unit_from_dict(self.from_json(json_string))
 
-    def from_simple_dict(self, simplified):
+    def from_simple_dict(self, simplified, builder=None):
         obj = self.build(simplified)
 
         obj.__uuid__ = int(UUID(simplified.get('_id')))
@@ -530,8 +532,12 @@ class ObjectJSON(object):
             obj.name = simplified['name']
 
         for key in obj._find_by:
+
             if key in simplified:
-                setattr(obj, key, self.build(simplified[key]))
+                if builder is None:
+                    builder = obj
+
+                setattr(obj, key, self.build(simplified[key], builder))
 
         return obj
 
@@ -563,32 +569,44 @@ class UUIDObjectJSON(ObjectJSON):
         if obj is self.storage:
             return {'_storage': 'self'}
 
-        if obj.__class__.__module__ != '__builtin__':
+        if obj.__class__.__module__ not in ('__builtin__', 'builtins'):
             if obj.__class__ in self.storage._obj_store:
                 if not obj._ignore:
                     store = self.storage._obj_store[obj.__class__]
                     store.save(obj)
                     return {
                         '_hex_uuid': hex(obj.__uuid__),
-                        '_store': store.name}
+                        '_store': store.name
+                        }
 
         return super(UUIDObjectJSON, self).simplify(obj, base_type)
 
-    def build(self, obj):
+    def build(self, obj, builder=None):
         if type(obj) is dict:
             if '_storage' in obj:
                 if obj['_storage'] == 'self':
                     return self.storage
 
-            if '_obj_uuid' in obj and '_store' in obj:
+            elif '_obj_uuid' in obj and '_store' in obj:
                 store = self.storage._stores[obj['_store']]
                 result = store.load(int(UUID(obj['_obj_uuid'])))
 
                 return result
 
-            if '_hex_uuid' in obj and '_store' in obj:
+            elif '_hex_uuid' in obj and '_store' in obj:
                 store = self.storage._stores[obj['_store']]
-                result = store.load(long(obj['_hex_uuid'], 16))
+                _long = long_t(obj['_hex_uuid'], 16)
+
+                if builder and builder.__uuid__ == _long:
+                    result = builder
+
+                else:
+                    load_args = [ _long ]
+
+                    if builder:
+                        load_args.append(builder)
+
+                    result = store.load(*load_args)
 
                 return result
 

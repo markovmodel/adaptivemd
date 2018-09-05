@@ -4,6 +4,7 @@
 # Copyright 2017 FU Berlin and the Authors
 #
 # Authors: Jan-Hendrik Prinz
+#          John Ossyra
 # Contributors:
 #
 # `adaptiveMD` is free software: you can redistribute it and/or modify
@@ -19,13 +20,16 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with MDTraj. If not, see <http://www.gnu.org/licenses/>.
 ##############################################################################
-
+from __future__ import print_function, absolute_import
 
 import os
 
-from file import File, JSONFile, FileTransaction
-from util import get_function_source
-from mongodb import StorableMixin, SyncVariable, ObjectSyncVariable
+import six
+import uuid
+
+from .file import File, JSONFile, FileTransaction
+from .util import get_function_source
+from .mongodb import StorableMixin, SyncVariable, ObjectSyncVariable
 
 
 class BaseTask(StorableMixin):
@@ -44,7 +48,7 @@ class BaseTask(StorableMixin):
     @staticmethod
     def _format_export_paths(paths):
         paths = sorted(list(set(paths)))
-        return map('export PATH={}:$PATH'.format, paths)
+        return list(map('export PATH={}:$PATH'.format, paths))
 
     @staticmethod
     def _format_environment(env):
@@ -166,11 +170,11 @@ class Task(BaseTask):
         was used to create this task
     state : str
         a string representing the current state of the execution. One of
-        - 'create' : task has been created and is available for execution
+        - 'created' : task has been created and is available for execution
         - 'running': task is currently executed by a scheduler
         - 'queued' : task has been captured by a worker for execution
         - 'fail' : task has completed but failed. You can restart it
-        - 'succedd` : task has completed and succeeded.
+        - 'success' : task has completed and succeeded.
         - 'halt' : task has been halted by user. You can restart it
         - 'cancelled' : task has been cancelled by user. You CANNOT restart it
     stdout : :class:`~adaptivemd.logentry.LogEntry`
@@ -183,7 +187,9 @@ class Task(BaseTask):
 
     _copy_attributes = BaseTask._copy_attributes + [
         'stdout', 'stderr', 'restartable', 'cleanup',
-        'generator', 'dependencies', 'state', 'worker'
+        'generator', 'dependencies', 'state', 'worker',
+        'est_exec_time', 'resource_requirements',
+        'resource_name'
         ]
 
     _find_by = ['state', 'worker', 'stderr', 'stdout']
@@ -194,10 +200,14 @@ class Task(BaseTask):
     stderr = ObjectSyncVariable('stderr', 'logs', lambda x: x is not None)
 
     FINAL_STATES = ['success', 'cancelled']
+    # TODO change halted  to paused
+    #      find where else this needs to change
     RESTARTABLE_STATES = ['fail', 'halted']
     RUNNABLE_STATES = ['created']
 
-    def __init__(self, generator=None):
+    def __init__(self, generator=None, resource_name=None, est_exec_time=5,
+                 cpu_threads=1, gpu_contexts=0, mpi_rank=0):
+
         super(Task, self).__init__()
 
         self.generator = generator
@@ -218,6 +228,22 @@ class Task(BaseTask):
         self.state = 'created'
 
         self.worker = None
+
+        assert isinstance(cpu_threads, int)
+        assert isinstance(gpu_contexts, int)
+        assert isinstance(mpi_rank, int)
+
+        if isinstance(resource_name, str):
+            resource_name = [resource_name]
+
+        self.resource_name = resource_name
+
+        self.resource_requirements = {'cpu_threads': cpu_threads,
+                                      'gpu_contexts': gpu_contexts,
+                                      'mpi_rank': mpi_rank}
+
+        assert isinstance(est_exec_time, int)
+        self.est_exec_time = est_exec_time
 
     def restart(self):
         """
@@ -284,7 +310,7 @@ class Task(BaseTask):
 
         return True
 
-    def _default_fail(self, scheduler):
+    def _default_fail(self, scheduler, path=None):
         """
         the default function executed when a task fails
 
@@ -297,20 +323,20 @@ class Task(BaseTask):
 
         """
         # todo: improve error handling
-        print 'task did not complete'
+        print('task did not complete')
 
         if hasattr(scheduler, 'units'):
             unit = scheduler.units.get(self)
 
             if unit is not None:
-                print "* %s  state %s (%s), out/err: %s / %s" \
-                      % (unit.uid,
-                         unit.state,
-                         unit.exit_code,
-                         unit.stdout,
-                         unit.stderr)
+                print("* %s  state %s (%s), out/err: %s / %s"
+                       % (unit.uid,
+                          unit.state,
+                          unit.exit_code,
+                          unit.stdout,
+                          unit.stderr))
 
-    def _default_success(self, scheduler):
+    def _default_success(self, scheduler, path=None):
         """
         the default function executed when a task succeeds
 
@@ -350,22 +376,28 @@ class Task(BaseTask):
             s += ['        cd worker.%s' % hex(task.__uuid__)]
 
         s += ['']
-        s += ['Sources']
+        s += ['Sources\n-- Unstaged']
         s += ['- %s %s' % (x.short, '[exists]' if x.exists else '')
               for x in task.unstaged_input_files]
-        s += ['Targets']
+        s += ['-- Staged']
+        s += ['- %s %s' % (x.short, '[exists]' if x.exists else '')
+              for x in task.sources if x not in task.unstaged_input_files]
+        s += ['\nTargets']
         s += ['- %s' % x.short for x in task.targets]
-        s += ['Modified']
+        s += ['\nModified']
         s += ['- %s' % x.short for x in task.modified_files]
 
         s += ['']
-        s += ['<pretask>']
-        s += map(str, task.script)
-        s += ['<posttask>']
+        #s += ['<pretask>']
+        #s += list(map(str, task.pretask))
+        #s += ['<main>']
+        s += list(map(str, task.script))
+        #s += ['<posttask>']
+        #s += list(map(str, task.pretask))
 
         return '\n'.join(s)
 
-    def fire(self, event, scheduler):
+    def fire(self, event, scheduler, path=None):
         """
         Fire an event like success or failed.
 
@@ -384,7 +416,7 @@ class Task(BaseTask):
         if event in Task._events:
             cbs = self._on.get(event, [])
             for cb in cbs:
-                cb(self, scheduler)
+                cb(self, scheduler, path)
 
         if event in ['submit', 'fail', 'success']:
             self.state = event
@@ -399,7 +431,12 @@ class Task(BaseTask):
             True if the task has finished its execution
 
         """
-        return self.state in ['fail', 'success', 'cancelled']
+        # TODO use final states attribute
+        if self.state in ['fail', 'success', 'cancelled']:
+            return True
+
+        else:
+            return False
 
     def was_successful(self):
         """
@@ -483,9 +520,7 @@ class Task(BaseTask):
 
         transactions = [t for t in self.script if isinstance(t, FileTransaction)]
 
-        return filter(
-            lambda x: not x.is_temp,
-            set(sum(filter(bool, [f.added for f in transactions]), []) + self._add_files))
+        return [x for x in set(sum(filter(bool, [f.added for f in transactions]), []) + self._add_files) if not x.is_temp]
 
     @property
     def target_locations(self):
@@ -511,9 +546,7 @@ class Task(BaseTask):
         """
         transactions = [t for t in self.script if isinstance(t, FileTransaction)]
 
-        return filter(
-            lambda x: not x.is_temp,
-            set(sum(filter(bool, [t.required for t in transactions]), []) + self._add_files))
+        return [x for x in set(sum(filter(bool, [t.required for t in transactions]), []) + self._add_files) if not x.is_temp]
 
     @property
     def source_locations(self):
@@ -575,9 +608,9 @@ class Task(BaseTask):
 
         """
         if self.generator is not None:
-            return set(sum(filter(bool, [t.required for t in self.generator.stage_in]), []))
+            return set(filter(bool, [t.target.url for t in self.generator.stage_in]))
         else:
-            return {}
+            return set()
 
     @property
     def unstaged_input_files(self):
@@ -750,9 +783,14 @@ class Task(BaseTask):
         self.append(transaction)
         return transaction.source
 
-    def add_conda_env(self, name):
+    def add_conda_env(self, name, activate_prefix=None):
+        #TODO sort out this resource.wrapper.append() business
+        #     clearly its not happening, is it possible?
+        #      - use as option
         """
-        Add loading a conda env to all tasks of this resource
+        Add loading a conda env as the first command, with source
+        deactivate as the final command. Currently this is best done
+        as a final step in defining the task objects.
 
         This calls `resource.wrapper.append('source activate {name}')`
         Parameters
@@ -761,7 +799,26 @@ class Task(BaseTask):
             name of the conda environment
 
         """
-        self.append('source activate %s' % name)
+        prefix = ''
+        if activate_prefix:
+            prefix = os.path.join(activate_prefix, prefix)
+
+        self.prepend('source {p}activate {n}'.format(p=prefix, n=name))
+        self.append('source deactivate')
+
+    def add_virtualenv(self, activate_location):
+        """
+        Add activation of virtualenv as the first command, with deactivate
+        as the final command. Currently this is best done as
+        a final step in defining the task objects.
+
+        Parameters
+        ----------
+        activate_location : 
+            Full file location of the virtualenv activate script
+        """
+        self.prepend('source ' + activate_location)
+        self.append('deactivate')
 
 
 class PrePostTask(Task):
@@ -781,10 +838,62 @@ class PrePostTask(Task):
         'pre', 'post'
     ]
 
-    def __init__(self, generator=None):
-        super(PrePostTask, self).__init__(generator)
+    def __init__(self, generator=None, resource_name=None,
+                 est_exec_time=5, cpu_threads=1,
+                 gpu_contexts=0, mpi_rank=0):
+
+        super(PrePostTask, self).__init__(generator, resource_name,
+                                          est_exec_time, cpu_threads,
+                                          gpu_contexts, mpi_rank)
+
         self.pre = []
         self.post = []
+
+    def pre_link(self, f, name=None):
+        """
+        Add an action to create a link to a file (under a new name)
+
+        Parameters
+        ----------
+        f : `Location`
+            the source location (file or folder) to be used
+        name : `Location` or str
+            the target location to be used. For source files and target folders the
+            basename is copied
+
+        Returns
+        -------
+        `Location`
+            the actual target location
+
+        """
+        transaction = f.link(name)
+        self.pre.append(transaction)
+        return transaction.target
+
+    def post_put(self, f, target):
+        """
+        Put a file back and make it persistent
+
+        Corresponds to output_staging
+
+        Parameters
+        ----------
+        f : `File`
+            the file to be used
+        target : str or `File`
+            the target location. Need to contain a URL like `staging://` or
+            `file://` for application side files
+
+        Returns
+        -------
+        `Location`
+            the actual target location
+
+        """
+        transaction = f.move(target)
+        self.post.append(transaction)
+        return transaction.target
 
     @property
     def pre_exec(self):
@@ -795,6 +904,45 @@ class PrePostTask(Task):
     @property
     def main(self):
         return self.pre + self._main + self.post
+
+    def add_conda_env(self, name, activate_prefix=None):
+        #TODO sort out this resource.wrapper.append() business
+        #     clearly its not happening, is it possible?
+        #      - use as option
+        """
+        Add loading a conda env as the first command, with source
+        deactivate as the final command. Currently this is best done
+        as a final step in defining the task objects.
+
+        This calls `resource.wrapper.append('source activate {name}')`
+        Parameters
+        ----------
+        name : str
+            name of the conda environment
+
+        """
+        activate   = 'activate'
+        deactivate = 'deactivate'
+        if activate_prefix:
+            activate   = os.path.join(activate_prefix, activate)
+            deactivate = os.path.join(activate_prefix, deactivate)
+
+        self.pre.insert(0,'source {a} {n}'.format(a=activate, n=name))
+        self.post.append('source {d}'.format(d=deactivate))
+
+    def add_virtualenv(self, activate_location):
+        """
+        Add activation of virtualenv as the first command, with deactivate
+        as the final command. Currently this is best done as
+        a final step in defining the task objects.
+
+        Parameters
+        ----------
+        activate_location : 
+            Full file location of the virtualenv activate script
+        """
+        self.pre.insert(0,'source ' + activate_location)
+        self.post.append('deactivate')
 
 
 class MPITask(PrePostTask):
@@ -824,7 +972,7 @@ class MPITask(PrePostTask):
     def command(self):
         cmd = self.executable or ''
 
-        if isinstance(self.arguments, basestring):
+        if isinstance(self.arguments, six.string_types):
             cmd += ' ' + self.arguments
         elif self.arguments is not None:
             cmd += ' '
@@ -840,11 +988,11 @@ class MPITask(PrePostTask):
         parts = [part.format(*args, **kwargs) for part in parts]
         self.executable = parts[0]
         self.arguments = parts[1:]
-        
+
     @property
     def main(self):
         return self.pre + [self.command] + self.post
-    
+
     def append(self, cmd):
         raise RuntimeWarning(
             'append does nothing for MPITasks. Use .pre.append or .post.append')
@@ -869,11 +1017,11 @@ class DummyTask(PrePostTask):
         s = ['Task: %s' % task.__class__.__name__]
 
         s += ['<pre>']
-        s += map(str, task.pre_exec + task.pre)
+        s += list(map(str, task.pre_exec + task.pre))
         s += ['</pre>']
         s += ['<main />']
         s += ['<post>']
-        s += map(str, task.post)
+        s += list(map(str, task.post))
         s += ['</post>']
 
         return '\n'.join(s)
@@ -945,20 +1093,27 @@ class PythonTask(PrePostTask):
 
     _copy_attributes = PrePostTask._copy_attributes + [
         '_python_import', '_python_source_files', '_python_function_name',
-        '_python_args', '_python_kwargs',
+        '_python_args', '_python_kwargs', 'output_stored',
         '_rpc_input_file', '_rpc_output_file',
         'then_func_name', 'store_output']
 
     then_func = None
+    output_stored = SyncVariable('output_stored', lambda x: isinstance(x, bool))
 
-    def __init__(self, generator=None):
-        super(PythonTask, self).__init__(generator)
+    def __init__(self, generator=None, resource_name=None,
+                 est_exec_time=5, cpu_threads=1, 
+                 gpu_contexts=0, mpi_rank=0):
+
+        super(PythonTask, self).__init__(generator, resource_name,
+                                          est_exec_time, cpu_threads,
+                                          gpu_contexts, mpi_rank)
 
         self._python_import = None
         self._python_source_files = None
         self._python_function_name = None
         self._python_args = None
         self._python_kwargs = None
+        self.output_stored = False
 
         # self.executable = 'python'
         # self.arguments = '_run_.py'
@@ -973,7 +1128,7 @@ class PythonTask(PrePostTask):
         # input args -> input.json
         self.pre.append(self._rpc_input_file.transfer('input.json'))
 
-        # output args -> output.json
+        # output data -> output.json
         self.post.append(File('output.json').transfer(self._rpc_output_file))
 
         f = File('staging:///_run_.py')
@@ -997,30 +1152,61 @@ class PythonTask(PrePostTask):
         """
         self.post.append(File('output.json').copy(target))
 
-    def _cb_success(self, scheduler):
+    def set_output_stored(self, project, is_stored):
+        my_id = str(uuid.UUID(int=self.__uuid__))
+        project.storage.tasks._document.update_one({"_id": my_id},
+            {"$set": {"_dict.output_stored": is_stored}})
+
+   ### @property
+   ### def output_stored(self):
+   ###     return self._output_stored
+
+   ### @output_stored.setter
+   ### #def output_stored(self, project_isstored):
+   ### def output_stored(self, is_stored):
+   ###     # TODO WHY can't we just do this:
+   ###     print(is_stored, is_stored.__class__)
+   ###     assert isinstance(is_stored, bool)
+   ###     self._output_stored = is_stored
+   ###     #project, isstored = project_isstored
+   ###     #my_id = str(uuid.UUID(int=self.__uuid__))
+   ###     #project.storage.tasks._document.update_one({"_id": my_id},
+   ###     #    {"$set": {"_dict._output_stored": isstored}})
+   ### def mark_output_stored(self, project, is_stored):
+   ###     my_id = str(uuid.UUID(int=self.__uuid__))
+   ###     project.storage.tasks._document.update_one({"_id": my_id},
+   ###         {"$set": {"_dict._output_stored": is_stored}})
+   ###  
+    def _cb_success(self, scheduler, path=None):
         # here is the logic to retrieve the result object
         # the output file is a JSON and these know how to load itself
 
         if self.store_output:
             # by default store the result. If you handle it yourself you
             # might want to turn it off to not save the data twice
-            self._rpc_output_file.load(scheduler)
+            self._rpc_output_file.load(scheduler, path)
 
-        filename = scheduler.get_path(self._rpc_output_file)
-        data = self._rpc_output_file.get(scheduler)
+        data = self._rpc_output_file.get(scheduler, path)
 
         if self.generator is not None and hasattr(self.generator, self.then_func_name):
+
+            # Data given to DB Here with function named `then_func_name`
             getattr(self.generator, self.then_func_name)(
                 scheduler.project, self, data, self._python_kwargs)
 
+            #self.output_stored = tuple([scheduler.project, True])
+            self.set_output_stored(scheduler.project, True)
+
         # cleanup
         # mark as changed / deleted
-        os.remove(filename)
-        self._rpc_output_file.modified()
-        os.remove(scheduler.get_path(self._rpc_input_file))
-        self._rpc_input_file.modified()
+        if not path:
+            filename = scheduler.get_path(self._rpc_output_file)
+            os.remove(filename)
+            self._rpc_output_file.modified()
+            os.remove(scheduler.get_path(self._rpc_input_file))
+            self._rpc_input_file.modified()
 
-    def _cb_submit(self, scheduler):
+    def _cb_submit(self, scheduler, path=None):
         filename = scheduler.replace_prefix(self._rpc_input_file.url)
         with open(filename, 'w') as f:
             f.write(scheduler.simplifier.to_json(self._get_json(scheduler)))
@@ -1064,7 +1250,8 @@ class PythonTask(PrePostTask):
             named arguments to the function
 
         """
-        self._python_function_name = '.'.join([command.__module__, command.func_name])
+        self._python_function_name = '.'.join([command.__module__, command.__name__])
+
         self._python_kwargs = kwargs
 
         self._python_import, self._python_source_files = \
@@ -1080,6 +1267,8 @@ class PythonTask(PrePostTask):
         dct = {
             'import': self._python_import,
             'function': self._python_function_name,
-            'kwargs': self._python_kwargs
+            'kwargs': self._python_kwargs,
+            'project': scheduler.project.name,
+            'generator': self.generator.name
         }
         return scheduler.flatten_location(dct)

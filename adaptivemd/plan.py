@@ -35,10 +35,9 @@ class ExecutionPlan(object):
         self._finish_conditions = []
 
     def _update_conditions(self):
-        self._finish_conditions = filter(
-            lambda x: not x(), self._finish_conditions)
+        self._finish_conditions = [x for x in self._finish_conditions if not x()]
 
-    def __call__(self, scheduler):
+    def __call__(self):
         if self._running:
             try:
                 conditions = next(self._generator)
@@ -51,15 +50,18 @@ class ExecutionPlan(object):
             except StopIteration:
                 self._running = False
 
-    def trigger(self, scheduler):
+    def trigger(self):
         if self:
             self._update_conditions()
             while self._running and len(self._finish_conditions) == 0:
-                self(scheduler)
+                self()
                 self._update_conditions()
 
-    def __nonzero__(self):
+    def __bool__(self):
         return self._running
+
+    def __nonzero__(self):
+        return self.__bool__()
 
     def __str__(self):
         return '%s(%s)' % (

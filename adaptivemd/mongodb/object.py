@@ -24,16 +24,20 @@
 # <http://www.openpathsampling.org> or
 # <http://github.com/openpathsampling/openpathsampling
 # for details and license
-
+from __future__ import absolute_import, print_function
 
 import logging
 from uuid import UUID
 from weakref import WeakValueDictionary
 
-from base import StorableMixin
-from cache import MaxCache, Cache, NoCache, \
+from numpy.random import randint
+
+import six
+
+from .base import StorableMixin, long_t
+from .cache import MaxCache, Cache, NoCache, \
     WeakLRUCache
-from proxy import LoaderProxy
+from .proxy import LoaderProxy
 
 logger = logging.getLogger(__name__)
 
@@ -61,7 +65,7 @@ class ObjectStore(StorableMixin):
         'int', 'float', 'long', 'str', 'bool',
         'numpy.float32', 'numpy.float64',
         'numpy.int8', 'numpy.inf16', 'numpy.int32', 'numpy.int64',
-        'numpy.uint8', 'numpy.uinf16', 'numpy.uint32', 'numpy.uint64',
+        'numpy.uint8', 'numpy.uint16', 'numpy.uint32', 'numpy.uint64',
         'index', 'length', 'uuid'
     ]
 
@@ -290,9 +294,9 @@ class ObjectStore(StorableMixin):
             return None
 
         tt = type(item)
-        if tt is long:
+        if tt is long_t:
             idx = item
-        elif tt in [str, unicode]:
+        elif tt in set([six.text_type]):
             if item[0] == '-':
                 return None
             idx = int(UUID(item))
@@ -320,7 +324,7 @@ class ObjectStore(StorableMixin):
                 if item < 0:
                     item += len(self)
                 return self.load(item)
-            elif type(item) is str or type(item) is long:
+            elif type(item) is str or type(item) is long_t:
                 return self.load(item)
             elif type(item) is list:
                 return [self.load(idx) for idx in item]
@@ -477,9 +481,9 @@ class ObjectStore(StorableMixin):
 
         return modified
 
-    def _load(self, idx):
-        obj = self.storage.simplifier.from_simple_dict(
-            self._document.find_one({'_id': str(UUID(int=idx))}))
+    def _load(self, idx, builder=None):
+        one = self._document.find_one({'_id': str(UUID(int=idx))})
+        obj = self.storage.simplifier.from_simple_dict(one, builder)
         obj.__store__ = self
         return obj
 
@@ -502,14 +506,45 @@ class ObjectStore(StorableMixin):
             self._cached_all = True
 
     def _save(self, obj):
-        dct = self.storage.simplifier.to_simple_dict(obj)
-        self._document.insert(dct)
-        obj.__store__ = self
+        """Save can recieve an object or group of objects to store.
+           The group can be `list`, `set`, or `tuple`.
+           The object will be simplified for storage and stored
+           with `pymongo.Collection.insert_many` method.
+        """
+        # TODO is there additional overhead for single inserts
+        #      when insert_many is used?
+        #      - just insert_one if object isn't a group
+
+        if isinstance(obj, (tuple, list, set)):
+            if not obj:
+                return []
+        else:
+            obj = [obj]
+
+        # mark as saved so circular dependencies will not cause infinite loops
+        next_idc = len(self.index)
+        [self.index.append(o.__uuid__) for o in obj]
+
+        logger.debug('Saving objects of type ' + str(type(obj[0])) + ' using IDX #' + str(obj[0].__uuid__))
+
+        try:
+            l_dct = [self.storage.simplifier.to_simple_dict(o) for o in obj]
+            self._document.insert_many(l_dct)
+            [setattr(o,'__store__',self) for o in obj]
+            [self.cache.update({o.__uuid__: o}) for o in obj]
+
+        except Exception as e:
+            # in case we did not succeed remove the mark as being saved
+            del self.index[next_idc:]
+            raise
+
+        return [self.reference(o) for o in obj]
+
 
     @property
     def last(self):
         """
-        Returns the last generated trajectory. Useful to continue a run.
+        Returns the last generated object. Useful to continue a run.
 
         Returns
         -------
@@ -533,7 +568,7 @@ class ObjectStore(StorableMixin):
     @property
     def one(self):
         """
-        Returns one random object.
+        Returns one object.
 
         Returns
         -------
@@ -542,6 +577,26 @@ class ObjectStore(StorableMixin):
         """
         idx = int(UUID(self._document.find_one()['_id']))
         return self.load(idx)
+
+    def pick(self):
+        '''
+        Return one random element
+
+        Returns
+        -------
+        
+        '''
+        # TODO use numpy.random.choice and optional
+        #       number argument to get multiple.
+        #       use/implement bulk pull&load for
+        #       for this
+        length = len(self)
+        if length:
+            idx = randint(length)
+            return self.load(self.index[idx])
+        else:
+            return None
+        
 
     @property
     def last(self):
@@ -604,7 +659,7 @@ class ObjectStore(StorableMixin):
         idx = self._document.find_one(dct)['_id']
         return self.load(int(UUID(idx)))
 
-    def load(self, idx):
+    def load(self, idx, builder=None, force_load=False):
         """
         Returns an object from the storage.
 
@@ -622,7 +677,7 @@ class ObjectStore(StorableMixin):
         if type(idx) is str:
             idx = int(UUID(self._document.find_one({'name': idx})['_id']))
 
-        if type(idx) is long:
+        if type(idx) is long_t:
             if idx not in self.index:
                 self.check_size()
                 if idx not in self.index:
@@ -635,20 +690,26 @@ class ObjectStore(StorableMixin):
                 '(only str and long)') % type(idx).__name__
             )
 
-        # if it is in the cache, return it
-        try:
-            obj = self.cache[idx]
-            logger.debug('Found IDX #' + str(idx) + ' in cache. Not loading!')
-            return obj
+        if not force_load:
+            # if it is in the cache, return it
+            try:
+                obj = self.cache[idx]
+                logger.debug('Found IDX #' + str(idx) + ' in cache. Not loading!')
+                return obj
 
-        except KeyError:
-            pass
+            except KeyError:
+                pass
+
+        else:
+            logger.debug(
+                'Forcing load of object #%d of class %s' %
+                (idx, self.content_class.__name__))
 
         logger.debug(
             'Calling load object of type `%s` @ IDX #%d' %
             (self.content_class.__name__, idx))
 
-        obj = self._load(idx)
+        obj = self._load(idx, builder)
 
         logger.debug(
             'Calling load object of type %s and IDX # %d ... DONE' %
@@ -668,11 +729,34 @@ class ObjectStore(StorableMixin):
 
         return obj
 
+
     @staticmethod
     def reference(obj):
         return obj.__uuid__
 
+
     def save(self, obj):
+        """
+        Handler for saving objects to storage.
+        If `obj` is not a group (`tuple`, `list`, or `set`),
+        saving is delegated to `_save_one` method.
+        Otherwise, we handle the group of objects.
+        """
+        if not isinstance(obj, (tuple, list, set)):
+            return self._save_one(obj)
+        else:
+            return self._save_many(obj)
+        
+
+    def _save_many(self, l_obj):
+        e,s = self._part_onsaved(l_obj)
+        sv  = []
+        if s:
+            sv = self._save(s)
+        return (e,sv)
+
+
+    def _save_one(self, obj):
         """
         Saves an object to the storage.
 
@@ -682,49 +766,79 @@ class ObjectStore(StorableMixin):
             the object to be stored
 
         """
-        uuid = obj.__uuid__
 
+        e,s = self._part_onsaved(obj)
+
+        if s:
+            # TODO remove this check after making test
+            if e:
+                raise Exception
+
+            e = self._save(*s)
+
+        return e[0]
+
+
+
+    def _part_onsaved(self, obj):
+
+        if not isinstance(obj, (tuple, set, list)):
+            obj = [obj]
+
+        e = []
+        s = []
+
+        for o in obj:
+
+            try:
+                exists = self._check_obj_exists(o)
+
+                if exists:
+                    e.append(exists)
+                else:
+                    s.append(o)
+
+            except Exception as e:
+                # an objeect was targeted to wrong store
+                pass
+
+        return (e, s)
+
+
+    def _check_obj_exists(self, obj):
+        uuid = obj.__uuid__
         if uuid in self.index:
             # has been saved so quit and do nothing
             return self.reference(obj)
 
-        if isinstance(obj, LoaderProxy):
+        elif isinstance(obj, LoaderProxy):
             if obj._store is self:
                 # is a proxy of a saved object so do nothing
                 return uuid
-            else:
-                # it is stored but not in this store so we try storing the
-                # full attribute which might be still in cache or memory
-                # if that is not the case it will be stored again. This can
-                # happen when you load from one store save to another. And load
-                # again after some time while the cache has been changed and try
-                # to save again the loaded object. We will not explicitly store
-                # a table that matches objects between different storages.
-                return self.save(obj.__subject__)
 
-        if not isinstance(obj, self.content_class):
+            else:
+                return self.save(obj.__subject__)
+                # TODO which is correct?
+                #e.append(one)
+                #s.append(one)
+            #    # it is stored but not in this store so we try storing the
+            #    # full attribute which might be still in cache or memory
+            #    # if that is not the case it will be stored again. This can
+            #    # happen when you load from one store save to another. And load
+            #    # again after some time while the cache has been changed and try
+            #    # to save again the loaded object. We will not explicitly store
+            #    # a table that matches objects between different storages.
+            #    return self.save(o.__subject__)
+
+        elif not isinstance(obj, self.content_class):
             raise ValueError((
                 'This store can only store object of base type "%s". Given '
                 'obj is of type "%s". You might need to use another store.')
                 % (self.content_class, obj.__class__.__name__)
             )
+        else:
+            return False
 
-        # mark as saved so circular dependencies will not cause infinite loops
-        n_idx = len(self.index)
-        self.index.append(uuid)
-
-        logger.debug('Saving ' + str(type(obj)) + ' using IDX #' + str(uuid))
-
-        try:
-            self._save(obj)
-            self.cache[uuid] = obj
-
-        except:
-            # in case we did not succeed remove the mark as being saved
-            del self.index[n_idx]
-            raise
-
-        return self.reference(obj)
 
     def add_single_to_cache(self, idx, json):
         """

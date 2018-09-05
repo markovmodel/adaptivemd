@@ -19,7 +19,7 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with MDTraj. If not, see <http://www.gnu.org/licenses/>.
 ##############################################################################
-
+from __future__ import absolute_import
 
 import os
 
@@ -28,7 +28,7 @@ from adaptivemd.analysis import Analysis
 from adaptivemd.mongodb import DataDict
 from adaptivemd.model import Model
 
-from _remote import remote_analysis
+from ._remote import remote_analysis
 
 
 class PyEMMAAnalysis(Analysis):
@@ -109,14 +109,19 @@ class PyEMMAAnalysis(Analysis):
         model = Model(DataDict(data))
         project.models.add(model)
 
-    def execute(
-            self,
-            trajectories,
-            tica_lag=2,
-            tica_dim=2,
-            msm_states=5,
-            msm_lag=2,
-            stride=1):
+    def execute(self,
+                trajectories,
+                tica_lag=10,
+                tica_dim=2,
+                tica_stride=2,
+                msm_states=10,
+                msm_lag=2,
+                clust_stride=2,
+                resource_name=None,
+                cpu_threads=1,
+                gpu_contexts=0,
+                mpi_rank=0):
+
         """
         Create a task that computes an msm using a given set of trajectories
 
@@ -144,7 +149,15 @@ class PyEMMAAnalysis(Analysis):
 
         # we call the PythonTask with self to tell him about the generator used
         # this will fire the then_func from the generator once finished
-        t = PythonTask(self)
+        t = PythonTask(self, resource_name, cpu_threads, gpu_contexts, mpi_rank)
+
+        if resource_name is None:
+            resource_name = list()
+        elif isinstance(resource_name, str):
+            resource_name = [resource_name]
+
+        assert isinstance(resource_name, list)
+        t.resource_name = resource_name
 
         # we handle the returned output ourselves -> its stored as a model
         # so do not store the returned JSON also
@@ -167,7 +180,7 @@ class PyEMMAAnalysis(Analysis):
 
         for traj in trajs:
             if outtype not in traj.types:
-                # ups, one of the trajectories does not have the required type!
+                # oops, one of the trajectories does not have the required type!
                 return
 
         ty = trajs[0].types[outtype]
@@ -181,9 +194,10 @@ class PyEMMAAnalysis(Analysis):
             topfile=input_pdb,
             tica_lag=tica_lag,
             tica_dim=tica_dim,
+            tica_stride=tica_stride,
             msm_states=msm_states,
             msm_lag=msm_lag,
-            stride=stride
+            clust_stride=clust_stride
         )
 
         return t

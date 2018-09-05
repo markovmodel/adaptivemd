@@ -4,6 +4,7 @@
 # Copyright 2017 FU Berlin and the Authors
 #
 # Authors: Jan-Hendrik Prinz
+#          John Ossyra
 # Contributors:
 #
 # `adaptiveMD` is free software: you can redistribute it and/or modify
@@ -19,26 +20,29 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with MDTraj. If not, see <http://www.gnu.org/licenses/>.
 ##############################################################################
+from __future__ import print_function, absolute_import
 
 
 class Condition(object):
     """
-    A function that returns a bool
-
+    A function that returns a bool.
     It uses some caching to keep checking fast and allows basic bool operations
-
     This is really just to replace some simple lambda functions, nothing more.
-    It is kind of deprecated and raraly used.
 
     Examples
     --------
     >>> a = Never()  # never fulfilles
-    >>> if a: print 'fulfilled' else 'not fulfilled'  # not fulfilled
+    >>> 'fulfilled' if a else 'not fulfilled'
+    'not fulfilled'
     >>> b = Now()  # always fulfilled
-    >>> if b: print 'fulfilled' else 'not fulfilled'  # fulfilled
-    >>> bool(a & b)  # False
-    >>> bool(a | b)  # True
-    >>> not a  # True
+    >>> 'fulfilled' if b else 'not fulfilled'
+    'fulfilled'
+    >>> bool(a & b)
+    False
+    >>> bool(a | b)
+    True
+    >>> not a
+    True
 
     """
     def __init__(self):
@@ -67,8 +71,18 @@ class Condition(object):
     def __invert__(self):
         return InvertCondition(self)
 
-    def __nonzero__(self):
+    def __bool__(self):
+        '''
+        Boolean evaluation in Python 3 use this special method.
+        '''
         return self()
+
+    def __nonzero__(self):
+        '''
+        Boolean evaluation in Python 2 uses this special method,
+        internally calls newer `self.__bool__`
+        '''
+        return self.__bool__()
 
 
 class InvertCondition(Condition):

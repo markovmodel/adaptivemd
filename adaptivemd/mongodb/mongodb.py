@@ -24,13 +24,13 @@
 # <http://www.openpathsampling.org> or
 # <http://github.com/openpathsampling/openpathsampling
 # for details and license
-
+from __future__ import absolute_import, print_function
 
 import abc
 import logging
 from collections import OrderedDict
-from dictify import UUIDObjectJSON
-from object import ObjectStore
+from .dictify import UUIDObjectJSON
+from .object import ObjectStore
 
 from pymongo import MongoClient
 
@@ -43,9 +43,23 @@ class MongoDBStorage(object):
     """
     _db_url = 'mongodb://localhost:27017/'
 
+    @classmethod
+    def set_host(cls, host):
+        #cls._db_url = cls._db_url.replace('localhost', host)
+        cls._db_url = 'mongodb://' + host + ':27017/'
+
+    @classmethod
+    def set_location(cls, location):
+        cls._db_url = 'mongodb://' + location
+
+    @classmethod
+    def set_port(cls, port):
+        portstring = str(port) + '/'
+        cls._db_url = ':'.join(cls._db_url.split(':')[:-1]+[portstring])
+
     @property
     def version(self):
-        import version
+        from . import version
         return version.short_version
 
     @property
@@ -335,8 +349,12 @@ class MongoDBStorage(object):
         try:
             return self.__dict__[item]
         except KeyError:
-            return self.__class__.__dict__[item]
+            try:
+                return self.__class__.__dict__[item]
+            except KeyError:
+                raise AttributeError("attribute %s not found" % item)
 
+    # TODO: is still really needed? it looks like the default impl of object.__setattr__
     def __setattr__(self, key, value):
         self.__dict__[key] = value
 
@@ -408,6 +426,7 @@ class MongoDBStorage(object):
             needed when loading the object to identify the correct storage
         """
 
+        # TODO isinstance these type checks
         if type(obj) is list:
             # a list of objects will be stored one by one
             return [self.save(part) for part in obj]
@@ -499,7 +518,7 @@ class MongoDBStorage(object):
         total_file = 0
         total_index = 0
 
-        for name, store in self.objects.iteritems():
+        for name, store in self.objects.items():
             size = store.cache.size
             count = store.cache.count
             profile = {

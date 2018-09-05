@@ -24,12 +24,19 @@
 # <http://www.openpathsampling.org> or
 # <http://github.com/openpathsampling/openpathsampling
 # for details and license
+from __future__ import absolute_import
 
 
 import inspect
 import logging
 import time
 import uuid
+import six
+
+if six.PY2:
+    long_t = long
+else:
+    long_t = int
 
 logger = logging.getLogger(__name__)
 
@@ -45,7 +52,7 @@ class StorableMixin(object):
     _find_by = []
 
     INSTANCE_UUID = list(uuid.uuid1().fields[:-1])
-    CREATION_COUNT = 0L
+    CREATION_COUNT = long_t(0)
     ACTIVE_LONG = int(uuid.UUID(
             fields=tuple(
                 INSTANCE_UUID +
@@ -72,6 +79,7 @@ class StorableMixin(object):
         # set the creation time
         self.__time__ = int(time.time())
         self.__store__ = None
+        self.name = None
 
     def __eq__(self, other):
         if isinstance(other, StorableMixin):
@@ -233,10 +241,17 @@ class StorableMixin(object):
 
         """
         try:
-            args = inspect.getargspec(cls.__init__)
-        except TypeError:
+            if six.PY2:
+                args = inspect.getargspec(cls.__init__)[0]
+            else:
+                args = inspect.getfullargspec(cls.__init__)
+                if args.args and args.args[0] == 'self':
+                    args = args.args[1:]
+                else:
+                    args = args.args
+        except TypeError as t:
             return []
-        return args[0]
+        return args
 
     _excluded_attr = []
     _included_attr = []
@@ -265,6 +280,7 @@ class StorableMixin(object):
                 not (key.startswith('_') and self._exclude_private_attr)
             )
         }
+
         return {
             key: self.__dict__[key] for key in keys_to_store
         }
@@ -298,7 +314,7 @@ class StorableMixin(object):
                         key: dct[key] for key in dct if key not in args}
 
                     if len(non_init_dct) > 0:
-                        for key, value in non_init_dct.iteritems():
+                        for key, value in non_init_dct.items():
                             setattr(obj, key, value)
 
                 return obj

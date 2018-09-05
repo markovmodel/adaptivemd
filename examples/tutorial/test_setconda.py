@@ -37,7 +37,7 @@ if __name__ == '__main__':
     # CREATE THE RESOURCE
     #   the instance to know about the place where we run simulations
     # --------------------------------------------------------------------------
-
+    # FIXME: this would locate the workspace in the bin dir of miniconda...
     project.initialize(LocalResource('$HOME/miniconda2/bin'))
 
     # --------------------------------------------------------------------------

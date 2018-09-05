@@ -24,17 +24,18 @@
 # <http://www.openpathsampling.org> or
 # <http://github.com/openpathsampling/openpathsampling
 # for details and license
+from __future__ import absolute_import
 
 
-from base import StorableMixin, create_to_dict
-from syncvar import SyncVariable, ObjectSyncVariable, JSONDataSyncVariable
-from cache import WeakKeyCache, WeakLRUCache, WeakValueCache, MaxCache, \
+from .base import StorableMixin, create_to_dict
+from .syncvar import SyncVariable, ObjectSyncVariable, JSONDataSyncVariable
+from .cache import WeakKeyCache, WeakLRUCache, WeakValueCache, MaxCache, \
     NoCache, Cache, LRUCache
-from dictify import ObjectJSON, UUIDObjectJSON
-from mongodb import MongoDBStorage
+from .dictify import ObjectJSON, UUIDObjectJSON
+from .mongodb import MongoDBStorage
 
-from object import ObjectStore
+from .object import ObjectStore
 
-from proxy import DelayedLoader, lazy_loading_attributes, LoaderProxy
+from .proxy import DelayedLoader, lazy_loading_attributes, LoaderProxy
 
-from file import FileStore, DataDict
+from .file import FileStore, DataDict

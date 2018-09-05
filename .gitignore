@@ -1,3 +1,20 @@
+# RP working directories from Tutorial
+examples/rp/rp.session*
+
+# Files for different systems
+examples/files/
+
+# Jupyter Notebooks
+**/**ipynb
+
+# Eclipse IDE files
+adaptivemd/.project
+adaptivemd/.pydevproject
+
+# Swap files
+**/*swp
+**/*swo
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -93,3 +110,6 @@ ENV/
 
 # rp test virtualenv
 examples/rp/myenv
+
+# generated version file
+adaptivemd/version.py

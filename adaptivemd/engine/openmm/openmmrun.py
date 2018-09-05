@@ -19,6 +19,7 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with MDTraj. If not, see <http://www.gnu.org/licenses/>.
 ##############################################################################
+from __future__ import absolute_import, print_function
 
 import os
 import argparse
@@ -28,9 +29,97 @@ import socket
 import numpy as np
 import mdtraj as md
 
+import time, random
+
 import simtk.unit as u
 from simtk.openmm import Platform, XmlSerializer
 from simtk.openmm.app import PDBFile, Simulation, DCDReporter, StateDataReporter
+
+
+
+
+def get_xml(xml_file):
+    # TODO file access control
+    attempt = 0
+    retries = 500
+    if not xml_file.endswith('.xml'):
+        raise IOError("{} must end in '.xml' for reading as XML file".format(xml_file))
+    while True:
+        try:
+            with open(xml_file) as f:
+                xml = f.read()
+                cereal = XmlSerializer.deserialize(xml)
+            return xml, cereal
+
+        except ValueError as e:
+            if attempt < retries:
+                attempt += 1
+                time.sleep(5*random.random())
+            else:
+                raise e
+
+
+def get_platform(platform_name):
+    if platform_name == 'fastest':
+        platform = None
+    else:
+        # TODO file access control
+        attempt = 0
+        retries = 500
+        while True:
+            try:
+                platform = Platform.getPlatformByName(platform_name)
+                return platform
+
+            except IndexError as e:
+                if attempt < retries:
+                    attempt += 1
+                    time.sleep(5*random.random())
+                else:
+                    raise e
+
+
+def get_pdbfile(topology_pdb):
+    # TODO file access control
+    attempt = 0
+    retries = 500
+    if not topology_pdb.endswith('.pdb'):
+        raise IOError("{} must end in '.pdb' for reading as PDB file".format(topology_pdb))
+    while True:
+        try:
+            pdb = PDBFile(topology_pdb)
+            return pdb
+
+        except IndexError as e:
+            if attempt < retries:
+                attempt += 1
+                time.sleep(5*random.random())
+            else:
+                raise e
+
+
+def read_input(platform, pdbfile, system, integrator):
+
+    return_order = ['get_platform', 'get_pdbfile',
+                    'get_system', 'get_integrator']
+
+    funcs = {'get_platform':   [get_platform, platform],
+             'get_pdbfile':    [get_pdbfile, pdbfile],
+             'get_system':     [get_xml, system],
+             'get_integrator': [get_xml, integrator]}
+
+    kfuncs = list(funcs.keys())
+    random.shuffle(kfuncs)
+    returns = dict()
+    while kfuncs:
+        op_name = kfuncs.pop(0)
+        func, arg = funcs[op_name]
+
+        returns.update({op_name: func(arg)})
+
+    return [returns[nxt] for nxt in return_order]
+
+
 
 if __name__ == '__main__':
 
@@ -141,7 +230,7 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    print 'GO...'
+    print('GO...')
 
     properties = None
 
@@ -159,26 +248,15 @@ if __name__ == '__main__':
                     args.platform + '_' + v.replace('_', '')
                 ] = value
 
-    if args.platform == 'fastest':
-        platform = None
-    else:
-        platform = Platform.getPlatformByName(args.platform)
+    # Randomizes the order of file reading to
+    # alleviate traffic from synchronization
+    platform, pdb, (system_xml, system), (integrator_xml, integrator) \
+     = read_input(args.platform, args.topology_pdb,
+                  args.system_xml, args.integrator_xml)
 
-    print 'Reading PDB'
 
-    pdb = PDBFile(args.topology_pdb)
-
-    print 'Done'
-
-    with open(args.system_xml) as f:
-        system_xml = f.read()
-        system = XmlSerializer.deserialize(system_xml)
-
-    with open(args.integrator_xml) as f:
-        integrator_xml = f.read()
-        integrator = XmlSerializer.deserialize(integrator_xml)
-
-    print 'Initialize Simulation'
+    print('Done')
+    print('Initialize Simulation')
 
     try:
         simulation = Simulation(
@@ -188,11 +266,13 @@ if __name__ == '__main__':
             platform,
             properties
         )
+        print("SIMULATION: ",simulation)
+
     except Exception:
         print('EXCEPTION', (socket.gethostname()))
         raise
 
-    print 'Done.'
+    print('Done.')
 
     print('# platform used:', simulation.context.getPlatform().getName())
 
@@ -210,11 +290,13 @@ if __name__ == '__main__':
     if args.restart:
         arr = np.load(args.restart)
         simulation.context.setPositions(arr['positions'] * u.nanometers)
+
         simulation.context.setVelocities(arr['velocities'] * u.nanometers/u.picosecond)
         simulation.context.setPeriodicBoxVectors(*arr['box_vectors'] * u.nanometers)
+
     else:
         simulation.context.setPositions(pdb.positions)
-        pbv = pdb.getTopology().getPeriodicBoxVectors()
+        pbv = system.getDefaultPeriodicBoxVectors()
         simulation.context.setPeriodicBoxVectors(*pbv)
         # set velocities to temperature in integrator
         try:
@@ -229,13 +311,14 @@ if __name__ == '__main__':
 
     output = args.output
 
+    types = None
     if args.types:
         # seems like we have JSON
         types_str = args.types.replace("'", '"')
-        print types_str
+        print(types_str)
         types = ujson.loads(types_str)
         if isinstance(types, dict):
-            for name, opts in types.iteritems():
+            for name, opts in types.items():
                 if 'filename' in opts and 'stride' in opts:
                     output_file = os.path.join(output, opts['filename'])
 
@@ -250,8 +333,8 @@ if __name__ == '__main__':
                         md.reporters.DCDReporter(
                             output_file, opts['stride'], atomSubset=atom_subset))
 
-                    print 'Writing stride %d to file `%s` with selection `%s`' % (
-                        opts['stride'], opts['filename'], opts['selection'])
+                    print('Writing stride %d to file `%s` with selection `%s`' % (
+                        opts['stride'], opts['filename'], opts['selection']))
 
     else:
         # use defaults from arguments
@@ -266,13 +349,19 @@ if __name__ == '__main__':
             r.report(simulation, state)
 
     if args.report and args.verbose:
+        output_stride = args.interval_store
+        if types:
+            output_stride = min([oty['stride'] for oty in types.values()])
         simulation.reporters.append(
             StateDataReporter(
                 stdout,
-                args.interval_report,
+                output_stride,
                 step=True,
                 potentialEnergy=True,
-                temperature=True))
+                temperature=True,
+                speed=True,
+                separator="  ||  ",
+            ))
 
     restart_file = os.path.join(output, 'restart.npz')
 

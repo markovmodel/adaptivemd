@@ -19,10 +19,10 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with MDTraj. If not, see <http://www.gnu.org/licenses/>.
 ##############################################################################
+from __future__ import print_function, absolute_import
 
-
-from mongodb import StorableMixin
-from util import DT
+from .mongodb import StorableMixin
+from .util import DT
 
 
 class LogEntry(StorableMixin):
@@ -31,9 +31,10 @@ class LogEntry(StorableMixin):
 
     Examples
     --------
+    >>> from adaptivemd import Project
     >>> p = Project('tutorial-project')
     >>> l = LogEntry('worker', 'failed execution', 'simsalabim, didnt work')
-    >>> print l
+    >>> print(l) # doctest: +SKIP
     >>> p.logs.add(l)
 
     Attributes
