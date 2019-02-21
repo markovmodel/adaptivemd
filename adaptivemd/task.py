@@ -31,6 +31,9 @@ from .file import File, JSONFile, FileTransaction
 from .util import get_function_source
 from .mongodb import StorableMixin, SyncVariable, ObjectSyncVariable
 
+import logging
+logger = logging.getLogger(__name__)
+
 
 class BaseTask(StorableMixin):
     _copy_attributes = [
@@ -1180,6 +1183,14 @@ class PythonTask(PrePostTask):
     def _cb_success(self, scheduler, path=None):
         # here is the logic to retrieve the result object
         # the output file is a JSON and these know how to load itself
+
+        # TODO Cleaner Hard check possible?
+        #       need to ensure objects sync across distributed layers
+        is_stored = scheduler.project.tasks._set.load(self.__uuid__, force_load=True).output_stored
+        logger.info("{}.output_stored after reloading: ".format(self), is_stored)
+        if is_stored:
+            logger.info("Skipping callback, output already stored")
+            return
 
         if self.store_output:
             # by default store the result. If you handle it yourself you
