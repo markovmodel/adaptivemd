@@ -2,6 +2,7 @@ from __future__ import print_function, absolute_import
 
 import os
 import time
+import six
 
 from .mongodb import (StorableMixin, ObjectJSON,
                       JSONDataSyncVariable, SyncVariable, ObjectSyncVariable, DataDict)
@@ -50,7 +51,7 @@ class Location(StorableMixin):
 
         if isinstance(location, Location):
             self.location = location.location
-        elif isinstance(location, (unicode, str)):
+        elif isinstance(location, six.string_types):
             self.location = str(location)
         else:
             raise ValueError('location can only be a `File` or a string.')
@@ -487,7 +488,7 @@ class File(Location):
     def __repr__(self):
         return "'%s'" % self.basename
 
-    def load(self, scheduler=None):
+    def load(self, scheduler=None, path=None):
         """
         Load a local file into memory
 
