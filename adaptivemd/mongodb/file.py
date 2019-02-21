@@ -3,8 +3,10 @@ from __future__ import absolute_import, print_function
 import logging
 import gridfs
 from uuid import UUID
+import time
+import six
 
-from .base import StorableMixin, long_t
+from .base import StorableMixin, long_t, hex_t
 from .object import ObjectStore
 from .proxy import LoaderProxy
 
@@ -43,8 +45,10 @@ class FileStore(ObjectStore):
         return 0
 
     def _load(self, idx):
-        _id = hex(idx)
+        _id = hex_t(idx)
+
         f = self.grid.find_one({'_id': _id})
+
         obj = self.storage.simplifier.from_json(f.read())
         obj.__store__ = self
         obj.__uuid__ = idx

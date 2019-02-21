@@ -595,8 +595,19 @@ class UUIDObjectJSON(ObjectJSON):
 
             elif '_hex_uuid' in obj and '_store' in obj:
                 store = self.storage._stores[obj['_store']]
-                _long = long_t(obj['_hex_uuid'], 16)
+                hex_uuid = obj['_hex_uuid']
+                if six.PY3:
+                    hex_uuid = hex_uuid.rstrip("L")
 
+                _long = long_t(hex_uuid, 16)
+                # FIXME extend to check for infinite
+                #       recursion via any cycle of builders
+                # FIXME this condition check will result in
+                #       attributeerror if builder isn't a
+                #       properly built stored object
+                #  builder --> builders :: list
+                #  build, from_simple_dict, and
+                #  object.load, object._load
                 if builder and builder.__uuid__ == _long:
                     result = builder
 
@@ -606,7 +617,11 @@ class UUIDObjectJSON(ObjectJSON):
                     if builder:
                         load_args.append(builder)
 
-                    result = store.load(*load_args)
+                    try:
+                        result = store.load(*load_args)
+
+                    except (ValueError,RuntimeError):
+                        result = None
 
                 return result
 
