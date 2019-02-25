@@ -41,7 +41,7 @@ from simtk.openmm.app import PDBFile, Simulation, DCDReporter, StateDataReporter
 def get_xml(xml_file):
     # TODO file access control
     attempt = 0
-    retries = 500
+    retries = 10
     if not xml_file.endswith('.xml'):
         raise IOError("{} must end in '.xml' for reading as XML file".format(xml_file))
     while True:
@@ -51,7 +51,8 @@ def get_xml(xml_file):
                 cereal = XmlSerializer.deserialize(xml)
             return xml, cereal
 
-        except ValueError as e:
+        #except ValueError as e:
+        except:
             if attempt < retries:
                 attempt += 1
                 time.sleep(5*random.random())
@@ -65,13 +66,14 @@ def get_platform(platform_name):
     else:
         # TODO file access control
         attempt = 0
-        retries = 500
+        retries = 10
         while True:
             try:
                 platform = Platform.getPlatformByName(platform_name)
                 return platform
 
-            except IndexError as e:
+            #except IndexError as e:
+            except:
                 if attempt < retries:
                     attempt += 1
                     time.sleep(5*random.random())
@@ -82,7 +84,7 @@ def get_platform(platform_name):
 def get_pdbfile(topology_pdb):
     # TODO file access control
     attempt = 0
-    retries = 500
+    retries = 10
     if not topology_pdb.endswith('.pdb'):
         raise IOError("{} must end in '.pdb' for reading as PDB file".format(topology_pdb))
     while True:
@@ -90,7 +92,8 @@ def get_pdbfile(topology_pdb):
             pdb = PDBFile(topology_pdb)
             return pdb
 
-        except IndexError as e:
+        #except IndexError as e:
+        except:
             if attempt < retries:
                 attempt += 1
                 time.sleep(5*random.random())

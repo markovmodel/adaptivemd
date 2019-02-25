@@ -114,9 +114,10 @@ class PyEMMAAnalysis(Analysis):
                 tica_lag=10,
                 tica_dim=2,
                 tica_stride=2,
-                msm_states=10,
+                msm_states=None,
                 msm_lag=2,
                 clust_stride=2,
+                tica_weights='empirical',
                 resource_name=None,
                 cpu_threads=1,
                 gpu_contexts=0,
@@ -133,7 +134,9 @@ class PyEMMAAnalysis(Analysis):
             the lag-time used for tCIA
         tica_dim : int
             number of dimensions using in tICA. This refers to the number of tIC used
-        msm_states : int
+        tica_weights : str
+            reweighting method for tICA calculation in pyemma.coor.tica
+        msm_states : int or None
             number of micro-states used for the MSM
         msm_lag : int
             lagtime used for the MSM construction
@@ -195,6 +198,7 @@ class PyEMMAAnalysis(Analysis):
             tica_lag=tica_lag,
             tica_dim=tica_dim,
             tica_stride=tica_stride,
+            tica_weights=tica_weights,
             msm_states=msm_states,
             msm_lag=msm_lag,
             clust_stride=clust_stride

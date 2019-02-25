@@ -272,7 +272,7 @@ class ObjectStore(StorableMixin):
         """
         if hasattr(self, '_document'):
             if self._document:
-                return self._document.count()
+                return self._document.count_documents({})
 
         return 0
 
@@ -481,9 +481,9 @@ class ObjectStore(StorableMixin):
 
         return modified
 
-    def _load(self, idx, builder=None):
+    def _load(self, idx, builders=[]):
         one = self._document.find_one({'_id': str(UUID(int=idx))})
-        obj = self.storage.simplifier.from_simple_dict(one, builder)
+        obj = self.storage.simplifier.from_simple_dict(one, builders)
         obj.__store__ = self
         return obj
 
@@ -659,7 +659,7 @@ class ObjectStore(StorableMixin):
         idx = self._document.find_one(dct)['_id']
         return self.load(int(UUID(idx)))
 
-    def load(self, idx, builder=None, force_load=False):
+    def load(self, idx, builders=[], force_load=False):
         """
         Returns an object from the storage.
 
@@ -682,7 +682,7 @@ class ObjectStore(StorableMixin):
                 self.check_size()
                 if idx not in self.index:
                     raise ValueError(
-                        'str %s not found in storage' % idx)
+                        'str %s not found in storage for class %s' % (idx, self.content_class.__name__))
 
         else:
             raise ValueError((
@@ -709,7 +709,11 @@ class ObjectStore(StorableMixin):
             'Calling load object of type `%s` @ IDX #%d' %
             (self.content_class.__name__, idx))
 
-        obj = self._load(idx, builder)
+        logger.debug(
+            'Builder Heritage: {}'.format(
+            builders))
+
+        obj = self._load(idx, builders)
 
         logger.debug(
             'Calling load object of type %s and IDX # %d ... DONE' %

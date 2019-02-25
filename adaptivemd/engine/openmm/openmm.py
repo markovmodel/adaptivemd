@@ -4,6 +4,7 @@
 # Copyright 2017 FU Berlin and the Authors
 #
 # Authors: Jan-Hendrik Prinz
+#          John Ossyra
 # Contributors:
 #
 # `adaptiveMD` is free software: you can redistribute it and/or modify
@@ -138,11 +139,14 @@ class OpenMMEngine(Engine):
                 # cannot use a trajectory where we do not have full coordinates
                 return
 
-            t.pre.append('mdconvert -o {target} -i {index} -t {pdb} {source}'.format(
+            cmd = ('mdconvert -o {target} -i {index} -t {pdb} {source}'.format(
                 target=input_pdb,  # input.pdb is used as starting structure
                 index=idx,         # the index from the source trajectory
                 pdb=initial_pdb,   # use the main pdb
                 source=input_traj.outputs(ty)))  # we pick output ty
+
+            t.pre.append(cmd)
+
         else:
             # for now we assume that if the initial frame is None or
             # not specific use the engines internal. That should be changed
@@ -157,11 +161,7 @@ class OpenMMEngine(Engine):
         t.touch(output)
 
         # TODO option for retry
-        # TODO use filenames from engine
-        retry = '\nj=0\ntries=10\nsleep=1\n'
-        retry += '\ntrajfile=traj/protein.dcd\n\n'
-        retry += 'while [ $j -le $tries ]; do if ! [ -s $trajfile ]; then {0}; fi; sleep 1; j=$((j+1)); done'
-
+        #       -  use filenames from engine
         cmd = 'python openmmrun.py {args} {types} -s {system} -i {integrator} -t {pdb} --length {length} {output}'.format(
             pdb=input_pdb,
             types=self._create_output_str(),
@@ -172,7 +172,6 @@ class OpenMMEngine(Engine):
             args=self.args,
         )
 
-        cmd = retry.format(cmd)
         t.append(cmd)
 
         t.put(output, target)
@@ -222,10 +221,6 @@ class OpenMMEngine(Engine):
 
         # TODO option for retry
         # TODO use filenames from engine
-        retry = '\nj=0\ntries=10\nsleep=1\n'
-        retry += '\ntrajfile=extension/protein.dcd\n\n'
-        retry += 'while [ $j -le $tries ]; do if ! [ -s $trajfile ]; then {0}; fi; sleep 1; j=$((j+1)); done'
-
         cmd = ('python openmmrun.py {args} {types} -s {system} -i {integrator} --restart {restart} -t {pdb} '
                '--length {length} {output}').format(
             pdb=initial_pdb,
@@ -238,7 +233,6 @@ class OpenMMEngine(Engine):
             types=self._create_output_str()
         )
 
-        cmd = retry.format(cmd)
         t.append(cmd)
 
         # join both trajectories for all outputs

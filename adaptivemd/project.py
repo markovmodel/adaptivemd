@@ -906,6 +906,34 @@ class Project(object):
 
         [check_condition(c) for c in condition]
 
+    def reload_tasks(self):
+        """
+        Sychronize the tasks cache by deleting and reloading the
+        entire contents.
+        """
+        self.tasks._set.clear_cache()
+        self.tasks._set.load_indices()
+
+    @property
+    def task_states(self, deep_check=False):
+        """
+        Tallies for each task state.
+        Returns
+        -------
+        count of the number of tasks in each observed task state.
+        """
+        taskstates = dict()
+        if deep_check:
+            self.tasks._set.clear_cache()
+            self.tasks._set.load_indices()
+
+        for task in self.tasks:
+            if task.state not in taskstates: taskstates[task.state] = 1
+            else: taskstates[task.state] += 1
+
+        return taskstates
+
+
     class EventTriggerTimer(threading.Thread):
         """
         A special thread to call the project trigger mechanism

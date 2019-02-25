@@ -4,6 +4,7 @@
 # Copyright 2017 FU Berlin and the Authors
 #
 # Authors: Jan-Hendrik Prinz
+#          John Ossyra
 # Contributors:
 #
 # `adaptiveMD` is free software: you can redistribute it and/or modify
@@ -66,8 +67,8 @@ del get_versions
 
 import imp
 try: 
-    # Only layer I've found that works
-    # this way to indicate an RP install
+    # Saga is only layer that works this
+    # way to indicate Radical Pilot install
     imp.find_module('saga')
     from .rp.client import Client
 except ImportError:

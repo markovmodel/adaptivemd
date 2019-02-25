@@ -22,6 +22,8 @@
 
 from __future__ import print_function
 
+from datetime import datetime
+
 # The remote function to be called py PyEMMAAnalysis
 
 
@@ -36,10 +38,11 @@ def remote_analysis(
         selection=None,
         features=None,
         topfile='input.pdb',
+        tica_weights='empirical',
         tica_lag=2,
         tica_dim=2,
         tica_stride=2,
-        msm_states=5,
+        msm_states=None,
         msm_lag=2,
         clust_stride=2):
     """
@@ -96,7 +99,7 @@ def remote_analysis(
         number of dimensions using in tICA. This refers to the number of tIC used
     tica_stride : int
         a stride to be used in tICA calculation. Can speed up computation at reduced accuracy
-    msm_states : int
+    msm_states : int or None
         number of microstates used for the MSM
     msm_lag : int
         lagtime used for the MSM construction
@@ -237,26 +240,34 @@ def remote_analysis(
     files = [os.path.join(t, traj_name) for t in trajectories]
     inp = pyemma.coordinates.source(files, feat)
 
-    tica_obj = pyemma.coordinates.tica(inp, lag=tica_lag,
+    tica_obj = pyemma.coordinates.tica(inp, lag=tica_lag, weights=tica_weights,
                    dim=tica_dim, kinetic_map=True, stride=tica_stride)
+
+    print('tica is done', datetime.now())
 
     y = tica_obj.get_output()
 
     cl = pyemma.coordinates.cluster_kmeans(data=y, k=msm_states,
              max_iter=50, stride=clust_stride)
 
+    print('clustering is done', datetime.now())
+
     m = pyemma.msm.estimate_markov_model(cl.dtrajs, msm_lag)
+
+    print('MSM estimation is done', datetime.now())
+
+    clust_k = cl.clustercenters.shape[0]
 
     data = {
         'input': {
-            'n_atoms': topology.n_atoms,
-            'frames': inp.n_frames_total(),
+            'n_atoms':   topology.n_atoms,
+            'frames':    inp.n_frames_total(),
             'n_trajectories': inp.number_of_trajectories(),
-            'lengths': inp.trajectory_lengths(),
+            'lengths':   inp.trajectory_lengths(),
             'selection': selection
         },
         'features': {
-            'features': features,
+            'features':   features,
             'n_features': inp.dimension(),
         },
         'tica': {
@@ -266,7 +277,7 @@ def remote_analysis(
             'eigenvectors': tica_obj.eigenvectors,
         },
         'clustering': {
-            'k':       msm_states,
+            'k':       clust_k,
             'dtrajs':  [ t for t in cl.dtrajs ],
             'centers': cl.clustercenters,
         },
