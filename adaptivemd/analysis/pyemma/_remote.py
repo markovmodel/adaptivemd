@@ -34,7 +34,6 @@ from datetime import datetime
 #                --> pull pars from args pool
 def remote_analysis(
         trajectories,
-        traj_name='output.dcd',
         selection=None,
         features=None,
         topfile='input.pdb',
@@ -50,10 +49,7 @@ def remote_analysis(
 
     Parameters
     ----------
-    trajectories : Sized of `Trajectory`
-        a list of `Trajectory` objects
-    traj_name : str
-        name of the trajectory file with the trajectory directory given
+    trajectories : Trajectory file paths
     selection : str
         an atom subset selection string as used in mdtraj .select
     features : dict, list<dict>, or None
@@ -237,8 +233,7 @@ def remote_analysis(
 
     print('#trajectories :', len(trajectories))
 
-    files = [os.path.join(t, traj_name) for t in trajectories]
-    inp = pyemma.coordinates.source(files, feat)
+    inp = pyemma.coordinates.source(trajectories, feat)
 
     tica_obj = pyemma.coordinates.tica(inp, lag=tica_lag, weights=tica_weights,
                    dim=tica_dim, kinetic_map=True, stride=tica_stride)
