@@ -11,8 +11,8 @@
 
 USER="osz"
 CWD="$(pwd)"
-# Line to install AdaptiveMD itself via
-# this script, otherwise can do later
+# Line to install AdaptiveMD itself via this
+# script, leave empty if you want to do later
 INSTALL_ADAPTIVEMD="python setup.py develop"
 # TODO mongo via conda, mongo 4.0
 MONGO_VERSION="mongodb-linux-x86_64-3.6.11"
