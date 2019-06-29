@@ -9,10 +9,10 @@ authors:
 
 emails:
   - jossyra@vols.utk.edu
-  - jan-hendrik.prinz@fu-berlin.de
+  - frank.noe@fu-berlin.de
 
 
-description: 'A framework to run Molecular Dynamics Simulations in Adaptive Sampling Workflows.'
+description: 'A workflow framework to run Molecular Dynamics Simulations with Adaptive Sampling.'
 
 
 long_description: |
@@ -28,7 +28,7 @@ classifiers: |
   License :: OSI Approved :: GNU Lesser General
   Public License v2.1 or later (LGPLv2.1+)
   Programming Language :: Python
-  Programming Language :: Python :: 2
+  Programming Language :: Python :: 3
   Topic :: Scientific/Engineering :: Bio-Informatics
   Topic :: Scientific/Engineering :: Chemistry
   Operating System :: POSIX
@@ -47,7 +47,7 @@ packages:
   - adaptivemd.analysis.pyemma
   - adaptivemd.engine.openmm
   - adaptivemd.mongodb
-  #- adaptivemd.rp
+  - adaptivemd.rp
 
 platforms:
   - Linux
@@ -61,13 +61,11 @@ scripts:
 
 
 install_requires:
-  - python
   - jsonschema
   - pyyaml
   - six
-  - numpy
+  - numpy<1.16
   - ujson
-  #- radical.pilot
   - pymongo>=3
 
 
