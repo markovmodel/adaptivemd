@@ -1,9 +1,11 @@
 #!/bin/bash
 
+#-------------------------------------------------------------------#
+#         Configuration for the installer first
+#-------------------------------------------------------------------#
 # Environment Setup:
 #     Application & Task Runtime:
-#       - Conda env
-#       - Python 3
+#       - inside conda env
 #
 #     You must correctly match the CUDA
 #     version on your cluster with OpenMM
@@ -23,6 +25,7 @@ PYEMMA_VERSION="pyemma"
 CUDA_MODULE="module load cuda/9.2"
 OPENMM_VERSION="openmm -c omnia/label/cuda92"
 
+#-------------------------------------------------------------------#
 # Software locations configuration
 #  - change these for your cluster before running
 #    i.e. some clusters have preffered locations
@@ -43,12 +46,14 @@ ADMD_SAMPLINGFUNCS="/lustre/or-hydra/cades-bsd/$USER/sampling"
 ADMD_PROFILE="$HOME/admd.bashrc"
 touch $ADMD_PROFILE
 
+#-------------------------------------------------------------------#
 # Extra actions to include for loading AdaptiveMD Environment
 ADMD_ACTIONS[0]="module unload python"
 # e.g. if you used a system anaconda module to create this env
 #ADMD_ACTIONS[1]="module load python/anaconda"
 
 #-------------------------------------------------------------------#
+#             Now onto the installation itself
 #-------------------------------------------------------------------#
 echo ""
 echo "-----------------------------------------------------------"
@@ -219,6 +224,8 @@ echo "<<<<<<<<<<<< ADMD_PROFILE <<<<<<<<<<<<<<<<<<<<<<<<"
 
 cd "$CWD"
 
+#-------------------------------------------------------------------#
+#-------------------------------------------------------------------#
 if [ ! -z "$INSTALL_ADAPTIVEMD" ]; then
     echo "AdaptiveMD Environment is installed,"
     echo "finishing up by installing the"
@@ -232,7 +239,10 @@ else
     echo "AdaptiveMD Python Package separately"
 fi
 
+echo ""
+
 #-------------------------------------------------------------------#
+#           Done, just printing some useful info
 #-------------------------------------------------------------------#
 echo "-----------------------------------------------------------"
 echo "--------------------   Install is Done    -----------------"
@@ -241,11 +251,9 @@ echo "To read AdaptiveMD environment profile, use"
 echo "source $ADMD_PROFILE"
 echo ""
 echo "Conda env name: \"$ENV_NAME\""
+echo ""
 echo "To use the environment, first source the AdaptiveMD"
 echo "profile and then source the environment:"
 echo "source activate $ENV_NAME"
 echo ""
 echo "-----------------------------------------------------------"
-
-#-------------------------------------------------------------------#
-#-------------------------------------------------------------------#
