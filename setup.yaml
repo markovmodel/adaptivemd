@@ -58,6 +58,9 @@ released: false
 
 scripts:
   - adaptivemd/scripts/adaptivemdworker
+  - adaptivemd/scripts/launch_amongod
+  - adaptivemd/scripts/startworker
+  - adaptivemd/scripts/startdb
 
 
 install_requires:
