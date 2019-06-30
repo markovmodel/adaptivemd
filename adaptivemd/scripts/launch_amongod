@@ -1,0 +1,45 @@
+#!/bin/bash
+
+DBPATH=$1
+DBPORT=$2
+LAUNCH=$3
+
+if [ -z "$DBPORT" ]
+then
+  DBPORT=27017
+fi
+
+if [ -z "$DBPATH" ]
+then
+  echo "Need to give a path for mongodb instance as script argument"
+  exit 1
+else
+  if ! [ -z "`lsof -Pi :$DBPORT | grep $DBPORT`" ]
+  then
+    echo "Port $DBPORT is already in use, try giving a different port as second argument"
+    exit 1
+  fi
+fi
+
+mkdir -p $DBPATH
+mkdir $DBPATH/db
+mkdir $DBPATH/socket
+
+echo -e "net:\n   unixDomainSocket:\n      pathPrefix: $DBPATH/socket\n   bindIp: 0.0.0.0\n   port:   $DBPORT\n" > $DBPATH/db.cfg
+
+if [ ! -z "$(command -v numactl)" ]; then
+  launcher="numactl --interleave=all "
+else
+  launcher=""
+fi
+
+if [ "$LAUNCH" = "--launch" ]
+then
+  postcommand=""
+else
+  postcommand="&"
+fi
+
+mongodcommand="${launcher}mongod --dbpath $DBPATH/db/ --config $DBPATH/db.cfg &>> $DBPATH/db.log $postcommand"
+
+eval "$mongodcommand"
