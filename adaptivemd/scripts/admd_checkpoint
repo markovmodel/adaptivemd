@@ -1,0 +1,15 @@
+#!/bin/bash
+
+echo "Did you prepare modeller args for this round correctly?"
+echo "Typed in your workflow setup correctly?"
+
+read -t 1 -n 9999 discard
+read -n 1 -p  " --- Type \"y\" if ready to proceed: " proceedinput
+
+if [ "$proceedinput" = "y" ]
+then
+    echo ""
+    echo "Moving to next phase"
+else
+    exit 0
+fi

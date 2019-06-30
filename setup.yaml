@@ -48,6 +48,7 @@ packages:
   - adaptivemd.engine.openmm
   - adaptivemd.mongodb
   - adaptivemd.runtime
+  - adaptivemd.sampling
   #- adaptivemd.rp
 
 
