@@ -47,11 +47,14 @@ packages:
   - adaptivemd.analysis.pyemma
   - adaptivemd.engine.openmm
   - adaptivemd.mongodb
-  - adaptivemd.rp
+  - adaptivemd.runtime
+  #- adaptivemd.rp
+
 
 platforms:
   - Linux
   - Mac OS X
+
 
 released: false
 
@@ -61,6 +64,8 @@ scripts:
   - adaptivemd/scripts/launch_amongod
   - adaptivemd/scripts/startworker
   - adaptivemd/scripts/startdb
+  - adaptivemd/scripts/admd_checkpoint
+  - adaptivemd/scripts/admd_workload
 
 
 install_requires:
@@ -74,9 +79,11 @@ install_requires:
 
 include_package_data: true
 
+
 package_data:
   adaptivemd:
     - adaptivemd/scripts/_run_.py
+
 
 license: LGPL 2.1 or later
 license_file: LICENSE

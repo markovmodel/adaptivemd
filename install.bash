@@ -21,9 +21,13 @@ MONGO_VERSION="mongodb-linux-x86_64-3.6.11"
 CONDA_VERSION="Miniconda3-latest-Linux-x86_64"
 PYTHON_VERSION="3.6.6"
 PYEMMA_VERSION="pyemma"
+OPENMM_VERSION="openmm -c omnia/label/cuda92"
 # CUDA module line saved in ADMD_PROFILE
 CUDA_MODULE="module load cuda/9.2"
-OPENMM_VERSION="openmm -c omnia/label/cuda92"
+
+# Runtime preferences and specifics for your cluster
+ADMD_LOGLEVEL="DEBUG"
+ADMD_NETDEVICE="eth0"
 
 #-------------------------------------------------------------------#
 # Software locations configuration
@@ -118,6 +122,16 @@ echo "" | tee -a $ADMD_PROFILE
 echo "<<<<<<<<<<<< ADMD_PROFILE <<<<<<<<<<<<<<<<<<<<<<<<"
 echo ""
 
+echo ">>>>>>>>>>>> ADMD_PROFILE >>>>>>>>>>>>>>>>>>>>>>>>"
+echo "# AdaptiveMD Environment Runtime Settings" | tee -a $ADMD_PROFILE
+echo "#  - modify to match the compute node interconnect" | tee -a $ADMD_PROFILE
+echo "#  - and your output level needs" | tee -a $ADMD_PROFILE
+echo "ADMD_LOGLEVEL=\"$ADMD_LOGLEVEL\"" | tee -a $ADMD_PROFILE
+echo "ADMD_NETDEVICE=\"$ADMD_NETDEVICE\"" | tee -a $ADMD_PROFILE
+echo "" | tee -a $ADMD_PROFILE
+echo "<<<<<<<<<<<< ADMD_PROFILE <<<<<<<<<<<<<<<<<<<<<<<<"
+echo ""
+
 read -t 1 -n 9999 discard
 read -n 1 -s -r -p " --- Press any key to continue"
 
@@ -136,11 +150,15 @@ echo "ADMD_MDSYSTEMS=\"$ADMD_MDSYSTEMS\"" | tee -a $ADMD_PROFILE
 echo "ADMD_SAMPLINGFUNCS=\"$ADMD_SAMPLINGFUNCS\"" | tee -a $ADMD_PROFILE
 echo "" | tee -a $ADMD_PROFILE
 echo "<<<<<<<<<<<< ADMD_PROFILE <<<<<<<<<<<<<<<<<<<<<<<<"
+
 mkdir -p "$ADMD_DATA"
 mkdir -p "$ADMD_SOFTWARE"
 mkdir -p "$ADMD_WORKFLOWS"
 mkdir -p "$ADMD_MDSYSTEMS"
 mkdir -p "$ADMD_SAMPLINGFUNCS"
+
+touch "$ADMD_SAMPLINGFUNCS/__init__.py"
+touch "$ADMD_SAMPLINGFUNCS/user_functions.py"
 
 #-------------------------------------------------------------------#
 #-------------------------------------------------------------------#
@@ -207,13 +225,13 @@ read -n 1 -p  " --- Press [enter] to keep this name, or type a new one: " procee
 echo ""
 
 if [ ! -z "$proceedinput" ]; then
-  ENV_NAME="$proceedinput"
+  ADMD_ENV_NAME="$proceedinput"
 else
-  ENV_NAME="$INSTALL_DIRNAME"
+  ADMD_ENV_NAME="$INSTALL_DIRNAME"
 fi
 
-conda create  --yes -n $ENV_NAME python=$PYTHON_VERSION
-source activate $ENV_NAME
+conda create  --yes -n $ADMD_ENV_NAME python=$PYTHON_VERSION
+source activate $ADMD_ENV_NAME
 conda install --yes $OPENMM_VERSION
 conda install --yes $PYEMMA_VERSION
 
@@ -250,10 +268,12 @@ echo ""
 echo "To read AdaptiveMD environment profile, use"
 echo "source $ADMD_PROFILE"
 echo ""
-echo "Conda env name: \"$ENV_NAME\""
+echo "Conda env name: \"$ADMD_ENV_NAME\""
 echo ""
 echo "To use the environment, first source the AdaptiveMD"
 echo "profile and then source the environment:"
-echo "source activate $ENV_NAME"
+echo "source activate $ADMD_ENV_NAME"
+echo " --or--"
+echo "conda activate $ADMD_ENV_NAME"
 echo ""
 echo "-----------------------------------------------------------"
