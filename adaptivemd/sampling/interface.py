@@ -50,7 +50,7 @@ def get_sampling_function(name_func, backup_func=None, **sfkwargs):
     _func = getattr(sampling_functions, name_func, None)
 
     if _func is None:
-        _func = getattr(user_sampling_functions, name_func, None)
+        _func = getattr(user_functions, name_func, None)
 
     assert callable(_func)
 
@@ -58,7 +58,7 @@ def get_sampling_function(name_func, backup_func=None, **sfkwargs):
         _backup_func = getattr(sampling_functions, backup_func, None) 
 
         if _backup_func is None:
-            _backup_func = getattr(user_sampling_functions, backup_func, None) 
+            _backup_func = getattr(user_functions, backup_func, None) 
 
         assert callable(_backup_func)
 
