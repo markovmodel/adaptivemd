@@ -1,0 +1,21 @@
+#!/bin/bash
+
+DBPATH=$1
+DBPORT=$2
+NETDEVICE=$3
+
+if [ -z "$NETDEVICE" ]
+then
+  # Can choose to default to some device
+  #NETDEVICE="eth0"
+  # Default to fail
+  echo "Error: A Network Device must be specified to support" >> admd.mongodb.err
+  echo "       the AdaptiveMD Worker connections" >> admd.mongodb.err
+fi
+
+# Parse the IP address of this compute node for the given NETDEVICE
+# and write it to a file for all the workers to read
+DBHOST=`ip addr show $NETDEVICE | grep -Eo '(addr:)?([0-9]*\.){3}[0-9]*' | head -n1`
+echo "$DBHOST" > $DBPATH/db.hostname
+
+launch_amongod $DBPATH $DBPORT --launch 2> admd.mongodb.err 1> admd.mongodb.out
