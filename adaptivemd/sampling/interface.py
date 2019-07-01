@@ -25,8 +25,9 @@ import os
 import traceback
 
 from ..utils import get_logger
-import .sampling_functions
+logger = get_logger(__name__)
 
+import .functions
 user_sampling_functions = os.environ.get("ADMD_SAMPLINGFUNCS", None)
 
 # Error if given non-existing location
@@ -38,16 +39,19 @@ if user_sampling_functions:
 '''This file provides an interface for using sampling functions
 that may be pre-packaged in adaptivemd or written by users.
 User-defined functions should take existing examples as a
-starting point. These are called
-through sampling_function defined in get_sampling_function, which handles
-the arguments and provides the routines that should be replicated
+starting point. The specified sampling function is found and
+defined in `get_sampling_function` interface, which handles
+the required arguments and passes function-specific ones to
+the actual sampling function. This interface provides the
+routines that should be replicated
 for all sampling functions, currently this is simply converting
-them to a runnable form, ie trajectory objects.
+them to a runnable form, ie trajectory objects. Sampling
+algorithm specifics require at least the basic logic contained here.
 '''
 
 def get_sampling_function(name_func, backup_func=None, **sfkwargs): 
 
-    _func = getattr(sampling_functions, name_func, None)
+    _func = getattr(functions, name_func, None)
 
     if _func is None:
         _func = getattr(user_functions, name_func, None)
@@ -55,7 +59,7 @@ def get_sampling_function(name_func, backup_func=None, **sfkwargs):
     assert callable(_func)
 
     if backup_func:
-        _backup_func = getattr(sampling_functions, backup_func, None) 
+        _backup_func = getattr(functions, backup_func, None) 
 
         if _backup_func is None:
             _backup_func = getattr(user_functions, backup_func, None) 
