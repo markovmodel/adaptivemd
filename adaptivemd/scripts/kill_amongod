@@ -1,0 +1,32 @@
+#!/bin/bash
+
+SEARCHKEY="$1"
+
+if [ ! -z "$SEARCHKEY" ]
+then
+  MP=`ps faux | grep "mongod" | grep -v "grep" | grep -v "kill_amongod" | grep "$SEARCHKEY" | tail -n1`
+else
+  MP=`ps faux | grep "mongod" | grep -v "grep" | grep -v "kill_amongod" | tail -n1`
+fi
+
+MPID=`echo $MP | awk '{print $2}'`
+
+echo "$MP"
+echo " --- Kill above (hopefully 'mongod') process with ID $MPID?"
+
+if [ ! -z "$MPID" ]
+then
+  read -t 1 -n 9999 discard
+  read -n 1 -p  " --- then type \"y\": " proceedinput
+  echo ""
+else
+  echo "No 'mongod' process found"
+fi
+
+if [ "$proceedinput" = "y" ]
+then
+  kill $MPID
+else
+  echo "Ok, not doing anything"
+  echo "(press lower case \"y\" to kill)"
+fi
