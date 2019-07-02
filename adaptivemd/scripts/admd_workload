@@ -1,0 +1,149 @@
+#!/bin/bash 
+
+#------------------------------------------------------------------------------#
+#
+# See `workflow.sh` example file as a template to design your own workflows.
+#
+#       Args to this script are:
+#
+#       1          2          3        4        5       6        7
+# roundnumber   projname wkloadtype  ntask  mdsteps tjsteps afterntjs
+#
+#       8          9         10       11       12      13       14       15
+# anlyztjlength samplefunc minutes execflag sysname  mfreq     pgreq  platform
+#
+#------------------------------------------------------------------------------#
+
+#------------------------------------------------------------------------------#
+#
+#
+# application - Instance of AdaptiveMD that runs on head node before job. This
+#               instance seeds tasks that constitute AdaptiveMD workloads. It
+#               shuts down after issueing tasks, and comes back up for each
+#               call to this script from `workflow.sh`.
+#
+#               There is currently no
+#               ability to change the database address during a live instance,
+#               so as the database is moved to compute nodes for job execution,
+#               this instance is just shut down by design.
+#
+#               For small-scale
+#               workflows, you could just have workers tunnel out from compute
+#               nodes to the database instance on head node, but your admin
+#               will probably get upset pretty quickly that you are opening
+#               tons of connections and causing large network traffic between
+#               head node and compute node as each worker connects to mongod
+#               instance individually.
+#
+#
+# controller  - Instance of AdaptiveMD that runs during job to shut down
+#               workers after they are done. In the case of running multiple
+#               tasks inside single job, this instance would issue new tasks
+#               while the job is running before shutting down the workers.
+#
+#               TODO FIXME currently there is a hardcoded 1:1 relationship
+#               between `admd_workload` calls and rounds of AdaptiveMD tasks,
+#               but this is only due to hardcoding in the file `runtime`
+#
+#
+#------------------------------------------------------------------------------#
+
+echo "Got these arguments for AdaptiveMD workload:"
+echo $@
+
+echo "Using AdaptiveMDWorkers to Execute workload"
+echo "Workload wall time is ${10} minutes"
+
+# types: `trajs`, `model`, `cleanup`, or `all`
+#  - type causes modification to application arguments downstream
+WKLTYPE="$3"
+
+# Splitting a single command with DB parent folder and port number
+DLM=":"
+DBHOME=$(echo ${11} | awk -F"$DLM" '{print $1}')
+DBPORT=$(echo ${11} | awk -F"$DLM" '{print $2}')
+
+# Fill in to use default port if None was given
+if [ -z "$DBPORT" ]
+then
+  DBPORT="27017"
+fi
+
+# Launch database instance to run side-by-side with
+# the AdaptiveMD application on head node
+echo "Starting database at $DBHOME on port $DBPORT"
+MPID=$(launch_amongod $DBHOME $DBPORT)
+echo "Mongo DB process ID: $MPID"
+echo "Running AdaptiveMD Application:"
+
+# This is environment variable is read by AdaptiveMD instances
+ADMD_DBURL="mongodb://0.0.0.0:$DBPORT/"
+
+# Run AdaptiveMD application with arguments to create a new workload
+generator="admd_generator $1 $2 $WKLTYPE $4 $5 $6 $7 $8 $9 ${10} --submit_only ${12} ${13} ${14} ${15}"
+echo "AdaptiveMD workload command to generator"
+
+# Capture the exit status of AdaptiveMD Application
+APP_OUT=$(eval $generator)
+IFS=$'\n' APP_OUT=($APP_OUT)
+APP_STATUS="${APP_OUT[${#APP_OUT[@]}-1]}"
+echo "Got status '$APP_STATUS' from AdaptiveMD"
+echo "Killing Mongo DB"
+kill $MPID
+wait $MPID
+
+# Sometimes shutdown doesn't happen nicely, we should not
+# have to do this. But if the workflow is the only thing
+# interacting with a database, should be safe... we are
+# circumventing locks that prevent multiple access and
+# enforce ACID compliance in the database.
+if [ "$(ls -A $DBHOME/socket)" ]
+then
+  rm $DBHOME/socket/*
+  rm $DBHOME/db/mongod.lock
+fi
+if [[ $APP_STATUS =~ ^[-+]?([1-9][[:digit:]]*|0)$ ]]
+then
+    if [[ $APP_STATUS -lt 0 ]]
+    then
+      echo "Exiting, AdaptiveMD application error"
+      exit 1
+    elif [[ $APP_STATUS -eq 0 ]]
+    then
+      echo "No incomplete/failed tasks, executing given workload"
+    elif [[ $APP_STATUS -gt 0 ]]
+    then
+      echo "Exiting, found existing incomplete/failed tasks"
+      exit 0
+    else
+      echo "This condition should not appear, already closed logic"
+    fi
+else
+    echo "Exiting, $APP_STATUS not castable as int"
+    exit 1
+fi
+
+JOBSTATEFILE="admd.state"
+echo "PEND" > $JOBSTATEFILE
+
+submitcommand="bsub -J $2.$1.$WKLTYPE.admd -nnodes $NNODES -W ${10} -P bif112 -alloc_flags smt4 -env \"all, SHPROFILE=$ADMD_ACTIVATE, ARGS=$1*$2*cleanup*$4*$5*$6*$7*$8*$9*${10}*$DBHOME*$JOBSTATEFILE\" $ADMD_RUNTIME/exectasks.lsf"
+echo $submitcommand
+ADMD_JOBOUT=$(eval $submitcommand)
+ADMD_JOBID="${ADMD_JOBOUT//[!0-9]/}"
+echo "Initiated AdaptiveMD workload in job# $ADMD_JOBID"
+waitfor $ADMD_JOBID $JOBSTATEFILE
+JOB_STATUS="$?"
+rm $JOBSTATEFILE
+
+echo "AdaptiveMD Job Exit Status: $JOB_STATUS"
+if [ "$JOB_STATUS" != "0" ]
+then
+  echo "Exiting, got Error from job status: $JOB_STATUS"
+  exit 1
+fi
+
+echo "Moving output logs from last workload"
+#sh $ADMD_RUNTIME/send_logs.sh $(latest)
+bash $ADMD_RUNTIME/send_logs.sh
+echo "Workload is complete"
+
