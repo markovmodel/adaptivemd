@@ -27,7 +27,7 @@ import traceback
 from ..util import get_logger
 logger = get_logger(__name__)
 
-from .functions import *
+from adaptivemd.sampling import functions
 
 user_sampling_functions = os.environ.get("ADMD_SAMPLINGFUNCS", None)
 
