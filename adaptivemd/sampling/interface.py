@@ -24,17 +24,23 @@
 import os
 import traceback
 
-from ..utils import get_logger
+from ..util import get_logger
 logger = get_logger(__name__)
 
-import .functions
+from .functions import *
+
 user_sampling_functions = os.environ.get("ADMD_SAMPLINGFUNCS", None)
+
+
+__all__ = ["get_sampling_function", "list_sampling_functions"]
+
 
 # Error if given non-existing location
 # or they don't have an __init__.py there
 if user_sampling_functions:
     sys.path.append(user_sampling_functions)
     import user_functions
+
 
 '''This file provides an interface for using sampling functions
 that may be pre-packaged in adaptivemd or written by users.
@@ -48,6 +54,13 @@ for all sampling functions, currently this is simply converting
 them to a runnable form, ie trajectory objects. Sampling
 algorithm specifics require at least the basic logic contained here.
 '''
+
+
+def list_sampling_functions():
+    # TODO provide list of built-in
+    #      and user sampling functions
+    pass
+
 
 def get_sampling_function(name_func, backup_func=None, **sfkwargs): 
 
@@ -121,4 +134,4 @@ def get_sampling_function(name_func, backup_func=None, **sfkwargs):
  
         return trajectories 
  
-return sampling_function 
+    return sampling_function 

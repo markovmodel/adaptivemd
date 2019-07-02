@@ -1,10 +1,10 @@
 
 import numpy as np
 
-from ..utils import get_logger
+from ..util import get_logger
 logger = get_logger(__name__)
 
-from .utils import get_picks, get_model, list_microstate_frames
+from .util import get_picks, get_model, list_microstate_frames
 
 
 def random_sampling_trajectories(project, number=1, **kwargs):

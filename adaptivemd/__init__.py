@@ -29,10 +29,14 @@ from __future__ import absolute_import
 from .file import (File, Directory, Location, JSONFile, MakeDir, Copy,
                    Transfer, Link, Move, Remove, Action, AddPathAction, FileAction,
                    FileTransaction, Touch)
+
 from .bundle import (Bundle, SortedBundle, ViewBundle, AndBundle,
                      BaseBundle, BundleDelegator, FunctionDelegator, LogicBundle,
                      OrBundle, StoredBundle)
-#from .resource import LocalResource
+
+# This module used an __all__
+from .sampling import *
+
 from .configuration import Configuration
 from .task import Task, PythonTask, DummyTask
 from .project import Project
@@ -47,6 +51,7 @@ from .reducer import (ActionParser, BashParser, ChainedParser,
 
 from .engine import (Engine, Trajectory, Frame,
                      TrajectoryGenerationTask, TrajectoryExtensionTask)
+
 from .analysis import Analysis, DoAnalysis
 
 # specific generators that should be available to the general user
@@ -61,16 +66,18 @@ from . import util
 from .util import DT
 
 from ._version import get_versions
+
 __version__ = get_versions()['version']
 del get_versions
 
-
 import imp
+
 try: 
     # Saga is only layer that works this
     # way to indicate Radical Pilot install
     imp.find_module('saga')
     from .rp.client import Client
+
 except ImportError:
     pass
 
