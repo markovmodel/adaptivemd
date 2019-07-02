@@ -28,5 +28,4 @@ then
   kill $MPID
 else
   echo "Ok, not doing anything"
-  echo "(press lower case \"y\" to kill)"
 fi
