@@ -1,60 +1,63 @@
 #!/bin/bash
 
+# FIXME coupled with hardcoded features
+#       given in init_project function
 SECRETMODELLERNAME="pyemma-tor"
 
 echo "admd_generator got args:"
 echo "$@"
 
-# used for TITAN Exec Config
+# Workload and Compute Configuration
 OPENMM_CPU_THREADS=$OMP_NUM_THREADS
-MINUTES=${10}
-EXECFLAG=${11}
+MINUTES="${10}"
+EXECFLAG="${11}"
 
 # System Identification
-PROJNAME=$2
-SYSTEMNAME=${12}
+PROJNAME="$2"
+SYSTEMNAME="${12}"
 
 # Workload Control
-BATCHSLEEP=5
-BATCHSIZE=5000
+BATCHSLEEP="5"
+BATCHSIZE="5000"
 if [ "$EXECFLAG" = "--submit_only" ]
 then
-  BATCHWAIT=
+  BATCHWAIT=""
 else
   BATCHWAIT="-u all"
 fi
 
 # Workflow Parameters
-ROUND_N=$1
-WORKLOAD=$3
+ROUND_N="$1"
+WORKLOAD="$3"
 if [[ $WORKLOAD = "cleanup" ]]
 then
-  RESCUE_TASKS=
+  RESCUE_TASKS=""
 else
   RESCUE_TASKS="--rescue_tasks"
 fi
-PROGRESS=any
-NTRAJ=$4
-NSTEPS=$5
-TSTEPS=$6
-AFTERNTRAJS=$7
-MODELTRAJLENGTH=$8
-SAMPLEFUNC=$9
+PROGRESS="any"
+NTRAJ="$4"
+NSTEPS="$5"
+TSTEPS="$6"
+AFTERNTRAJS="$7"
+MODELTRAJLENGTH="$8"
+SAMPLEFUNC="$9"
 
 # Simulation Data Parameters
-MFREQ=${13}
-PFREQ=${14}
-PLATFORM=${15}
-# If you have a system set up for 5fs
-# timesteps use this parameter (recommended)
-#  --> FIXME steps are given in 2fs unit
-#            and converted to 5fs equivalent
+MFREQ="${13}"
+PFREQ="${14}"
+PLATFORM="${15}"
+
+# FIXME delete this and users just stick
+#       with a single system
+#       undo the nonsense timestep conversion
 LONGTS="--longts"
-#LONGTS=
 
-
-SCRIPT_NAME=run_admd.py
-ADMD_SCRIPT=$ADMD_GENERATOR/scripts/$SCRIPT_NAME
+# FIXME use adaptivemdruntime as bridge to
+#       adaptivemd.runtime module with the
+#       generator functionality
+SCRIPT_NAME="adaptivemdruntime"
+ADMD_SCRIPT="$ADMD_GENERATOR/scripts/$SCRIPT_NAME"
 
 # Initialize the run
 if [ ! -z "$SYSTEMNAME" ]

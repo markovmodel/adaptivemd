@@ -69,6 +69,7 @@ scripts:
   - adaptivemd/scripts/startdb
   - adaptivemd/scripts/admd_checkpoint
   - adaptivemd/scripts/admd_workload
+  - adaptivemd/scripts/admd_generator
 
 
 install_requires:
