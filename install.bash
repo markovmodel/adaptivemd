@@ -17,7 +17,7 @@ CWD="$(pwd)"
 # script, leave empty if you want to do later
 INSTALL_ADAPTIVEMD="python setup.py develop"
 # TODO mongo via conda, mongo 4.0
-MONGO_VERSION="mongodb-linux-x86_64-3.6.11"
+MONGO_VERSION="mongodb-linux-x86_64-3.2.22"
 CONDA_VERSION="Miniconda3-latest-Linux-x86_64"
 PYTHON_VERSION="3.6.6"
 PYEMMA_VERSION="pyemma"
@@ -234,6 +234,7 @@ conda create  --yes -n $ADMD_ENV_NAME python=$PYTHON_VERSION
 source activate $ADMD_ENV_NAME
 conda install --yes $OPENMM_VERSION
 conda install --yes $PYEMMA_VERSION
+conda install --yes pyyaml
 
 echo ">>>>>>>>>>>> ADMD_PROFILE >>>>>>>>>>>>>>>>>>>>>>>>"
 echo "export PATH=\"$(dirname $(which conda)):\$PATH\"" | tee -a $ADMD_PROFILE
@@ -251,6 +252,11 @@ if [ ! -z "$INSTALL_ADAPTIVEMD" ]; then
     echo "this line:"
     echo "$INSTALL_ADAPTIVEMD"
     eval "$INSTALL_ADAPTIVEMD"
+
+    # Build the alanine system for lightweight basic tests
+    cd "examples/files/alanine"
+    python "openmmsetup.py"
+    cd $CWD
 else
     echo "AdaptiveMD Environment is installed"
     echo "but you have chosen to install the"
