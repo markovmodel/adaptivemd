@@ -13,15 +13,18 @@
 
 USER="osz"
 CWD="$(pwd)"
+
 # Line to install AdaptiveMD itself via this
 # script, leave empty if you want to do later
 INSTALL_ADAPTIVEMD="python setup.py develop"
+
 # TODO mongo via conda, mongo 4.0
 MONGO_VERSION="mongodb-linux-x86_64-3.2.22"
 CONDA_VERSION="Miniconda3-latest-Linux-x86_64"
 PYTHON_VERSION="3.6.6"
 PYEMMA_VERSION="pyemma"
 OPENMM_VERSION="openmm -c omnia/label/cuda92"
+
 # CUDA module line saved in ADMD_PROFILE
 CUDA_MODULE="module load cuda/9.2"
 
