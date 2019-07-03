@@ -1,3 +1,7 @@
+# Version-specific simulation files built on install
+#  - these should be `system.xml` or `integrator.xml`
+**/*xml
+
 # RP working directories from Tutorial
 examples/rp/rp.session*
 

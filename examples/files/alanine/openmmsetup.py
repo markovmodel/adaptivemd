@@ -1,12 +1,35 @@
+
 from simtk.openmm.app import *
 from simtk.openmm import *
 from simtk.unit import *
 
-pdb = PDBFile('alanine.pdb')
+#pdb    = PDBFile('alanine.pdb')
+#ff     = ForceField('amber99sb.xml')
 
-forcefield = ForceField('amber99sb.xml', 'tip3p.xml')
-system = forcefield.createSystem(pdb.topology, nonbondedMethod=PME, nonbondedCutoff=1*nanometer, constraints=HBonds)
-integrator = LangevinIntegrator(300*kelvin, 1/picosecond, 0.002*picoseconds)
+pdb    = PDBFile('alanine_autopsf.pdb')
+psf    = CharmmPsfFile('alanine_autopsf.psf')
+ff     = ForceField('charmm36.xml')
+
+psf.setBox(*(3*[1.2*nanometers]))
+
+model = Modeller(
+    psf.topology,
+    pdb.positions,
+)
+
+system = ff.createSystem(
+    model.topology,
+    nonbondedMethod=PME,
+    nonbondedCutoff=1*nanometer,
+    constraints=AllBonds,
+    hydrogenMass=4*amu,
+)
+
+integrator = LangevinIntegrator(
+    300*kelvin,
+    1/picosecond,
+    0.005*picoseconds,
+)
 
 with open('system.xml', 'w') as f:
     system_xml = XmlSerializer.serialize(system)
