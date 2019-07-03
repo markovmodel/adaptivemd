@@ -18,6 +18,10 @@ CWD="$(pwd)"
 # script, leave empty if you want to do later
 INSTALL_ADAPTIVEMD="python setup.py develop"
 
+# Type "yes" here to build the chignolin test system
+#  - installs `parmed` and uses Charmm22star forcefield
+BUILD_CHIGNOLIN="yes"
+
 # TODO mongo via conda, mongo 4.0
 MONGO_VERSION="mongodb-linux-x86_64-3.2.22"
 CONDA_VERSION="Miniconda3-latest-Linux-x86_64"
@@ -264,6 +268,13 @@ else
     echo "AdaptiveMD Environment is installed"
     echo "but you have chosen to install the"
     echo "AdaptiveMD Python Package separately"
+fi
+
+if [ "$BUILD_CHIGNOLIN" = "yes" ]; then
+    conda install parmed
+    cd "examples/files/chignolin/"
+    ./parmit.py
+    cd "$CWD"
 fi
 
 echo ""
