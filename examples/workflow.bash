@@ -11,6 +11,8 @@ MINS="50"
 # relative or absolute path to DB parent folder
 #  - optional DB port for head node to avoid
 #    congestionon default port
+#  - this argument is transformed as it travels
+#    down the pipe
 EXECFLAG="mongo:43224"
 
 # Name for AdaptiveMD Project instance

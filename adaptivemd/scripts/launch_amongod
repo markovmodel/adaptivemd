@@ -41,5 +41,5 @@ else
 fi
 
 mongodcommand="${launcher}mongod --dbpath $DBPATH/db/ --config $DBPATH/db.cfg &>> $DBPATH/db.log $postcommand"
-
 eval "$mongodcommand"
+echo "$!"

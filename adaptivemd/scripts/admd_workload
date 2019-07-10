@@ -10,7 +10,7 @@
 # roundnumber   projname wkloadtype  ntask  mdsteps tjsteps afterntjs
 #
 #       8          9         10       11       12      13       14       15
-# anlyztjlength samplefunc minutes execflag sysname  mfreq     pgreq  platform
+# anlyztjlength samplefunc minutes execflag sysname  mfreq     pfreq  platform
 #
 #------------------------------------------------------------------------------#
 
@@ -48,15 +48,31 @@
 #
 #------------------------------------------------------------------------------#
 
+#------------------------------------------------------------------------------#
 echo "Got these arguments for AdaptiveMD workload:"
 echo $@
 
 echo "Using AdaptiveMDWorkers to Execute workload"
 echo "Workload wall time is ${10} minutes"
 
+exitval="-1"
+
+#------------------------------------------------------------------------------#
+# Input Argument processing
+
+ROUNDNUMBER="$1"
+PROJNAME="$2"
 # types: `trajs`, `model`, `cleanup`, or `all`
 #  - type causes modification to application arguments downstream
-WKLTYPE="$3"
+WORKLOAD="$3"
+NTRAJS="$4"
+MDSTEPS="$5"
+TRAJSTEPS="$6"
+AFTERNTRAJS="$7"
+MODELTRAJLENGTH="$8"
+SAMPLEFUNC="$9"
+MINUTES="${10}"
+EXECFLAG="--submit_only"
 
 # Splitting a single command with DB parent folder and port number
 DLM=":"
@@ -69,25 +85,119 @@ then
   DBPORT="27017"
 fi
 
+# This is environment variable is read by
+# any local AdaptiveMD instances
+ADMD_DBURL="mongodb://0.0.0.0:$DBPORT/"
+
+# These ones only come with the first round
+# to describe simulation setup
+SYSNAME="${12}"
+MFREQ="${13}"
+PFREQ="${14}"
+PLATFORM="${15}"
+
+# More Workload Control and Parameters
+#  _ some derived from above
+BATCHSLEEP="5"
+BATCHSIZE="5000"
+if [ "$EXECFLAG" = "--submit_only" ]
+then
+  BATCHWAIT=""
+else
+  BATCHWAIT="-u all"
+fi
+if [[ $WORKLOAD = "cleanup" ]]
+then
+  RESCUE_TASKS=""
+else
+  RESCUE_TASKS="--rescue_tasks"
+fi
+PROGRESS="any"
+
+ROUND_PER_WORKLOAD="1"
+
+
+#------------------------------------------------------------------------------#
+# Formulating args for adaptivemdruntime
+
+generator="adaptivemdruntime $PROJNAME"
+
+if [ ! -z "$SYSTEMNAME" ]
+then
+  initializer="$generator $SYSTEMNAME --init_only"
+  initializer+=" -P $PLATFORM -p $PFREQ -m $MFREQ"
+
+  echo "Initializing Project with this command"
+  echo "To 'adaptivemdruntime':"
+  echo "$initializer"
+
+  eval "$initializer"
+fi
+
+if [ ! -z "$ROUND_N" ]
+then
+  generator+=" -R $ROUND_N"
+fi
+
+generator+=" -w $ADMD_ENV_ACTIVATE"
+generator+=" -s $BATCHSLEEP -c $BATCHSIZE $BATCHWAIT"
+generator+=" --progress $PROGRESS"
+generator+=" -l $NSTEPS -k $TSTEPS"
+
+if [[ "$WORKLOAD" = "cleanup" ]]
+then
+  generator+=" -N 0"
+elif [[ "$WORKLOAD" = "trajs" ]]
+then
+  generator+=" -N $NTRAJS -S $SAMPLEFUNC"
+elif [[ "$WORKLOAD" = "model" ]]
+then
+  generator+=" -N 0 -a $AFTERNTRAJS"
+elif [[ "$WORKLOAD" = "all" ]]
+then
+  generator+=" -N $NTRAJS"
+else
+  echo "Workload argument choice of 'model','trajs','all','cleanup'"
+  echo "Recieved argument: $WORKLOAD"
+  exitval="-2"
+  exit "$exitval"
+fi
+
+generator+=" -b $ROUND_PER_WORKLOAD"
+generator+=" --minutes $MINUTES $EXECFLAG"
+
+if [ ! -z "$RESCUE_TASKS" ]
+then
+  generator+=" $RESCUE_TASKS"
+fi
+
+#------------------------------------------------------------------------------#
 # Launch database instance to run side-by-side with
 # the AdaptiveMD application on head node
-echo "Starting database at $DBHOME on port $DBPORT"
+
+echo "Starting database in directory '$DBHOME' on port '$DBPORT'"
 MPID=$(launch_amongod $DBHOME $DBPORT)
 echo "Mongo DB process ID: $MPID"
 echo "Running AdaptiveMD Application:"
 
-# This is environment variable is read by AdaptiveMD instances
-ADMD_DBURL="mongodb://0.0.0.0:$DBPORT/"
+#------------------------------------------------------------------------------#
+# Launch adaptivemdruntime
 
-# Run AdaptiveMD application with arguments to create a new workload
-generator="admd_generator $1 $2 $WKLTYPE $4 $5 $6 $7 $8 $9 ${10} --submit_only ${12} ${13} ${14} ${15}"
-echo "AdaptiveMD workload command to generator"
+echo "Starting 'adaptivemdruntime' with command:"
+echo "$generator"
 
 # Capture the exit status of AdaptiveMD Application
+# - by parsing the last line
+# - should be a code if errors handled correctly
 APP_OUT=$(eval $generator)
 IFS=$'\n' APP_OUT=($APP_OUT)
 APP_STATUS="${APP_OUT[${#APP_OUT[@]}-1]}"
+
 echo "Got status '$APP_STATUS' from AdaptiveMD"
+
+#------------------------------------------------------------------------------#
+# Kill and cleanup database stuff
+
 echo "Killing Mongo DB"
 kill $MPID
 wait $MPID
@@ -102,48 +212,32 @@ then
   rm $DBHOME/socket/*
   rm $DBHOME/db/mongod.lock
 fi
+
+#------------------------------------------------------------------------------#
+# Process adaptivemdruntime exit code
+
 if [[ $APP_STATUS =~ ^[-+]?([1-9][[:digit:]]*|0)$ ]]
 then
     if [[ $APP_STATUS -lt 0 ]]
     then
       echo "Exiting, AdaptiveMD application error"
-      exit 1
+      exitval="1"
     elif [[ $APP_STATUS -eq 0 ]]
     then
-      echo "No incomplete/failed tasks, executing given workload"
+      echo "No incomplete/failed tasks, executed given workload"
+      exitval="0"
     elif [[ $APP_STATUS -gt 0 ]]
     then
+      # TODO trigger extra cleanup workloads
       echo "Exiting, found existing incomplete/failed tasks"
-      exit 0
+      exitval="0"
     else
       echo "This condition should not appear, already closed logic"
     fi
 else
     echo "Exiting, $APP_STATUS not castable as int"
-    exit 1
+    exitval="1"
 fi
 
-JOBSTATEFILE="admd.state"
-echo "PEND" > $JOBSTATEFILE
-
-submitcommand="bsub -J $2.$1.$WKLTYPE.admd -nnodes $NNODES -W ${10} -P bif112 -alloc_flags smt4 -env \"all, SHPROFILE=$ADMD_ACTIVATE, ARGS=$1*$2*cleanup*$4*$5*$6*$7*$8*$9*${10}*$DBHOME*$JOBSTATEFILE\" $ADMD_RUNTIME/exectasks.lsf"
-echo $submitcommand
-ADMD_JOBOUT=$(eval $submitcommand)
-ADMD_JOBID="${ADMD_JOBOUT//[!0-9]/}"
-echo "Initiated AdaptiveMD workload in job# $ADMD_JOBID"
-waitfor $ADMD_JOBID $JOBSTATEFILE
-JOB_STATUS="$?"
-rm $JOBSTATEFILE
-
-echo "AdaptiveMD Job Exit Status: $JOB_STATUS"
-if [ "$JOB_STATUS" != "0" ]
-then
-  echo "Exiting, got Error from job status: $JOB_STATUS"
-  exit 1
-fi
-
-echo "Moving output logs from last workload"
-#sh $ADMD_RUNTIME/send_logs.sh $(latest)
-bash $ADMD_RUNTIME/send_logs.sh
-echo "Workload is complete"
+exit "$exitval"
 

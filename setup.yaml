@@ -62,6 +62,7 @@ released: false
 
 scripts:
   - adaptivemd/scripts/adaptivemdworker
+  - adaptivemd/scripts/adaptivemdruntime
   - adaptivemd/scripts/launch_amongod
   - adaptivemd/scripts/list_mongods
   - adaptivemd/scripts/kill_amongod

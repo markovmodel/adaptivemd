@@ -1,0 +1,116 @@
+#!/usr/bin/env/python
+
+'''
+    Usage:
+           $ python run_admd.py [name] [additional options]
+
+'''
+
+import traceback
+import os
+import sys
+import time
+import datetime
+
+from .argparser import argparser
+from .jobtools import calculate_request, jobBuilder
+
+from ..util import get_logger, formatlines
+logger = get_logger(logname=__name__)
+
+from __run_admd import init_project, strategy_function, get_logger, formatlines
+
+from adaptivemd import Task, TrajectoryGenerationTask, TrajectoryExtensionTask, PythonTask, Scheduler
+
+_exitval_ = -1
+
+final_states = Task.FINAL_STATES + Task.RESTARTABLE_STATES
+created_state = 'created'
+fix_states = {'queued','running','fail','failed','cancelled','pending'}
+runnable_states = set(fix_states).add(created_state)
+
+created_state_update = {"state":created_state, "__dict__.state":created_state}
+
+task_done = lambda ta: ta.state in final_states
+is_incomplete = lambda ta: ta.state in runnable_states
+
+
+if __name__ == '__main__':
+
+    project = None
+    sleeptime = 1
+
+    try:
+
+        parser   = argparser()
+        args     = parser.parse_args()
+
+        submit_only = args.submit_only
+
+        logger.info("Initializing Project named: " + args.project_name)
+        logger.info(formatline("Recieved Argumentes:\n{}".format(args)))
+        logger.info(
+            formatline("TIMER Project opening {}".format(
+            datetime.datetime.fromtimestamp(time.time())))
+        )
+
+        project = init_project(
+            args.project_name,
+            args.system_name,
+            args.all,
+            args.prot,
+            args.platform,
+            reinitialize=args.reinitialize,
+            #args.dblocation                                 )
+
+        logger.info(
+            formatline("TIMER Project opened {}".format(
+            datetime.datetime.fromtimestamp(time.time())))
+        )
+
+        logger.info(
+            "AdaptiveMD dburl: {}".format(project.storage._db_url))
+        logger.info(
+            "number of project.trajectories: {}".format(len(project.trajectories)))
+        logger.info(
+            "number of project.models: {}".format(len(project.models)))
+
+        rescue_tasks = list(filter(is_incomplete, project.tasks))
+        rescue_uuids = list(map(lambda ta: ta.__uuid__, rescue_tasks))
+        n_incomplete_tasks = len(rescue_tasks)
+
+        # TODO not clean on relationship of these and embedded conditions
+        if args.rescue_tasks:
+
+            if n_incomplete_tasks:
+
+                _exitval_ = n_incomplete_tasks
+                logger.info(
+                  "Exiting to rescue {} incomplete tasks".format(_exitval_)
+                )
+                sys.exit(_exitval_)
+
+            elif args.rescue_only:
+
+                _exitval_ = 0
+                logger.info("All tasks rescued, exiting with no action")
+                sys.exit(_exitval_)
+
+            # TODO what is happening here?
+            else:
+                logger.info(
+                    "Proceeding after rescue check, found {} incomplete tasks".format(
+                    n_incomplete_tasks)
+                )
+
+        else:
+            logger.info(
+                "No rescue check performed, found {} incomplete tasks".format(
+                n_incomplete_tasks)
+            )
+
+        if args.init_only:
+            logger.info("Leaving project '{}' initialized without tasks".format(
+                project.name)
+            )
+

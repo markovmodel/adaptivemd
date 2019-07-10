@@ -245,6 +245,10 @@ conda install --yes pyyaml
 
 echo ">>>>>>>>>>>> ADMD_PROFILE >>>>>>>>>>>>>>>>>>>>>>>>"
 echo "export PATH=\"$(dirname $(which conda)):\$PATH\"" | tee -a $ADMD_PROFILE
+echo "# 'activate' now in PATH"
+echo "export ADMD_ACTIVATE=\"source activate $ADMD_ENV_NAME\""
+echo "# activate by default"
+echo "$ADMD_ACTIVATE"
 echo "" | tee -a $ADMD_PROFILE
 echo "<<<<<<<<<<<< ADMD_PROFILE <<<<<<<<<<<<<<<<<<<<<<<<"
 
