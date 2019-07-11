@@ -57,11 +57,11 @@ P1t="8000000"
 admd_checkpoint
 #           0 1     2     3   4    5    6 7 8   9    10        11   12     13     14        15
 admd_workload 1 $PROJ trajs $N1 $P1i $P1t 0 0 $SF $MINS $EXECFLAG $SYS $MFREQ $PFREQ $PLATFORM
-admd_workload 1 $PROJ trajs $N1 $P1i $P1t 0 0 $SF $MINS $EXECFLAG
-admd_workload 1 $PROJ trajs $N1 $P1i $P1t 0 0 $SF $MINS $EXECFLAG
-admd_workload 1 $PROJ trajs $N1 $P1i $P1t 0 0 $SF $MINS $EXECFLAG
-admd_workload 1 $PROJ trajs $N1 $P1i $P1t 0 0 $SF $MINS $EXECFLAG
-admd_workload 1 $PROJ trajs $N1 $P1i $P1t 0 0 $SF $MINS $EXECFLAG
-admd_workload 1 $PROJ model 1   0    0    0 0 $SF $MINS $EXECFLAG
-# NEXT!
+## admd_workload 1 $PROJ trajs $N1 $P1i $P1t 0 0 $SF $MINS $EXECFLAG
+## admd_workload 1 $PROJ trajs $N1 $P1i $P1t 0 0 $SF $MINS $EXECFLAG
+## admd_workload 1 $PROJ trajs $N1 $P1i $P1t 0 0 $SF $MINS $EXECFLAG
+## admd_workload 1 $PROJ trajs $N1 $P1i $P1t 0 0 $SF $MINS $EXECFLAG
+## admd_workload 1 $PROJ trajs $N1 $P1i $P1t 0 0 $SF $MINS $EXECFLAG
+## admd_workload 1 $PROJ model 1   0    0    0 0 $SF $MINS $EXECFLAG
+## # NEXT!
 

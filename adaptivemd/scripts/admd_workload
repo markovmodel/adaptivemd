@@ -177,7 +177,7 @@ fi
 # the AdaptiveMD application on head node
 
 echo "Starting database in directory '$DBHOME' on port '$DBPORT'"
-MPID="`launch_amongod $DBHOME $DBPORT`"
+MPID="$(launch_amongod $DBHOME $DBPORT)"
 sleep 15
 echo "Mongo DB process ID: $MPID"
 echo "Running AdaptiveMD Application:"

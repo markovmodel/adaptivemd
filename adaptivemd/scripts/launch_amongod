@@ -40,11 +40,9 @@ else
   postcommand="&"
 fi
 
-echo "the mongod: `which mongod`"
+mongodcommand="${launcher}mongod --dbpath $DBPATH/db/ --config $DBPATH/db.cfg &> $DBPATH/db.log $postcommand"
 
-mongodcommand="${launcher}mongod --dbpath $DBPATH/db/ --config $DBPATH/db.cfg > $DBPATH/db.log $postcommand"
-
-echo "Launching `mongod` with this command:"
+echo "Launching 'mongod' with this command:"
 echo "$mongodcommand"
 eval "$mongodcommand"
 echo "$!"
