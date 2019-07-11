@@ -27,7 +27,7 @@ BUILD_CHIGNOLIN="yes"
 MONGO_VERSION="mongodb-linux-x86_64-3.6.13"
 #MONGO_VERSION="mongodb-linux-x86_64-3.2.22"
 CONDA_VERSION="Miniconda3-latest-Linux-x86_64"
-PYTHON_VERSION="3.7.4"
+PYTHON_VERSION="3.7"
 PYEMMA_VERSION="pyemma"
 OPENMM_VERSION="openmm -c omnia/label/cuda92"
 
@@ -51,8 +51,8 @@ INSTALL_DIRNAME="admd"
 ADMD_DATA="/lustre/or-hydra/cades-bsd/$USER/$INSTALL_DIRNAME/data"
 ADMD_SOFTWARE="/home/$USER/$INSTALL_DIRNAME/software"
 ADMD_WORKFLOWS="/lustre/or-hydra/cades-bsd/$USER/$INSTALL_DIRNAME/workflows"
-ADMD_MDSYSTEMS="/lustre/or-hydra/cades-bsd/$USER/mdsystems"
-ADMD_SAMPLINGFUNCS="/lustre/or-hydra/cades-bsd/$USER/sampling"
+ADMD_MDSYSTEMS="/lustre/or-hydra/cades-bsd/$USER/$INSTALL_DIRNAME/mdsystems"
+ADMD_SAMPLINGFUNCS="/lustre/or-hydra/cades-bsd/$USER/$INSTALL_DIRNAME/sampling"
 
 # This file contains all required runtime
 # environment configuration, built by installer
@@ -243,20 +243,32 @@ conda create  --yes -n $ADMD_ENV_NAME python=$PYTHON_VERSION
 source activate $ADMD_ENV_NAME
 conda install --yes $OPENMM_VERSION
 conda install --yes $PYEMMA_VERSION
-conda install --yes pyyaml
+# something weird goes on with the yaml and pyyaml
+# packages, choosing to force install instead of
+# switching to use yaml package for now
+# TODO FIXME why does conda think pyyaml is installed
+#            (only some times...) when it is not?
+conda install --yes --force-reinstall pyyaml
 
 echo ">>>>>>>>>>>> ADMD_PROFILE >>>>>>>>>>>>>>>>>>>>>>>>"
 echo "export PATH=\"$(dirname $(which conda)):\$PATH\"" | tee -a $ADMD_PROFILE
-echo "# 'activate' now in PATH"
-echo "# TODO maybe? conda activate $ADMD_ENV_NAME... but seems"
-echo "#      this isn't reliable without the bashrc component"
-echo "export ADMD_ACTIVATE=\"source activate $ADMD_ENV_NAME\""
-echo "# activate by default"
-echo "$ADMD_ACTIVATE"
+echo "# 'activate' now in PATH" | tee -a $ADMD_PROFILE
+echo "# TODO maybe? conda activate $ADMD_ENV_NAME... but seems" | tee -a $ADMD_PROFILE
+echo "#      this isn't reliable without the bashrc component" | tee -a $ADMD_PROFILE
+echo "export ADMD_ACTIVATE=\"source activate $ADMD_ENV_NAME\"" | tee -a $ADMD_PROFILE
+echo "# activate by default" | tee -a $ADMD_PROFILE
+echo "\$ADMD_ACTIVATE" | tee -a $ADMD_PROFILE
 echo "" | tee -a $ADMD_PROFILE
 echo "<<<<<<<<<<<< ADMD_PROFILE <<<<<<<<<<<<<<<<<<<<<<<<"
 
 cd "$CWD"
+
+# FIXME TODO I have seen that at least on some machines,
+#            the OpenMM / Simtk packages aren't importable
+#            some times, not others, no idea why, without
+#            a deactivate and reactivate of the env
+source deactivate $ADMD_ENV_NAME
+source   activate $ADMD_ENV_NAME
 
 #-------------------------------------------------------------------#
 #-------------------------------------------------------------------#
@@ -279,7 +291,7 @@ else
 fi
 
 if [ "$BUILD_CHIGNOLIN" = "yes" ]; then
-    conda install parmed
+    conda install --yes parmed
     cd "examples/files/chignolin/"
     ./parmit.py
     cd "$CWD"
