@@ -47,7 +47,7 @@
 #
 #
 #------------------------------------------------------------------------------#
-
+#TODO write "Error" in exit conditions
 #------------------------------------------------------------------------------#
 echo "Got these arguments for AdaptiveMD workload:"
 echo $@
@@ -124,6 +124,7 @@ generator="adaptivemdruntime $PROJNAME"
 
 if [ ! -z "$SYSTEMNAME" ]
 then
+  # Initialize a project for the first time
   initializer="$generator $SYSTEMNAME --init_only"
   initializer+=" -P $PLATFORM -p $PFREQ -m $MFREQ"
 
@@ -139,7 +140,7 @@ then
   generator+=" -R $ROUND_N"
 fi
 
-generator+=" -w $ADMD_ENV_ACTIVATE"
+generator+=" -w $ADMD_PROFILE"
 generator+=" -s $BATCHSLEEP -c $BATCHSIZE $BATCHWAIT"
 generator+=" --progress $PROGRESS"
 generator+=" -l $NSTEPS -k $TSTEPS"
@@ -176,7 +177,8 @@ fi
 # the AdaptiveMD application on head node
 
 echo "Starting database in directory '$DBHOME' on port '$DBPORT'"
-MPID=$(launch_amongod $DBHOME $DBPORT)
+MPID="`launch_amongod $DBHOME $DBPORT`"
+sleep 15
 echo "Mongo DB process ID: $MPID"
 echo "Running AdaptiveMD Application:"
 
@@ -200,7 +202,6 @@ echo "Got status '$APP_STATUS' from AdaptiveMD"
 
 echo "Killing Mongo DB"
 kill $MPID
-wait $MPID
 
 # Sometimes shutdown doesn't happen nicely, we should not
 # have to do this. But if the workflow is the only thing

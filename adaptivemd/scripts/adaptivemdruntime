@@ -62,7 +62,7 @@ if __name__ == '__main__':
             args.platform,
             reinitialize=args.reinitialize,
             #args.dblocation                                 )
-
+        ) 
         logger.info(
             formatline("TIMER Project opened {}".format(
             datetime.datetime.fromtimestamp(time.time())))
@@ -114,3 +114,5 @@ if __name__ == '__main__':
                 project.name)
             )
 
+    except:
+        pass

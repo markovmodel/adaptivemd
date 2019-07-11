@@ -1,5 +1,6 @@
 #!/bin/bash
 
-mongods=`ps faux | grep "mongod" | grep -v "grep" | grep -v "list_mongods"`
+# Avoid capturing AdaptiveMD's mongod utilities
+mongods=`ps faux | grep "mongod" | grep -v "grep" | grep -v "amongod" | grep -v "list_mongods"`
 echo "Current mongod processes:"
 printf '%s\n' "${mongods[@]}"
