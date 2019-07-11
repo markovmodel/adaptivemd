@@ -23,9 +23,11 @@ INSTALL_ADAPTIVEMD="python setup.py develop"
 BUILD_CHIGNOLIN="yes"
 
 # TODO mongo via conda, mongo 4.0
-MONGO_VERSION="mongodb-linux-x86_64-3.2.22"
+
+MONGO_VERSION="mongodb-linux-x86_64-3.6.13"
+#MONGO_VERSION="mongodb-linux-x86_64-3.2.22"
 CONDA_VERSION="Miniconda3-latest-Linux-x86_64"
-PYTHON_VERSION="3.6.6"
+PYTHON_VERSION="3.7.4"
 PYEMMA_VERSION="pyemma"
 OPENMM_VERSION="openmm -c omnia/label/cuda92"
 
@@ -246,6 +248,8 @@ conda install --yes pyyaml
 echo ">>>>>>>>>>>> ADMD_PROFILE >>>>>>>>>>>>>>>>>>>>>>>>"
 echo "export PATH=\"$(dirname $(which conda)):\$PATH\"" | tee -a $ADMD_PROFILE
 echo "# 'activate' now in PATH"
+echo "# TODO maybe? conda activate $ADMD_ENV_NAME... but seems"
+echo "#      this isn't reliable without the bashrc component"
 echo "export ADMD_ACTIVATE=\"source activate $ADMD_ENV_NAME\""
 echo "# activate by default"
 echo "$ADMD_ACTIVATE"
