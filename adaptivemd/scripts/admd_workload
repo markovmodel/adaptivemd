@@ -140,10 +140,10 @@ then
   generator+=" -R $ROUND_N"
 fi
 
-generator+=" -w $ADMD_PROFILE"
+generator+=" -r $ADMD_PROFILE"
 generator+=" -s $BATCHSLEEP -c $BATCHSIZE $BATCHWAIT"
 generator+=" --progress $PROGRESS"
-generator+=" -l $NSTEPS -k $TSTEPS"
+generator+=" -l $MDSTEPS -k $TRAJSTEPS"
 
 if [[ "$WORKLOAD" = "cleanup" ]]
 then

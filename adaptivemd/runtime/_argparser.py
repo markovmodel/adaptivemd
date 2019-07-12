@@ -76,8 +76,8 @@ def argparser():
 
     # TODO activate command with full path to bins or shell source
     #      activate of rc file with full activate command
-    parser.add_argument("-A","--activate_prefix",
-        help="Activate command to load an environment", type=stripped)
+    parser.add_argument("-r","--rc",
+        help="Location of AdaptiveMD profile, ie an rc file", type=stripped)
 
     parser.add_argument("-a","--after_n_trajs",
         help="Extension of trajs N onward", type=digit)

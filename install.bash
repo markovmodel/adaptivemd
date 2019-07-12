@@ -98,7 +98,7 @@ echo ">>>>>>>>>>>> ADMD_PROFILE >>>>>>>>>>>>>>>>>>>>>>>>"
 echo "# Source the ADMD_PROFILE when you want to use" | tee -a $ADMD_PROFILE
 echo "# your AdaptiveMD Platform" | tee -a $ADMD_PROFILE
 echo ""
-echo "ADMD_PROFILE=\"$ADMD_PROFILE\"" | tee -a $ADMD_PROFILE
+echo "export ADMD_PROFILE=\"$ADMD_PROFILE\"" | tee -a $ADMD_PROFILE
 echo "" | tee -a $ADMD_PROFILE
 echo "<<<<<<<<<<<< ADMD_PROFILE <<<<<<<<<<<<<<<<<<<<<<<<"
 echo ""
@@ -135,8 +135,8 @@ echo ">>>>>>>>>>>> ADMD_PROFILE >>>>>>>>>>>>>>>>>>>>>>>>"
 echo "# AdaptiveMD Environment Runtime Settings" | tee -a $ADMD_PROFILE
 echo "#  - modify to match the compute node interconnect" | tee -a $ADMD_PROFILE
 echo "#  - and your output level needs" | tee -a $ADMD_PROFILE
-echo "ADMD_LOGLEVEL=\"$ADMD_LOGLEVEL\"" | tee -a $ADMD_PROFILE
-echo "ADMD_NETDEVICE=\"$ADMD_NETDEVICE\"" | tee -a $ADMD_PROFILE
+echo "export ADMD_LOGLEVEL=\"$ADMD_LOGLEVEL\"" | tee -a $ADMD_PROFILE
+echo "export ADMD_NETDEVICE=\"$ADMD_NETDEVICE\"" | tee -a $ADMD_PROFILE
 echo "" | tee -a $ADMD_PROFILE
 echo "<<<<<<<<<<<< ADMD_PROFILE <<<<<<<<<<<<<<<<<<<<<<<<"
 echo ""
@@ -152,11 +152,11 @@ echo "------------- Creating Platform Directories -------------"
 echo ""
 echo ">>>>>>>>>>>> ADMD_PROFILE >>>>>>>>>>>>>>>>>>>>>>>>"
 echo "# AdaptiveMD Platform Location Configurations" | tee -a $ADMD_PROFILE
-echo "ADMD_DATA=\"$ADMD_DATA\"" | tee -a $ADMD_PROFILE
-echo "ADMD_SOFTWARE=\"$ADMD_SOFTWARE\"" | tee -a $ADMD_PROFILE
-echo "ADMD_WORKFLOWS=\"$ADMD_WORKFLOWS\"" | tee -a $ADMD_PROFILE
-echo "ADMD_MDSYSTEMS=\"$ADMD_MDSYSTEMS\"" | tee -a $ADMD_PROFILE
-echo "ADMD_SAMPLINGFUNCS=\"$ADMD_SAMPLINGFUNCS\"" | tee -a $ADMD_PROFILE
+echo "export ADMD_DATA=\"$ADMD_DATA\"" | tee -a $ADMD_PROFILE
+echo "export ADMD_SOFTWARE=\"$ADMD_SOFTWARE\"" | tee -a $ADMD_PROFILE
+echo "export ADMD_WORKFLOWS=\"$ADMD_WORKFLOWS\"" | tee -a $ADMD_PROFILE
+echo "export ADMD_MDSYSTEMS=\"$ADMD_MDSYSTEMS\"" | tee -a $ADMD_PROFILE
+echo "export ADMD_SAMPLINGFUNCS=\"$ADMD_SAMPLINGFUNCS\"" | tee -a $ADMD_PROFILE
 echo "" | tee -a $ADMD_PROFILE
 echo "<<<<<<<<<<<< ADMD_PROFILE <<<<<<<<<<<<<<<<<<<<<<<<"
 

@@ -27,8 +27,9 @@ import os
 import datetime
 
 
+# formatlines adds some format for multiline log entries
 prefixline = '    >>>   '
-formatline = lambda l: '\n'.join(
+formatlines = lambda l: '\n'.join(
     [prefixline+ls if ls else '' for ls in l.split('\n')] +
     ( [''] if len(l.split('\n'))>1 else [])
     )

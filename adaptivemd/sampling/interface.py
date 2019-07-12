@@ -22,6 +22,7 @@
 ##############################################################################
 
 import os
+import sys
 import traceback
 
 from ..util import get_logger
