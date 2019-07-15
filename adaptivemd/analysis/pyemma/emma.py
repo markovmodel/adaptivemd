@@ -23,12 +23,11 @@ from __future__ import absolute_import
 
 import os
 
-from adaptivemd import PythonTask
-from adaptivemd.analysis import Analysis
-from adaptivemd.mongodb import DataDict
-from adaptivemd.model import Model
-
 from ._remote import remote_analysis
+from ..analysis import Analysis
+from ...task import PythonTask
+from ...mongodb import DataDict
+from ...model import Model
 
 
 class PyEMMAAnalysis(Analysis):

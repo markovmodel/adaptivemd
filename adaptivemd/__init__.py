@@ -20,7 +20,16 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with MDTraj. If not, see <http://www.gnu.org/licenses/>.
 ##############################################################################
+# TODO remove __future__ funcionality,
+#      the future is now.
 from __future__ import absolute_import
+
+# These module used an __all__ to control importing
+from .sampling import *
+from .runtime import *
+
+# TODO create unified import syntax, is the __all__
+#      with import * ok inside module?
 
 #from .brain import Brain
 # from event import StopEvent, Event, TasksFinished
@@ -33,9 +42,6 @@ from .file import (File, Directory, Location, JSONFile, MakeDir, Copy,
 from .bundle import (Bundle, SortedBundle, ViewBundle, AndBundle,
                      BaseBundle, BundleDelegator, FunctionDelegator, LogicBundle,
                      OrBundle, StoredBundle)
-
-# This module used an __all__
-from .sampling import *
 
 from .configuration import Configuration
 from .task import Task, PythonTask, DummyTask
@@ -52,6 +58,8 @@ from .reducer import (ActionParser, BashParser, ChainedParser,
 from .engine import (Engine, Trajectory, Frame,
                      TrajectoryGenerationTask, TrajectoryExtensionTask)
 
+# TODO remove or make this exist in useful form for custom
+#      analysis implementation
 from .analysis import Analysis, DoAnalysis
 
 # specific generators that should be available to the general user

@@ -1,8 +1,13 @@
 
 import yaml
 
-from adaptivemd import Project, File, OpenMMEngine
-from adaptivemd.analysis.pyemma import PyEMMAAnalysis
+from ..project import Project
+from ..file import File
+from ..engine.openmm import OpenMMEngine
+from ..analysis.pyemma import PyEMMAAnalysis
+
+
+__all__ = ["initialize_project"]
 
 
 def initialize_project(p_name, sys_name=None, m_freq=None, p_freq=None, platform=None, features=None):
