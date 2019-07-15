@@ -193,7 +193,12 @@ echo "$generator"
 # - should be a code if errors handled correctly
 APP_OUT=$(eval $generator)
 IFS=$'\n' APP_OUT=($APP_OUT)
-APP_STATUS="${APP_OUT[${#APP_OUT[@]}-1]}"
+
+if [ -z "$APP_OUT" ]; then
+  echo "Warning: No output recieved from AdaptiveMD Application"
+else
+  APP_STATUS="${APP_OUT[${#APP_OUT[@]}-1]}"
+fi
 
 echo "Got status '$APP_STATUS' from AdaptiveMD"
 

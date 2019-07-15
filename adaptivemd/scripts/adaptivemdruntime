@@ -1,4 +1,4 @@
-#!/usr/bin/env/python
+#!/usr/bin/env python
 
 '''
     Usage:
@@ -6,27 +6,28 @@
 
 '''
 
-import traceback
 import os
 import sys
 import time
 import datetime
+import traceback
 
 from adaptivemd.runtime import argparser
 #TODO#from .jobtools import calculate_request, jobBuilder
 
-from adaptivemd.util import get_logger, formatlines
+from adaptivemd.util import get_logger, initialize_project
 logger = get_logger(logname=__name__)
 
-#TODO#from __run_admd import init_project, strategy_function, get_logger, formatlines
+#from __run_admd import init_project, strategy_function, get_logger
 
 from adaptivemd import Task, TrajectoryGenerationTask, TrajectoryExtensionTask, PythonTask, Scheduler
 
 _exitval_ = -1
 
-final_states = Task.FINAL_STATES + Task.RESTARTABLE_STATES
-created_state = 'created'
-fix_states = {'queued','running','fail','failed','cancelled','pending'}
+# FIXME these should be organized within the AdaptiveMD Task object
+final_states    = Task.FINAL_STATES + Task.RESTARTABLE_STATES
+created_state   = 'created'
+fix_states      = {'queued','running','fail','failed','cancelled','pending'}
 runnable_states = set(fix_states).add(created_state)
 
 created_state_update = {"state":created_state, "__dict__.state":created_state}
@@ -48,30 +49,32 @@ if __name__ == '__main__':
         submit_only = args.submit_only
 
         logger.info("Initializing Project named: " + args.project_name)
-        logger.info(formatline("Recieved Argumentes:\n{}".format(args)))
+        logger.info("Recieved Argumentes:\n{}".format(args))
+
         logger.info(
-            formatline("TIMER Project opening {}".format(
-            datetime.datetime.fromtimestamp(time.time())))
+            "TIMER Project opening {}".format(
+            datetime.datetime.fromtimestamp(time.time()))
         )
 
-        project = init_project(
+        project = initialize_project(
             args.project_name,
             args.system_name,
             args.all,
             args.prot,
             args.platform,
-            reinitialize=args.reinitialize,
-            #args.dblocation                                 )
         ) 
+
         logger.info(
-            formatline("TIMER Project opened {}".format(
+            formatlines("TIMER Project opened {}".format(
             datetime.datetime.fromtimestamp(time.time())))
         )
 
         logger.info(
             "AdaptiveMD dburl: {}".format(project.storage._db_url))
+
         logger.info(
             "number of project.trajectories: {}".format(len(project.trajectories)))
+
         logger.info(
             "number of project.models: {}".format(len(project.models)))
 
@@ -114,5 +117,31 @@ if __name__ == '__main__':
                 project.name)
             )
 
-    except:
-        pass
+    except KeyboardInterrupt:
+        logger.info("KEYBOARD INTERRUPT- Quitting Workflow Execution")
+
+    except Exception as e:
+        logger.error("Error during workflow: {}".format(e))
+        logger.error(traceback.print_exc())
+
+    finally:
+
+        if project:
+            project.resources.consume_one()
+            project.close()
+         #   if not args.init_only and dump_finalize_timestamps:
+         #       final_timestamps = pull_final_timestamps(project)
+         #       logger.info(pformat(final_timestamps))
+
+        logger.info("Exiting Event Script")
+        logger.info(formatline("TIMER Project closed {0:.5f}".format(time.time())))
+
+        if len(project.workers) > 0:
+            logger.info("Sending 'shutdown' command to all active workers")
+            logger.info(project.workers.all)
+            project.workers.all.execute('shutdown')
+            #[setattr(w,'state','down') for w in project.workers]
+            logger.info(project.workers.all)
+
+        print(_exitval_)
+        sys.exit(_exitval_)
