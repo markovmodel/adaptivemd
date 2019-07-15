@@ -87,7 +87,7 @@ fi
 
 # This is environment variable is read by
 # any local AdaptiveMD instances
-ADMD_DBURL="mongodb://0.0.0.0:$DBPORT/"
+export ADMD_DBURL="mongodb://0.0.0.0:$DBPORT/"
 
 # These ones only come with the first round
 # to describe simulation setup

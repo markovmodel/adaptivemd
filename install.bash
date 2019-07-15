@@ -158,6 +158,10 @@ echo "export ADMD_WORKFLOWS=\"$ADMD_WORKFLOWS\"" | tee -a $ADMD_PROFILE
 echo "export ADMD_MDSYSTEMS=\"$ADMD_MDSYSTEMS\"" | tee -a $ADMD_PROFILE
 echo "export ADMD_SAMPLINGFUNCS=\"$ADMD_SAMPLINGFUNCS\"" | tee -a $ADMD_PROFILE
 echo "" | tee -a $ADMD_PROFILE
+echo "# This var is defined (and redefined) when using the runtime" | tee -a $ADMD_PROFILE
+echo "# system so all the platform layers can find database" | tee -a $ADMD_PROFILE
+echo "#ADMD_DBURL=\"mongodb://localhost:27017\"" | tee -a $ADMD_PROFILE
+echo "" | tee -a $ADMD_PROFILE
 echo "<<<<<<<<<<<< ADMD_PROFILE <<<<<<<<<<<<<<<<<<<<<<<<"
 
 mkdir -p "$ADMD_DATA"
@@ -252,10 +256,12 @@ conda install --yes --force-reinstall pyyaml
 
 echo ">>>>>>>>>>>> ADMD_PROFILE >>>>>>>>>>>>>>>>>>>>>>>>"
 echo "export PATH=\"$(dirname $(which conda)):\$PATH\"" | tee -a $ADMD_PROFILE
+echo "" | tee -a $ADMD_PROFILE
 echo "# 'activate' now in PATH" | tee -a $ADMD_PROFILE
 echo "# TODO maybe? conda activate $ADMD_ENV_NAME... but seems" | tee -a $ADMD_PROFILE
 echo "#      this isn't reliable without the bashrc component" | tee -a $ADMD_PROFILE
 echo "export ADMD_ACTIVATE=\"source activate $ADMD_ENV_NAME\"" | tee -a $ADMD_PROFILE
+echo "" | tee -a $ADMD_PROFILE
 echo "# activate by default" | tee -a $ADMD_PROFILE
 echo "\$ADMD_ACTIVATE" | tee -a $ADMD_PROFILE
 echo "" | tee -a $ADMD_PROFILE
