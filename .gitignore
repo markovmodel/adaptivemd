@@ -8,6 +8,9 @@ examples/rp/rp.session*
 # Files for different systems
 examples/files/
 
+# Explicit adds required for alanine example
+examples/alanine
+
 # Jupyter Notebooks
 **/**ipynb
 
