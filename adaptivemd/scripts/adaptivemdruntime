@@ -65,8 +65,8 @@ if __name__ == '__main__':
         ) 
 
         logger.info(
-            formatlines("TIMER Project opened {}".format(
-            datetime.datetime.fromtimestamp(time.time())))
+            "TIMER Project opened {}".format(
+            datetime.datetime.fromtimestamp(time.time()))
         )
 
         logger.info(
@@ -134,7 +134,7 @@ if __name__ == '__main__':
          #       logger.info(pformat(final_timestamps))
 
         logger.info("Exiting Event Script")
-        logger.info(formatline("TIMER Project closed {0:.5f}".format(time.time())))
+        logger.info("TIMER Project closed {0:.5f}".format(time.time()))
 
         if len(project.workers) > 0:
             logger.info("Sending 'shutdown' command to all active workers")

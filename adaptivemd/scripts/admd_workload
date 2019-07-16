@@ -60,6 +60,7 @@ exitval="-1"
 #------------------------------------------------------------------------------#
 # Input Argument processing
 
+# FIXME never shows up below
 ROUNDNUMBER="$1"
 PROJNAME="$2"
 # types: `trajs`, `model`, `cleanup`, or `all`
@@ -69,6 +70,7 @@ NTRAJS="$4"
 MDSTEPS="$5"
 TRAJSTEPS="$6"
 AFTERNTRAJS="$7"
+# FIXME never shows up below
 MODELTRAJLENGTH="$8"
 SAMPLEFUNC="$9"
 MINUTES="${10}"
@@ -91,9 +93,9 @@ export ADMD_DBURL="mongodb://0.0.0.0:$DBPORT/"
 
 # These ones only come with the first round
 # to describe simulation setup
-SYSNAME="${12}"
-MFREQ="${13}"
-PFREQ="${14}"
+SYSTEMNAME="${12}"
+MFREQUENCY="${13}"
+PFREQUENCY="${14}"
 PLATFORM="${15}"
 
 # More Workload Control and Parameters
@@ -126,13 +128,7 @@ if [ ! -z "$SYSTEMNAME" ]
 then
   # Initialize a project for the first time
   initializer="$generator $SYSTEMNAME --init_only"
-  initializer+=" -P $PLATFORM -p $PFREQ -m $MFREQ"
-
-  echo "Initializing Project with this command"
-  echo "To 'adaptivemdruntime':"
-  echo "$initializer"
-
-  eval "$initializer"
+  initializer+=" -P $PLATFORM -p $PFREQUENCY -m $MFREQUENCY"
 fi
 
 if [ ! -z "$ROUND_N" ]
@@ -178,12 +174,19 @@ fi
 
 echo "Starting database in directory '$DBHOME' on port '$DBPORT'"
 MPID="$(launch_amongod $DBHOME $DBPORT)"
-sleep 15
 echo "Mongo DB process ID: $MPID"
 echo "Running AdaptiveMD Application:"
 
 #------------------------------------------------------------------------------#
 # Launch adaptivemdruntime
+
+if [ ! -z "$initializer" ]; then
+  echo "Initializing Project with this command"
+  echo "To 'adaptivemdruntime':"
+  echo "$initializer"
+
+  eval "$initializer"
+fi
 
 echo "Starting 'adaptivemdruntime' with command:"
 echo "$generator"
@@ -192,6 +195,9 @@ echo "$generator"
 # - by parsing the last line
 # - should be a code if errors handled correctly
 APP_OUT=$(eval $generator)
+APP_ID="$!"
+echo "Waiting on application: $APP_ID"
+wait "$APP_ID"
 IFS=$'\n' APP_OUT=($APP_OUT)
 
 if [ -z "$APP_OUT" ]; then
