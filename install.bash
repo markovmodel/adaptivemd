@@ -156,6 +156,7 @@ echo "export ADMD_DATA=\"$ADMD_DATA\"" | tee -a $ADMD_PROFILE
 echo "export ADMD_SOFTWARE=\"$ADMD_SOFTWARE\"" | tee -a $ADMD_PROFILE
 echo "export ADMD_WORKFLOWS=\"$ADMD_WORKFLOWS\"" | tee -a $ADMD_PROFILE
 echo "export ADMD_MDSYSTEMS=\"$ADMD_MDSYSTEMS\"" | tee -a $ADMD_PROFILE
+echo "export ADMD_ADAPTIVEMD=\"$CWD\"" | tee -a $ADMD_PROFILE
 echo "export ADMD_SAMPLINGFUNCS=\"$ADMD_SAMPLINGFUNCS\"" | tee -a $ADMD_PROFILE
 echo "" | tee -a $ADMD_PROFILE
 echo "# This var is defined (and redefined) when using the runtime" | tee -a $ADMD_PROFILE
