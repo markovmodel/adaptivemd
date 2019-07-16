@@ -1,4 +1,5 @@
 
+import os
 import yaml
 
 from ..project import Project
@@ -6,6 +7,9 @@ from ..file import File
 from ..engine.openmm import OpenMMEngine
 from ..analysis.pyemma import PyEMMAAnalysis
 
+from ..util import get_logger
+
+logger = get_logger(__name__)
 
 __all__ = ["initialize_project"]
 
@@ -41,14 +45,22 @@ def initialize_project(p_name, sys_name=None, m_freq=None, p_freq=None, platform
 
         # Initialize w/ config file: 1 of multiple options
         # TODO add config filename argument
-        configuration_file = 'configuration.cfg'
-
+        configuration_file = 'resource.yaml'
         project.initialize(configuration_file)
 
         f_name = '{0}.pdb'.format(sys_name)
 
         # FIXME add system specifications to configuration file
-        f_base       = 'file:///$ADMD_MDSYSTEMS/{0}/'.format(sys_name)
+        if sys_name in os.listdir(os.path.expandvars("$ADMD_MDSYSTEMS")):
+            f_base = 'file:///$ADMD_MDSYSTEMS/{0}/'.format(sys_name)
+
+        elif sys_name in os.listdir(os.path.join(os.path.expandvars("$ADMD_ADAPTIVEMD"), "examples/files")):
+            f_base = 'file:///$ADMD_ADAPTIVEMD/examples/files/{0}/'.format(sys_name)
+
+        else:
+            raise ValueError( ("System name {} was not found in either $ADMD_MDSYSTEMS or "
+                               "source package 'examples/files' directory".format(sys_name)) )
+
         f_structure  = File(f_base + f_name).load()
         f_system     = File(f_base + 'system.xml').load()
         f_integrator = File(f_base + 'integrator.xml').load()
