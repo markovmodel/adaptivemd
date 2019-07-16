@@ -22,9 +22,10 @@
 from __future__ import absolute_import, print_function
 
 import os
+import yaml
+
 from .mongodb import StorableMixin, SyncVariable
 from .task import DummyTask
-from .util import parse_cfg_file
 
 
 # TODO
@@ -85,7 +86,6 @@ class Configuration(StorableMixin):
     read_configurations
 
     """
-    _ext = '.cfg'
     _fields = {'shared_path'   : (str, '$HOME'),
                'resource_name' : (str, 'local.localhost'),
                'queues'        : (str, ''),
@@ -95,32 +95,6 @@ class Configuration(StorableMixin):
                'current'       : (bool,False),
               }
 
-    _resource_names = set(['fub.allegro', 'xsede.supermic',
-        'das4.fs2', 'osg.connect', 'xsede.stampede',
-        'radical.tutorial', 'lumc.gb-ui', 'chameleon.cloud',
-        'xsede.trestles', 'osg.xsede-virt-clust',
-        'futuregrid.echo', 'nersc.edison', 'xsede.greenfield',
-        'xsede.bridges', 'xsede.lonestar', 'futuregrid.bravo',
-        'xsede.gordon', 'radical.one', 'xsede.wrangler',
-        'stfc.joule', 'futuregrid.delta', 'lumc.shark',
-        'ornl.titan_aprun', 'ncar.yellowstone', 'xsede.comet', 'ornl.titan_orte',
-        'local.localhost', 'xsede.blacklight', 'yale.grace',
-        'rice.davinci', 'lrz.supermuc', 'nersc.hopper',
-        'futuregrid.xray', 'iu.bigred2', 'rice.biou',
-        'futuregrid.india', 'das5.fs1', 'epsrc.archer',
-        'ncsa.bw', 'radical.two', 'xsede.stampede2'])
-
-
-    def get_resource_list(self):
-        # TODO Use this method to get list of resource names
-        # Read this guy as function
-        # and eliminate the (incorrect) use of
-        # truncated names
-        # make sure to do import test for RP
-        #from .rp import rp_resource_list
-        pass
-
-
     # TODO init from passed dict
     def __init__(self, name, wrapper=None, **fields):
         # Configuration initialization will only complete if all
@@ -128,24 +102,21 @@ class Configuration(StorableMixin):
         # to valid fields, and the resource name is a known
         # resource configured in Radical Pilot.
         #  - verify this with test...
-        # TODO  conditional system that checks rp compatibility of a resource
 
         # Construction from file
         if fields:
-            if 'resource_name' in fields:
-                if fields['resource_name'] not in Configuration._resource_names:
-                    raise ValueError("Resouce Name is not defined")
 
             _dict = self.process_attributes(fields)
             super(Configuration, self).__init__()
+
             [setattr(self, field, val) for field, val in _dict.items()]
+
             self.name = name
 
             # currently only handle 1 given queue
             # but must convert to list for RP
             if not isinstance(self.queues, list):
                 self.queues = [self.queues]
-
 
         # Construction via from_dict from storage
         else:
@@ -155,7 +126,6 @@ class Configuration(StorableMixin):
             wrapper = DummyTask()
 
         self.wrapper = wrapper
-
 
     # TODO remove extra filename field project_name
     @classmethod
@@ -191,22 +161,20 @@ class Configuration(StorableMixin):
         #      an adaptivemd file object
         configuration_file = os.path.normpath(
             os.path.expandvars(configuration_file)
-            )
-
-        # Look in other locations
-        if not configuration_file:
-            locs = ['./' + project_name + cls._ext,]
-
-            if os.path.isfile(locs[0]):
-                f_cfg = locs[0]
+        )
 
         # Use given file
-        elif os.path.isfile(configuration_file):
+        if os.path.isfile(configuration_file):
             f_cfg = configuration_file
+
+        else:
+            # Need to recieve valid, existing config filename
+            raise Exception
 
         # create configuration objects from parsed config
         if f_cfg:
-            configurations_fields = parse_cfg_file(f_cfg)
+            with open(f_cfg, 'r') as f_yaml:
+                configurations_fields = yaml.safe_load(f_yaml)
 
             for configuration, fields in configurations_fields.items():
                 configurations.append(cls(configuration, **fields))
@@ -215,7 +183,8 @@ class Configuration(StorableMixin):
         elif configuration_file and f_cfg is None:
             print("Could not locate the given configuration file: {0}\n"
                   .format(configuration_file,
-                  "Going to use default local configuration"))
+                  "Going to use default local configuration")
+            )
 
             configurations.append(cls('local', **dict(resource_name='local.localhost')))
 
@@ -227,7 +196,9 @@ class Configuration(StorableMixin):
     @classmethod
     def process_attributes(cls, fields):
         _dict = dict()
+
         for field, val in fields.items():
+
             try:
                 _type = cls._fields[field][0]
                 _val  = _type(val)
