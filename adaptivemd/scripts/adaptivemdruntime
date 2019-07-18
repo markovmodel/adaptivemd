@@ -28,7 +28,8 @@ _exitval_ = -1
 final_states    = Task.FINAL_STATES + Task.RESTARTABLE_STATES
 created_state   = 'created'
 fix_states      = {'queued','running','fail','failed','cancelled','pending'}
-runnable_states = set(fix_states).add(created_state)
+runnable_states = set(fix_states)
+runnable_states.add(created_state)
 
 created_state_update = {"state":created_state, "__dict__.state":created_state}
 
