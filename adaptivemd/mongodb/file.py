@@ -45,7 +45,7 @@ class FileStore(ObjectStore):
         return 0
 
     def _load(self, idx):
-        _id = hex_t(idx)
+        _id = hex_t(idx).rstrip("L")
 
         f = self.grid.find_one({'_id': _id})
 

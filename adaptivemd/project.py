@@ -242,6 +242,7 @@ class Project(object):
         self.set_current_configuration(default_configuration)
 
     def __init__(self, name):
+
         self.name = name
 
         dburl = os.environ.get("ADMD_DBURL")
