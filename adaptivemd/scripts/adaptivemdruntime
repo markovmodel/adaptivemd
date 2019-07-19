@@ -31,8 +31,6 @@ from adaptivemd import Task
 # positive: the integer number of tasks that were found to
 #           have (erroneously) not completed
 
-_exitval_ = -1
-
 # FIXME these should be organized within the AdaptiveMD Task object
 final_states    = Task.FINAL_STATES + Task.RESTARTABLE_STATES
 created_state   = 'created'
@@ -52,6 +50,8 @@ if __name__ == '__main__':
     sleeptime = 1
 
     try:
+
+        _exitval_ = -1
 
         parser   = argparser()
         args     = parser.parse_args()
@@ -123,9 +123,11 @@ if __name__ == '__main__':
             )
 
         if args.init_only:
-            logger.info("Leaving project '{}' initialized without tasks".format(
+            logger.info("Leaving project '{}' initialized without tasks--->><<<>".format(
                 project.name)
             )
+
+            _exitval_ = 0
 
         else:
             logger.info("Configuring workload")
@@ -184,9 +186,9 @@ if __name__ == '__main__':
 
                         logger.info("Checked for failed tasks to rescue but found none, exiting without error")
 
-                        __exitval__ = 0
-                        print(__exitval__)
-                        sys.exit(__exitval__)
+                        _exitval_ = 0
+                        print(_exitval_)
+                        sys.exit(_exitval_)
 
                     else:
 
@@ -263,10 +265,11 @@ if __name__ == '__main__':
 
             logger.info("Project event added")
 
+            _exitval_ = 0
+
             if submit_only:
-                __exitval__ = 0
-                print(__exitval__)
-                sys.exit(__exitval__)
+                print(_exitval_)
+                sys.exit(_exitval_)
 
             logger.info("Project waiting on completion event for last workload")
             project.wait_until(project.events_done)
@@ -274,9 +277,13 @@ if __name__ == '__main__':
 
     except KeyboardInterrupt:
 
+        _exitval_ = -2
+
         logger.info("KEYBOARD INTERRUPT- Quitting Workflow Execution")
 
     except Exception as e:
+
+        _exitval_ = -1
 
         logger.error("Error during workflow: {}".format(e))
         logger.error(traceback.print_exc())
@@ -286,13 +293,13 @@ if __name__ == '__main__':
         if project:
             project.resources.consume_one()
             project.close()
+            logger.info("Project closed")
 
          #   if not args.init_only and dump_finalize_timestamps:
          #       final_timestamps = pull_final_timestamps(project)
          #       logger.info(pformat(final_timestamps))
 
         logger.info("Exiting Event Script")
-        logger.info("TIMER Project closed {0:.5f}".format(time.time()))
 
         if len(project.workers) > 0:
             logger.info("Sending 'shutdown' command to all active workers")
