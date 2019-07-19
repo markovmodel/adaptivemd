@@ -42,9 +42,8 @@ fi
 
 mongodcommand="${launcher}mongod --dbpath $DBPATH/db/ --config $DBPATH/db.cfg &> $DBPATH/db.log $postcommand"
 
-echo "Launching 'mongod' with this command:"
-echo "$mongodcommand"
+#echo "Launching 'mongod' with this command:"
+#echo "$mongodcommand"
 eval "$mongodcommand"
 echo "$!"
-echo `list_mongods`
 

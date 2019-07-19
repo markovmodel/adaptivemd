@@ -196,8 +196,9 @@ echo "$generator"
 # - should be a code if errors handled correctly
 APP_OUT=$(eval $generator)
 APP_ID="$!"
-echo "Waiting on application: $APP_ID"
-wait "$APP_ID"
+## # TODO get process ID of subshell'd process
+## echo "Waiting on application: $APP_ID"
+## wait "$APP_ID"
 IFS=$'\n' APP_OUT=($APP_OUT)
 
 if [ -z "$APP_OUT" ]; then
@@ -211,19 +212,19 @@ echo "Got status '$APP_STATUS' from AdaptiveMD"
 #------------------------------------------------------------------------------#
 # Kill and cleanup database stuff
 
-echo "Killing Mongo DB"
+echo "Killing Mongo DB Process: $MPID"
 kill $MPID
 
-# Sometimes shutdown doesn't happen nicely, we should not
-# have to do this. But if the workflow is the only thing
-# interacting with a database, should be safe... we are
-# circumventing locks that prevent multiple access and
-# enforce ACID compliance in the database.
-if [ "$(ls -A $DBHOME/socket)" ]
-then
-  rm $DBHOME/socket/*
-  rm $DBHOME/db/mongod.lock
-fi
+# ## Sometimes shutdown doesn't happen nicely, we should not
+# ## have to do this. But if the workflow is the only thing
+# ## interacting with a database, should be safe... we are
+# ## circumventing locks that prevent multiple access and
+# ## enforce ACID compliance in the database.
+# #if [ ! -z "$(ls -A $DBHOME/socket)" ]
+# #then
+# #  rm $DBHOME/socket/*
+# #  rm $DBHOME/db/mongod.lock
+# #fi
 
 #------------------------------------------------------------------------------#
 # Process adaptivemdruntime exit code

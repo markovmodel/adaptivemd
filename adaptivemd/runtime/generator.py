@@ -1,5 +1,4 @@
 
-
 import os
 import sys
 #from pprint import pformat
@@ -48,7 +47,9 @@ def workflow_generator_simple(
         sampling_function_name, **sfkwargs
     )
 
-    return True
+    from random import random
+
+    yield lambda: random() > 0.9
 
 
 def model_extend_simple(modeller, c_ext, tasks, n_steps, sampling_function, mtask=None, c=None):
@@ -100,9 +101,6 @@ def model_extend_simple(modeller, c_ext, tasks, n_steps, sampling_function, mtas
         #print("First Extensions' status':\n", [ta.state for ta in tasks])
 
         return lambda: progress(tasks)
-        #return any([ta.is_done() for ta in tasks[:-1]])
-        #return lambda: len(filter(lambda ta: ta.is_done(), tasks)) > len(tasks) / 2
-        #return all([ta.is_done() for ta in tasks[:-1]])
 
     # LAST workload in this execution
     elif c_ext == n_ext:
@@ -198,6 +196,3 @@ def model_extend_simple(modeller, c_ext, tasks, n_steps, sampling_function, mtas
 
         else:
             return lambda: progress(tasks)
-            #return any([ta.is_done() for ta in tasks])
-            #return lambda: len(filter(lambda ta: ta.is_done(), tasks)) > len(tasks) / 2
-            #return all([ta.is_done() for ta in tasks])
