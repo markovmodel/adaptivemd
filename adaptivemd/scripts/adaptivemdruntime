@@ -12,15 +12,24 @@ import time
 import datetime
 import traceback
 
-from adaptivemd.runtime import argparser, initialize_project
-#TODO#from .jobtools import calculate_request, jobBuilder
+from adaptivemd import PythonTask
+
+from adaptivemd.runtime import argparser, initialize_project, workflow_generator_simple
+#from adaptivemd.runtime.jobtools import calculate_request, jobBuilder
 
 from adaptivemd.util import get_logger
 logger = get_logger(logname=__name__)
 
-#from __run_admd import init_project, strategy_function, get_logger
-
 from adaptivemd import Task
+
+# Exit codes from this script are NOT conventional!
+#
+# negative: an error
+#
+# zero:     no error
+#
+# positive: the integer number of tasks that were found to
+#           have (erroneously) not completed
 
 _exitval_ = -1
 
@@ -83,7 +92,7 @@ if __name__ == '__main__':
         rescue_uuids = list(map(lambda ta: ta.__uuid__, rescue_tasks))
         n_incomplete_tasks = len(rescue_tasks)
 
-        # TODO not clean on relationship of these and embedded conditions
+        # TODO not clear on relationship of these and embedded conditions
         if args.rescue_tasks:
 
             if n_incomplete_tasks:
@@ -118,10 +127,157 @@ if __name__ == '__main__':
                 project.name)
             )
 
+        else:
+            logger.info("Configuring workload")
+
+            # TODO we currently only support a single simulation configuration
+            #      with the runtime system.
+            engine   = project.generators["openmm"]
+            n_traj   = args.n_traj
+            n_rounds = args.n_rounds # n_rounds in single runtime, almost always 1
+            round_n  = args.round_n   # round number for overall workflow
+            length   = args.length
+            modeller = None
+            walltime = args.minutes
+            model_tasks = list(project.tasks.c(PythonTask).m('state','created'))
+
+            # We support multiple modellers so that analysis using
+            # different featurization can be evaluated easily
+            if args.modeller:
+                nm_modeller = args.modeller
+                modeller = project.generators[nm_modeller]
+
+            if not n_traj:
+                logger.info("No trajectories given to run")
+
+                if not modeller:
+                    logger.info("No modeller either, looking to do a cleanup")
+                    logger.info("Before fixes: task states: {}".format(project.task_states))
+
+                    # TODO FIXME this approach for resetting task states not acceptable for general use...
+                    #            in the future a single adaptivemd project instance should be able to
+                    #            coordinate multiple workloads simultaneously, and this introduces race
+                    #            conditions since we are in no way trying to target the reset action to
+                    #            specific groups of tasks, i.e. by their resource, round number (isn't
+                    #            stored yet anyways), etc
+                    for fix_state in fix_states:
+                        project.tasks._set._document.update_many(
+                            {"state": fix_state},
+                            {"$set" : created_state_update}
+                        )
+
+                    logger.info("After fixes: task states: {}".format(project.task_states))
+                    #project.tasks._set.clear_cache()
+                    #project.tasks._set.load_indices()
+                    #logger.info("After reload: observed task states: {}".format(project.task_states))
+
+                    new_tasks    = project.tasks.v(lambda ta: ta.__uuid__ in rescue_uuids)
+                    model_tasks += list(new_tasks.c(PythonTask))
+
+                    # FIXME list elements getting duplicated somehow
+                    # TODO  see if this still happens ^^^
+                    new_tasks = list(set(new_tasks))
+                    model_tasks = list(set(model_tasks))
+                    logger.info("Found {} tasks to execute in cleanup".format(len(new_tasks)))
+
+                    if not new_tasks:
+
+                        logger.info("Checked for failed tasks to rescue but found none, exiting without error")
+
+                        __exitval__ = 0
+                        print(__exitval__)
+                        sys.exit(__exitval__)
+
+                    else:
+
+                        n_rounds  = 1
+                        n_traj    = len(new_tasks)
+
+                        #for ta in new_tasks:
+                        #    logger.info("{0}  {1}".format(ta.state, getattr(ta, 'trajectory', None)))
+
+                        # FIXME get the number of MD steps to be run in the task, not total MD length
+                        #       and use this for the length argument to generator function
+                        #if any([hasattr(ta, 'trajectory') for ta in new_tasks]):
+                        #    # doesn't handle TrajectoryExtensionTask correctly
+                        #    length    = max(map(lambda ta: ta.trajectory.length, filter(lambda ta: hasattr(ta,'trajectory'), new_tasks)))
+
+
+                else:
+                    # Just doing an analysis task
+                    pass
+
+
+            sfkwargs = dict()
+            sfkwargs['num_macrostates'] = 25
+
+            logger.info("n_rounds: {}".format(n_rounds))
+
+            # TODO calculate_request via resource configuration and args
+            cpus = 1
+            gpus = 1
+            project.request_resource(cpus, walltime, gpus, 'current')
+
+            logger.info(
+                "\nResource request arguments: \ncpus: {0}\nwalltime: {1}\ngpus: {2}".format(
+                cpus, walltime, gpus)
+            )
+
+            if n_traj or modeller:
+
+                # We're going to track what happens with new tasks that
+                # get generated next, need to capture current inventory
+                existing_tasks = [ta.__uuid__ for ta in project.tasks]
+
+                logger.info("Project event adding from {}".format(workflow_generator_simple))
+                project.add_event(workflow_generator_simple(
+                    project, engine, n_traj, args.n_ext, length, round_n,
+                    longest = args.all,
+                    n_rounds = n_rounds,
+                    modeller = modeller,
+                    sfkwargs = sfkwargs,
+                    minlength = args.minlength,
+                    batchsize = args.batchsize,
+                    batchwait = args.batchwait,
+                    batchsleep = args.batchsleep,
+                    progression = args.progression,
+                    cpu_threads = args.threads,
+                    fixedlength = True,#args.fixedlength,
+                    startontraj = args.after_n_trajs,
+                    admd_profile = args.rc,
+                    min_model_trajlength = args.min_model_trajlength,
+                    sampling_function_name = args.sampling_method,
+                ))
+
+                new_tasks = filter(lambda ta: ta.__uuid__ not in existing_tasks, project.tasks)
+
+            else:
+
+                logger.info("Project event adding from incomplete tasks\n{}".format(new_tasks))
+                sleeptime = 20
+
+                logger.info("These are the tasks being cleaned up:")
+                logger.info(pformat(new_tasks))
+
+                project.add_event(all([ta.is_done() for ta in new_tasks]))
+
+            logger.info("Project event added")
+
+            if submit_only:
+                __exitval__ = 0
+                print(__exitval__)
+                sys.exit(__exitval__)
+
+            logger.info("Project waiting on completion event for last workload")
+            project.wait_until(project.events_done)
+            logger.info("Project event done")
+
     except KeyboardInterrupt:
+
         logger.info("KEYBOARD INTERRUPT- Quitting Workflow Execution")
 
     except Exception as e:
+
         logger.error("Error during workflow: {}".format(e))
         logger.error(traceback.print_exc())
 
@@ -130,6 +286,7 @@ if __name__ == '__main__':
         if project:
             project.resources.consume_one()
             project.close()
+
          #   if not args.init_only and dump_finalize_timestamps:
          #       final_timestamps = pull_final_timestamps(project)
          #       logger.info(pformat(final_timestamps))
@@ -141,8 +298,7 @@ if __name__ == '__main__':
             logger.info("Sending 'shutdown' command to all active workers")
             logger.info(project.workers.all)
             project.workers.all.execute('shutdown')
-            #[setattr(w,'state','down') for w in project.workers]
-            logger.info(project.workers.all)
 
         print(_exitval_)
         sys.exit(_exitval_)
+
