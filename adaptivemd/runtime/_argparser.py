@@ -109,6 +109,10 @@ def argparser():
         help="Full URL of the MongoDB",
         default="mongodb://localhost:27017/", type=stripped)
 
+    parser.add_argument("--threads",
+        help="Number of threads for each task",
+        default=1, type=int)
+
     parser.add_argument("-S","--sampling_method",
         help="Name of sampling function saved in sampling_functions.py",
         default="explore_macrostates", type=stripped)
