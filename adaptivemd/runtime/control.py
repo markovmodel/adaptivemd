@@ -1,10 +1,12 @@
 
 
 
+from time import sleep
 
 from ..util import get_logger
 
 logger = get_logger(__name__)
+
 
 def all_done(tasks):
         '''Check if a workload (batch of tasks) is done
@@ -21,7 +23,7 @@ def all_done(tasks):
         if n_waiting > 0:
 
             logger.info("Waiting on {} tasks".format(n_waiting))
-            time.sleep(idle_time)
+            sleep(idle_time)
 
             return False
 
@@ -63,7 +65,7 @@ def queue_tasks(project, tasks, wait=False, batchsize=9999999, sleeptime=5):
            w=wait, b=batchsize, s=sleeptime)
     )
 
-    for i in range(len(tasks)/batchsize + bool(len(tasks)%batchsize)):
+    for i in range( len(tasks) // batchsize + bool(len(tasks) % batchsize) ):
         waiting = False
 
         if wait:
@@ -84,7 +86,7 @@ def queue_tasks(project, tasks, wait=False, batchsize=9999999, sleeptime=5):
 
             logger.debug("Queueing these tasks: ", _tasks)
             project.queue(_tasks)
-            time.sleep(sleeptime)
+            sleep(sleeptime)
 
             while waiting:
                 logger.debug("waiting: ", waitfunc, _tasks)
@@ -99,7 +101,8 @@ def queue_tasks(project, tasks, wait=False, batchsize=9999999, sleeptime=5):
                     logger.debug(reduce(lambda s,ta: s+' '+ta.state, [' ']+list(_tasks)))
                     logger.debug("Sleeping for {} seconds".format(sleeptime))
 
-                    time.sleep(sleeptime)
+                    sleep(sleeptime)
+
 
 def update_margs(margs, round_n=None):
 
@@ -132,6 +135,7 @@ def update_margs(margs, round_n=None):
             # FIXME not good here, braoder solution to typing: typetemplate
             try:
                 _margs[k] = int(v)
+
             except (ValueError,TypeError):
                 _margs[k] = v
 

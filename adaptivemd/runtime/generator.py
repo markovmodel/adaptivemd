@@ -6,7 +6,7 @@ import sys
 #import time
 
 from .control import queue_tasks, all_done
-from .util import add_task_env
+from .util import counter
 
 from ..sampling import get_sampling_function
 from ..util import get_logger
@@ -42,14 +42,72 @@ def workflow_generator_simple(
     gpu_contexts = 1,
     **kwargs,):
 
-
+    logger.info("Starting workflow_generator_simple function")
     sampling_function = get_sampling_function(
         sampling_function_name, **sfkwargs
     )
 
-    from random import random
+    resource_requirements = dict() # TODO calculate request
 
-    yield lambda: random() > 0.9
+    if progression == 'all':
+        progress = lambda tasks: all([ta.is_done() for ta in tasks])
+
+    else:
+        progress = lambda tasks: any([ta.is_done() for ta in tasks])
+
+    c = counter(n_rounds)
+    tasks = list()
+    if n_rounds:
+
+        assert isinstance(n_rounds, int)
+        assert n_rounds > 0
+
+        logger.info("Going to do n_rounds:  {}".format(c.n))
+
+    # PREPARATION - Preprocess task setups
+    logger.info("Using MD Engine: {0} {1}".format(engine, engine.name))#, project.generators[engine.name].__dict__)
+    logger.info("Using fixed length? {}".format(fixedlength))
+
+    if minlength is None:
+        minlength = n_steps
+
+    logger.info("\nProject models\n - Number: {n_model}"
+          .format(n_model=len(project.models)))
+
+    logger.info("\nProject trajectories\n - Number: {n_traj}"
+          .format(n_traj=len(project.trajectories)))
+
+    logger.debug("\nProject trajectories\n - Lengths:\n{lengths}"
+          .format(lengths=[t.length for t in project.trajectories]))
+
+    # ROUND 1 - No pre-existing data
+    if len(project.trajectories) == 0:
+        notfirsttime = False
+
+        logger.info("Defining first simulation tasks for new project")
+
+        for traj in project.new_trajectory(engine['pdb_file'], n_steps, engine, n_run):
+            tasks.append(traj.run(**resource_requirements))
+            if admd_profile: # This should be path to an RC file
+                tasks[-1].pre.insert(0, "source %s" % admd_profile)
+
+        if not n_rounds or not c.done:
+            logger.info("Project first tasks queue")
+            queue_tasks(project, tasks, sleeptime=batchsleep, batchsize=batchsize, wait=batchwait)
+            c.increment()
+
+        logger.info("Project first tasks queued")
+        logger.info("Queued First Tasks in new project")
+
+        yield lambda: progress(tasks)
+
+        logger.info("First Tasks are done")
+        logger.info("Project first tasks done")
+
+    else:
+
+        notfirsttime = True
+
 
 
 def model_extend_simple(modeller, c_ext, tasks, n_steps, sampling_function, mtask=None, c=None):
@@ -66,7 +124,6 @@ def model_extend_simple(modeller, c_ext, tasks, n_steps, sampling_function, mtas
             if not n_rounds or not c.done:
                 logger.info("Converting trajectories to tasks")
                 [tasks.append(t.run(**resource_requirements)) for t in trajectories]
-                add_task_env(tasks, **taskenv)
 
                 logger.info("Runtime new tasks queueing {0:.5f}".format(time.time()))
                 queue_tasks(project, tasks, sleeptime=batchsleep, batchsize=batchsize, wait=batchwait)
@@ -74,7 +131,7 @@ def model_extend_simple(modeller, c_ext, tasks, n_steps, sampling_function, mtas
                 c.increment()
                 logger.info("Runtime new tasks queued")
 
-            # wait for all initial trajs to finish
+            # wait for all initial trajs to finish ¿in this workload?
             waiting = True
             while waiting:
                 # OK condition because we're in first
@@ -90,15 +147,12 @@ def model_extend_simple(modeller, c_ext, tasks, n_steps, sampling_function, mtas
                         taskenv=taskenv, min_trajlength=min_model_trajlength,
                         resource_requirements=resource_requirements)
     
-                    logger.info(formatline("\nQueued Modelling Task\nUsing these modeller arguments:\n" + pformat(margs)))
+                    logger.info("\nQueued Modelling Task\nUsing these modeller arguments:\n" + pformat(margs))
 
                     tasks.extend(mtask)
                     waiting = False
                 else:
                     time.sleep(3)
-
-        #print(tasks)
-        #print("First Extensions' status':\n", [ta.state for ta in tasks])
 
         return lambda: progress(tasks)
 
@@ -115,25 +169,18 @@ def model_extend_simple(modeller, c_ext, tasks, n_steps, sampling_function, mtas
                             resource_requirements=resource_requirements)
 
                     tasks.extend(mtask)
-                    logger.info(formatline("\nQueued Modelling Task\nUsing these modeller arguments:\n" + pformat(margs)))
+                    logger.info("\nQueued Modelling Task\nUsing these modeller arguments:\n" + pformat(margs))
                 
-            logger.info(formatline("TIMER Brain last tasks define {0:.5f}".format(time.time())))
+            logger.info("Project last tasks define")
             logger.info("Queueing final extensions after modelling done")
-            logger.info(formatline("\nFirst MD Task Lengths: \n".format(randbreak)))
-            unrandbreak = [2*n_steps - rb for rb in randbreak]
-            unrandbreak.sort()
-            unrandbreak.reverse()
-            logger.info(formatline("\nFinal MD Task Lengths: \n".format(unrandbreak)))
+            logger.info("\nFirst MD Task Lengths: \n")
 
             trajectories = sampling_function(project, engine, unrandbreak, n_run)
-            #trajectories = project.new_ml_trajectory(engine, unrandbreak, n_run)
-            #trajectories = [project.new_trajectory(engine['pdb_file'], urb, engine) for urb in unrandbreak]
 
             [tasks.append(t.run(**resource_requirements)) for t in trajectories]
-            #add_task_env(tasks, environment, activate_prefix, virtualenv, task_env, pre=pre_cmds)
             add_task_env(tasks, **taskenv)
 
-            logger.info(formatline("TIMER Brain last tasks queue {0:.5f}".format(time.time())))
+            logger.info("Project last tasks queue")
             if not n_rounds or not c.done:
 
                 logger.info("Queueing these: ")
@@ -142,12 +189,9 @@ def model_extend_simple(modeller, c_ext, tasks, n_steps, sampling_function, mtas
 
                 c.increment()
 
-            logger.info(formatline("TIMER Brain last tasks queued {0:.5f}".format(time.time())))
+            logger.info("Project last tasks queued")
 
         return lambda: progress(tasks)
-        #return any([ta.is_done() for ta in tasks])
-        #return lambda: len(filter(lambda ta: ta.is_done(), tasks)) > len(tasks) / 2
-        #return all([ta.is_done() for ta in tasks])
 
     else:
         # MODEL TASK MAY NOT BE CREATED
@@ -158,22 +202,19 @@ def model_extend_simple(modeller, c_ext, tasks, n_steps, sampling_function, mtas
         #    with mtask
         if len(tasks) == 0:
             logger.info("Queueing new round of modelled trajectories")
-            logger.info(formatline("TIMER Brain new tasks define {0:.5f}".format(time.time())))
+            logger.info("Project new tasks define")
 
             trajectories = sampling_function(project, engine, n_steps, n_run)
-            #trajectories = project.new_ml_trajectory(engine, n_steps, n_run)
-            #trajectories = [project.new_trajectory(engine['pdb_file'], n_steps, engine) for _ in range(n_run)]
 
             if not n_rounds or not c.done:
                 [tasks.append(t.run(**resource_requirements)) for t in trajectories]
-                #add_task_env(tasks, environment, activate_prefix, virtualenv, task_env, pre=pre_cmds)
                 add_task_env(tasks, **taskenv)
-                logger.info(formatline("TIMER Brain new tasks queue {0:.5f}".format(time.time())))
+                logger.info("Project new tasks queue")
 
                 queue_tasks(project, tasks, rp_client, sleeptime=batchsleep, batchsize=batchsize, wait=batchwait)
 
                 c.increment()
-                logger.info(formatline("TIMER Brain new tasks queued {0:.5f}".format(time.time())))
+                logger.info("Project new tasks queued")
 
                 if mtask:
                     if mtask.is_done():
@@ -184,15 +225,9 @@ def model_extend_simple(modeller, c_ext, tasks, n_steps, sampling_function, mtas
                         tasks.extend(mtask)
 
                 return lambda: progress(tasks)
-                #return any([ta.is_done() for ta in tasks[:-1]])
-                #return lambda: len(filter(lambda ta: ta.is_done(), tasks)) > len(tasks) / 2
-                #return all([ta.is_done() for ta in tasks[:-1]])
 
             else:
                 return lambda: progress(tasks)
-                #return any([ta.is_done() for ta in tasks])
-                #return lambda: len(filter(lambda ta: ta.is_done(), tasks)) > len(tasks) / 2
-                #return all([ta.is_done() for ta in tasks])
 
         else:
             return lambda: progress(tasks)
