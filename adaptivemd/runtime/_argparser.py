@@ -5,7 +5,7 @@
 from argparse import ArgumentParser
 
 
-__all__ = ["argparser"]
+__all__ = ["get_argparser"]
 
 
 #sleeptime = lambda arg: arg if arg == 'wait' else int(arg)
@@ -16,7 +16,7 @@ digit     = lambda arg: int(arg) if arg.isdigit() else ValueError
 pos_int   = lambda arg: int(arg) if (int(arg) > 0 and arg.isdigit()) else ValueError
 
 
-def argparser():
+def get_argparser():
 
     parser = ArgumentParser(description="Create admd jobs")
 
@@ -45,6 +45,12 @@ def argparser():
     parser.add_argument("-x","--n-extension", dest="n_ext",
         help="Number of extensions to trajectories per round",
         type=int, default=1)
+
+    parser.add_argument("-C","--config",
+        help="Path to config file",
+        default="cfg/admd.yaml")
+        # TODO FIXME none and path from above
+        #default=None)
 
     parser.add_argument("-l","--length",
         help="Length of trajectory segments in frames",

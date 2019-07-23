@@ -14,8 +14,9 @@ logger = get_logger(__name__)
 __all__ = ["initialize_project"]
 
 
-def initialize_project(p_name, sys_name=None, m_freq=None, p_freq=None, platform=None, features=None):
+def initialize_project(p_name, sys_name=None, m_freq=None, p_freq=None, platform=None, features=None, config=None):
 
+    logger.info("This run is using config file: %s" % config)
     dburl = os.environ.get("ADMD_DBURL", False)
 
     if dburl:
@@ -31,6 +32,9 @@ def initialize_project(p_name, sys_name=None, m_freq=None, p_freq=None, platform
         )
 
         project = Project(p_name)
+        # TODO
+        #if config:
+        #    do-something-to-use-given-config
 
     elif not all([sys_name,m_freq,p_freq,platform]):
 
@@ -42,11 +46,7 @@ def initialize_project(p_name, sys_name=None, m_freq=None, p_freq=None, platform
     else:
 
         project = Project(p_name)
-
-        # Initialize w/ config file: 1 of multiple options
-        # TODO add config filename argument
-        configuration_file = 'resource.yaml'
-        project.initialize(configuration_file)
+        project.initialize(config)
 
         f_name = '{0}.pdb'.format(sys_name)
 

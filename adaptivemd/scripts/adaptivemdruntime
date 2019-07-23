@@ -14,7 +14,7 @@ import traceback
 
 from adaptivemd import PythonTask
 
-from adaptivemd.runtime import argparser, initialize_project, workflow_generator_simple
+from adaptivemd.runtime import get_argparser, initialize_project, workflow_generator_simple
 #from adaptivemd.runtime.jobtools import calculate_request, jobBuilder
 
 from adaptivemd.util import get_logger
@@ -53,40 +53,37 @@ if __name__ == '__main__':
 
         _exitval_ = -1
 
-        parser   = argparser()
+        parser   = get_argparser()
         args     = parser.parse_args()
 
         submit_only = args.submit_only
 
         logger.info("Initializing Project named: " + args.project_name)
         logger.info("Recieved Argumentes:\n{}".format(args))
-
-        logger.info(
-            "TIMER Project opening {}".format(
-            datetime.datetime.fromtimestamp(time.time()))
-        )
+        logger.info("Project opening")
+        logger.debug("with config %s"%args.config)
 
         project = initialize_project(
             args.project_name,
-            args.system_name,
-            args.all,
-            args.prot,
-            args.platform,
+            sys_name = args.system_name,
+            m_freq   = args.all,
+            p_freq   = args.prot,
+            platform = args.platform,
+            features = None,
+            config   = args.config,
         ) 
 
-        logger.info(
-            "TIMER Project opened {}".format(
-            datetime.datetime.fromtimestamp(time.time()))
-        )
-
+        logger.debug("Project opened")
         logger.info(
             "AdaptiveMD dburl: {}".format(project.storage._db_url))
 
         logger.info(
-            "number of project.trajectories: {}".format(len(project.trajectories)))
+            "number of project.trajectories: {}".format(
+                len(project.trajectories)))
 
         logger.info(
-            "number of project.models: {}".format(len(project.models)))
+            "number of project.models: {}".format(
+                len(project.models)))
 
         rescue_tasks = list(filter(is_incomplete, project.tasks))
         rescue_uuids = list(map(lambda ta: ta.__uuid__, rescue_tasks))

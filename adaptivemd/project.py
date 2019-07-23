@@ -28,6 +28,7 @@ import time
 import numpy as np
 import os
 import types
+import yaml
 
 from .file import URLGenerator, File
 from .engine import Trajectory
@@ -46,13 +47,13 @@ from .plan import ExecutionPlan
 #from .rp import client
 
 from .configuration import Configuration
+from .util import get_logger
 
 
 from .mongodb import MongoDBStorage, ObjectStore, FileStore, DataDict, WeakValueCache
 
 
-import logging
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class Project(object):
@@ -232,8 +233,29 @@ class Project(object):
         default_configuration : `str` or `Configuration`
             Name or instance of configuration to use by default
         '''
+        USER     = "user"
+        RESOURCE = "resource"
+        WORKLOAD = "workload"
+        LAUNCH   = "launch"
+        TASK     = "task"
+
+        _fields = [USER,RESOURCE,WORKLOAD,LAUNCH,TASK]
+
+        logger.debug("Reading configs file: %s"
+            % configuration_file)
+
+        with open(configuration_file, 'r') as f:
+            all_configs = yaml.safe_load(f)
+
+        if RESOURCE in all_configs:
+            resource_config = all_configs[RESOURCE]
+
+        else:
+            resource_config = configuration_file
+            # TODO just use all_configs as init dict
+
         configurations = Configuration.read_configurations(
-            configuration_file, self.name)
+            resource_config, self.name)
 
         for c in configurations:
             if not self.configurations or c.name not in self.configurations.all.name:
@@ -340,10 +362,14 @@ class Project(object):
             # this method will save configurations to the storage
             # if a valid configuration file is found
             if isinstance(configuration, str):
-                self.read_configurations(configuration,
-                        default_configuration)
+                logger.debug("reading a configuration")
+                self.read_configurations(
+                    configuration, default_configuration)
+
             elif isinstance(configuration, dict):
-                self.configurations.add(Configuration('local', **configuration))
+                self.configurations.add(
+                    Configuration('local', **configuration))
+
             elif not configuration:
                 self.configurations.add(Configuration('local'))
 
