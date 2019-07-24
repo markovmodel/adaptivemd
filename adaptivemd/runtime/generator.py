@@ -1,6 +1,7 @@
 
 import os
 import sys
+import yaml
 #from pprint import pformat
 #import uuid
 #import time
@@ -37,9 +38,8 @@ def workflow_generator_simple(
     # these arent currently utilized
     mpi_rank = 0,
     randomly = False,
-    read_margs = True,
+    margs_file = None,
     continuing = True,
-    gpu_contexts = 1,
     **kwargs,):
 
     logger.info("Starting workflow_generator_simple function")
@@ -57,6 +57,7 @@ def workflow_generator_simple(
 
     c = counter(n_rounds)
     tasks = list()
+
     if n_rounds:
 
         assert isinstance(n_rounds, int)
@@ -107,6 +108,159 @@ def workflow_generator_simple(
     else:
 
         notfirsttime = True
+
+    c_ext = 0
+    mtask = None
+
+    with open(margs_file, 'r') as f:
+        _margs = yaml.safe_load(f)
+
+    margs = lambda rn: _margs[max(list(filter(lambda mi: mi <= rn, _margs)))]
+
+    # Start of CONTROL LOOP
+    # when on final workload, with c_ext == n_ext,
+    while c_ext <= n_ext and (not n_rounds or not c.done):
+
+        logger.info("Checking Extension Lengths")
+
+        done = False
+        lastcheck = True
+        priorext = 0
+        # TODO fix, this isn't a consistent name "trajectories"
+        trajectories = set()
+        while not done and ( not n_rounds or not c.done ):
+
+            #print("looking for too-short trajectories")
+            if c.done:
+                xtasks = list()
+            else:
+                #logger.info(formatline("TIMER Brain ext tasks define {0:.5f}".format(time.time())))
+                #active_trajs =  ~~~  after_n_trajs_trajs
+                after_n_trajs_trajs = list(project.trajectories.sorted(lambda tj: tj.__time__))[startontraj:]
+                logger.info("Checking last {} trajectories for proper length".format(len(after_n_trajs_trajs)))
+                xtasks = check_trajectory_minlength(project, minlength, n_steps, n_run, task_env=taskenv,
+                    trajectories=after_n_trajs_trajs, resource_requirements=resource_requirements)
+                   # environment=environment,
+                   # activate_prefix=activate_prefix, virtualenv=virtualenv,
+                   # task_env=task_env, resource_requirements=resource_requirements)
+
+            tnames = set()
+            if len(trajectories) > 0:
+                [tnames.add(_) for _ in set(zip(*trajectories)[0])]
+
+            #if xtasks:
+            #    logger.info(formatline("TIMER Brain ext tasks queue {0:.5f}".format(time.time())))
+            queuethese = list()
+            for xta in xtasks:
+                tname = xta.trajectory.basename
+
+                if tname not in tnames:
+                    tnames.add(tname)
+                    trajectories.add( (tname, xta) )
+                    queuethese.append(xta)
+
+            queue_tasks(project, queuethese, rp_client, sleeptime=batchsleep, batchsize=batchsize, wait=batchwait)
+
+            #if xtasks:
+            #    logger.info(formatline("TIMER Brain ext tasks queued {0:.5f}".format(time.time())))
+            removals = list()
+            for tname, xta in trajectories:
+                if xta.state in {"fail","halted","success","cancelled"}:
+                    removals.append( (tname, xta) )
+
+            for removal in removals:
+                trajectories.remove(removal)
+
+            if len(trajectories) == n_run and priorext < n_run:
+                logger.info("Have full width of extensions")
+                c.increment()
+
+            # setting this to look at next round
+            priorext = len(trajectories)
+
+            if len(trajectories) == 0:
+                if lastcheck:
+                    logger.info("Extensions last check")
+                    lastcheck = False
+                    time.sleep(15)
+
+                else:
+                    logger.info("Extensions are done")
+                    #logger.info(formatline("TIMER Brain ext tasks done {0:.5f}".format(time.time())))
+                    done = True
+
+            else:
+                if not lastcheck:
+                    lastcheck = True
+
+                time.sleep(15)
+
+        logger.info("----------- Extension #{0}".format(c_ext))
+
+        # when c_ext == n_ext, we just wanted
+        # to use check_trajectory_minlength above
+        if c_ext < n_ext and not c.done:
+            logger.info(formatline("TIMER Brain main loop enter {0:.5f}".format(time.time())))
+            tasks = list()
+            if not modeller:
+                c_ext += 1
+                logger.info("Extending project without modeller")
+                yield lambda: model_extend(modeller, randbreak, c=c)
+                logger.info(formatline("TIMER Brain main no modeller done {0:.5f}".format(time.time())))
+            else:
+                margs = update_margs(_margs, round_n)
+
+                logger.info("Extending project with modeller")
+                logger.info("margs for this round will be: {}".format(pformat(margs)))
+
+                if mtask is None:
+
+                    mtime -= time.time()
+                    yield lambda: model_extend(modeller, randbreak, c=c)
+
+                    logger.info(formatline("TIMER Brain main loop1 done {0:.5f}".format(time.time())))
+                    logger.info("Set a current modelling task")
+                    mtask = tasks[-1]
+                    logger.info("First model task is: {}".format(mtask))
+
+                # TODO don't assume mtask not None means it
+                #      has is_done method. outer loop needs
+                #      upgrade
+                elif mtask.is_done():
+
+                    mtime += time.time()
+                    mtimes.append(mtime)
+                    mtime = -time.time()
+                    logger.info("Current modelling task is done")
+                    logger.info("It took {0} seconds".format(mtimes[-1]))
+                    c_ext += 1
+
+                    yield lambda: model_extend(modeller, randbreak, mtask, c=c)
+                    logger.info(formatline("TIMER Brain main loop2 done {0:.5f}".format(time.time())))
+
+                    pythontask_callback(mtask, scd)
+                    #mpath = os.path.expandvars(mtask.__dict__['post'][1].target.url.replace('project:///','$ADMDRP_DATA/projects/{}/'.format(project.name)))
+                    #mtask._cb_success(scd, mpath)
+                    logger.info("Added another model to project, now have: {}".format(len(project.models)))
+
+                    print_last_model(project)
+                    mtask = tasks[-1]
+                    logger.info("Set a new current modelling task")
+
+                elif not mtask.is_done():
+                    logger.info("Continuing trajectory tasks, waiting on model")
+                    yield lambda: model_extend(modeller, randbreak, mtask, c=c)
+                    logger.info(formatline("TIMER Brain main loop3 done {0:.5f}".format(time.time())))
+
+                else:
+                    logger.info("Not sure how we got here")
+                    pass
+
+
+        # End of CONTROL LOOP
+        # need to increment c_ext to exit the loop
+        else:
+            c_ext += 1
 
 
 
