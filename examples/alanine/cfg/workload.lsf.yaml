@@ -1,0 +1,21 @@
+# Command to queue/submit LRMS job
+command:  "bsub"
+
+# The options this command takes
+options:
+    -e:      "admd.err"
+    -o:      "admd.out"
+    -J:      "{job_name}"
+    -P:      "{allocation}"
+    -W:      "{minutes}"
+    -nnodes: "{n_nodes}"
+
+# Extra arguments if needed/desired
+arguments:
+    - "-alloc_flags \"gpumps smt4\""
+
+# Before task-launching commands (ie mpirun/wrappers)
+script:
+
+# After task-launching commands (ie mpirun/wrappers)
+postscript:

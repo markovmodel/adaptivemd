@@ -1,0 +1,7 @@
+
+resource_name:    "summit"
+shared_path:      "$ADMD_DATA"
+queues:           ""
+allocation:       "bif112"
+cores_per_node:   "42"
+gpu_per_node:     "3"

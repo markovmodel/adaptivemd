@@ -1,0 +1,10 @@
+# Command wrapping mpirun, or mpirun
+launcher: "mpirun"
+
+# Options to control launcher, assign hardware
+resource:
+    --exit_on_error:       1
+
+# Additional to accommadate rigid formats
+arguments:
+    - "--smpiargs=\"none\""

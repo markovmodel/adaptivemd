@@ -1,0 +1,12 @@
+
+condo-qsub-mpirun:
+    user:     "cfg/user.yaml"
+    analyze:  "cfg/analyze.yaml"
+    resource: "cfg/resource.condo.yaml"
+    workload: "cfg/workload.pbs.yaml"
+    launch:   "cfg/launch.mpirun.yaml"
+
+    task:
+        worker:   "cfg/task.worker.yaml"
+        database: "cfg/task.database.yaml"
+        #TODO analysis: "cfg/task.analysis.yaml"

@@ -1,0 +1,23 @@
+
+1:
+  tica_stride:      1
+  tica_lag:         50
+  tica_dim:         5
+  #tica_weights:     koopman
+  tica_weights:     empirical
+  #counting:         reversal
+  clust_stride:     1
+  #msm_states:       250
+  msm_lag:          50
+
+3:
+  tica_stride:      1
+  tica_lag:         100
+  tica_dim:         5
+  #tica_weights:     koopman
+  tica_weights:     empirical
+  #counting:         reversal
+  clust_stride:     1
+  #msm_states:       250
+  msm_lag:          100
+

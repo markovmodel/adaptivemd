@@ -1,0 +1,14 @@
+
+pre:
+post:
+main:
+    executable:
+        - "startdb"
+
+    arguments:
+        - "{dbhome}"
+        - "{somethign}"
+        - "--launch"
+        - "2> admd.database.launch.err 1> admd.database.launch.out"
+
+    options:

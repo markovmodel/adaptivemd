@@ -1,0 +1,14 @@
+
+pre:
+post:
+main:
+    executable:
+        - "startworker"
+
+    arguments:
+        - "{project_name}"
+        - "{admd_dburl}"
+        - "{n_workers}"
+        - "2> admd.workers.launch.err 1> admd.workers.launch.out"
+
+    options:

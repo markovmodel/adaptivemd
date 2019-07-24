@@ -1,0 +1,18 @@
+resource_name:    "condo"
+shared_path:      "$ADMD_DATA"
+queues:           "batch"
+# TODO like this
+#queues:
+
+#  batch:
+#    allocation:       ""
+#    cores_per_node:   "16"
+#    gpu_per_node:     "0"
+
+#  gpu:
+#    allocation:       ""
+#    cores_per_node:   "16"
+#    gpu_per_node:     "1"
+allocation:       ""
+cores_per_node:   "16"
+gpu_per_node:     "0"
