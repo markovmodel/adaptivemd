@@ -84,7 +84,7 @@ def queue_tasks(project, tasks, wait=False, batchsize=9999999, sleeptime=5):
 
         if _tasks:
 
-            logger.debug("Queueing these tasks: {}".format_tasks))
+            logger.debug("Queueing these tasks: {}".format(tasks))
             project.queue(_tasks)
             sleep(sleeptime)
 
