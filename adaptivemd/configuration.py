@@ -23,10 +23,13 @@ from __future__ import absolute_import, print_function
 
 import os
 import yaml
+from pprint import pformat
 
 from .mongodb import StorableMixin, SyncVariable
 from .task import DummyTask
+from .util import get_logger
 
+logger = get_logger(__name__)
 
 # TODO
 # **** Want to add ability to grab specific nodes that aren't caught
@@ -86,22 +89,58 @@ class Configuration(StorableMixin):
     read_configurations
 
     """
-    _fields = {'shared_path'   : (str, '$HOME'),
-               'resource_name' : (str, 'local.localhost'),
-               'queues'        : (str, ''),
-               'allocation'    : (str, ''),
-               'cores_per_node': (int, 1),
-               'gpu_per_node'  : (int, 0),
-               'current'       : (bool,False),
-              }
+
+    USER     = "user"
+    RESOURCE = "resource"
+    WORKLOAD = "workload"
+    LAUNCH   = "launch"
+    TASK     = "task"
+
+    #TODO required fields with checkoff later on
+    #_required_fields = {RESOURCE:[list-of-rquires],USER,...}
+
+    _fields = {
+        RESOURCE: {
+            "shared_path"   : (str, "$HOME"),
+            "resource_name" : (str, "local.localhost"),
+            "queues"        : (str, str()),
+            "allocation"    : (str, str()),
+            "cores_per_node": (int, 1),
+            "gpu_per_node"  : (int, 0),
+            "current"       : (bool, False),
+        },
+        USER: {
+            "allocation" : (str, str()),
+            "formula"    : (str, str()),
+            "limit"      : (int, 0),
+        },
+        # TODO give required subfields in list/dicts
+        WORKLOAD: {
+            "command"   : (str, "bash"),
+            "options"   : (dict, dict()),
+            "arguments" : (list, list()),
+            "script"    : (list, list()),
+            "postscript": (list, list()),
+        },
+        LAUNCH: {
+            "resource":  (dict, dict()),
+            "launcher":  (str, "mpirun"),
+            "arguments": (list, list()),
+        },
+        TASK: {
+            "pre":  (list, list()),
+            "post": (list, list()),
+            "main": (dict, dict()),
+        },
+    }
 
     # TODO init from passed dict
     def __init__(self, name, wrapper=None, **fields):
         # Configuration initialization will only complete if all
         # entries read from the configuration file entry correspond
-        # to valid fields, and the resource name is a known
-        # resource configured in Radical Pilot.
-        #  - verify this with test...
+        # to valid fields
+
+        logger.debug(pformat(fields))
 
         # Construction from file
         if fields:
@@ -112,11 +151,6 @@ class Configuration(StorableMixin):
             [setattr(self, field, val) for field, val in _dict.items()]
 
             self.name = name
-
-            # currently only handle 1 given queue
-            # but must convert to list for RP
-            if not isinstance(self.queues, list):
-                self.queues = [self.queues]
 
         # Construction via from_dict from storage
         else:
@@ -173,23 +207,51 @@ class Configuration(StorableMixin):
 
         # create configuration objects from parsed config
         if f_cfg:
-            with open(f_cfg, 'r') as f_yaml:
-                configurations_fields = yaml.safe_load(f_yaml)
 
-            for configuration, fields in configurations_fields.items():
+            with open(f_cfg, 'r') as f_yaml:
+                _all_configs = yaml.safe_load(f_yaml)
+
+            assert all([cls.RESOURCE in _
+                for _ in _all_configs.values()])
+
+            full_config = dict()
+
+            for nm_cfg, _all_config in _all_configs.items():
+                full_config[nm_cfg] = _full_config = dict()
+
+                for field in cls._fields:
+
+                    if isinstance(_all_config[field], list):
+                        configs_list = zip(len(_all_config[field])*[field], _all_config[field])
+
+                    elif isinstance(_all_config[field], dict):
+                        configs_list = [
+                            (field+"."+name, _all_config[field][name])
+                            for name in _all_config[field]
+                        ]
+
+                    else:
+                        configs_list = [(field, _all_config[field])]
+
+                    _full_config[field] = _config = dict()
+
+                    logger.debug(pformat(configs_list))
+                    for n,f in configs_list:
+
+                        with open(f, 'r') as f_yaml:
+                            __config = {n:yaml.safe_load(f_yaml)}
+
+                            assert all([_field not in _config
+                                for _field in __config])
+
+                            _config.update(__config)
+
+            for configuration, fields in full_config.items():
                 configurations.append(cls(configuration, **fields))
 
         # making configuration for localhost
         elif configuration_file and f_cfg is None:
-            print("Could not locate the given configuration file: {0}\n"
-                  .format(configuration_file,
-                  "Going to use default local configuration")
-            )
-
-            configurations.append(cls('local', **dict(resource_name='local.localhost')))
-
-        else:
-            configurations.append(cls('local', **dict(resource_name='local.localhost')))
+            raise Exception("Could not locate the given configuration file: {0}\n".format(f_cfg))
 
         return configurations
 
@@ -197,25 +259,45 @@ class Configuration(StorableMixin):
     def process_attributes(cls, fields):
         _dict = dict()
 
-        for field, val in fields.items():
+        for name, _config in fields.items():
+            for _field, config in _config.items():
+                if "." in _field:
+                    _field,_more = _field.split(".")
 
-            try:
-                _type = cls._fields[field][0]
-                _val  = _type(val)
+                    if _field not in _dict:
+                        _dict[_field] = dict()
 
-                assert isinstance(_val, _type)
-                _dict[field] = _val
+                    _dict[_field][_more] = __dict = dict()
 
-            except ValueError:
-                print("Listed field {0} is not a valid configuration field"
-                      .format(field))
+                else:
+                    _dict[_field] = __dict = dict()
 
-            except AssertionError:
-                print("Listed field {0} is not the required type {1}"
-                      .format(field, _type))
+                logger.debug(pformat(config))
+                for field,val in config.items():
 
-        unused = filter(lambda f: f not in _dict, cls._fields)
-        [_dict.update({uu: cls._fields[uu][1]}) for uu in unused]
+                    try:
+                        _type = cls._fields[_field][field][0]
+
+                        if _type in {list,dict} and val is None:
+                            _val = _type()
+                        else:
+                            _val = _type(val)
+
+                        assert isinstance(_val, _type)
+
+                        __dict[field] = _val
+
+                    except ValueError:
+                        print("Listed field {0} is not a valid configuration field"
+                              .format(field))
+
+                    except AssertionError:
+                        print("Listed field {0} is not the required type {1}"
+                              .format(field, _type))
+
+        #for f,v in cls._fields.items():
+        #    unused = filter(lambda uu: uu not in _dict[f], v)
+        #    [_dict.update({uu: v[uu][1]}) for uu in unused]
 
         return _dict
 

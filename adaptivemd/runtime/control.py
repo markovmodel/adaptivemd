@@ -84,7 +84,7 @@ def queue_tasks(project, tasks, wait=False, batchsize=9999999, sleeptime=5):
 
         if _tasks:
 
-            logger.debug("Queueing these tasks: ", _tasks)
+            logger.debug("Queueing these tasks: {}".format_tasks))
             project.queue(_tasks)
             sleep(sleeptime)
 
@@ -102,42 +102,4 @@ def queue_tasks(project, tasks, wait=False, batchsize=9999999, sleeptime=5):
                     logger.debug("Sleeping for {} seconds".format(sleeptime))
 
                     sleep(sleeptime)
-
-
-def update_margs(margs, round_n=None):
-
-    _margs    = dict()
-
-    if round_n:
-        logger.info("Choosing margs for round {}".format(round_n))
-
-        # margs from previous or current round
-        margs = margs[str(max(filter(lambda i: i <= round_n, map(lambda i: int(i), margs))))]
-        logger.info(pformat(margs))
-
-    for k,v in margs.items():
-
-        if isinstance(v,list): #TODO consider using afterntraj in calculation
-            progress = math.ceil(len(project.trajectories)/float(n_run))
-
-            for u in v:
-                # u is a 2-tuple
-                #  already prepped as ints
-                if progress >= u[1]:
-                    _margs[k] = u[0]
-
-                else:
-                    if k not in _margs:
-                        _margs[k] = u[0]
-
-                    break
-        else:
-            # FIXME not good here, braoder solution to typing: typetemplate
-            try:
-                _margs[k] = int(v)
-
-            except (ValueError,TypeError):
-                _margs[k] = v
-
-    return _margs
 

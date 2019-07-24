@@ -28,7 +28,6 @@ import time
 import numpy as np
 import os
 import types
-import yaml
 
 from .file import URLGenerator, File
 from .engine import Trajectory
@@ -176,10 +175,7 @@ class Project(object):
             cfg = [ configuration ]
 
         elif isinstance(configuration, str):
-            cfg = list(self.configurations.a('resource_name', configuration))
-
-            if len(cfg) == 0:
-                cfg = list(self.configuration.a('name', configuration))
+            cfg = list(self.configurations.a('name', configuration))
 
         elif len(self.configurations) == 1:
             cfg = [ self.configurations.one ]
@@ -188,7 +184,7 @@ class Project(object):
             cfg = list(self.configurations.m('current', True))
 
             if len(cfg) == 0:
-                cfg = list(self.configurations.a('resource_name', 'local.localhost'))
+                cfg = list(self.configurations.a('name', 'local.localhost'))
 
         # TODO always exactly 1 airtight?
         #      also - no rule for when reading from file and multiple
@@ -233,29 +229,9 @@ class Project(object):
         default_configuration : `str` or `Configuration`
             Name or instance of configuration to use by default
         '''
-        USER     = "user"
-        RESOURCE = "resource"
-        WORKLOAD = "workload"
-        LAUNCH   = "launch"
-        TASK     = "task"
-
-        _fields = [USER,RESOURCE,WORKLOAD,LAUNCH,TASK]
-
-        logger.debug("Reading configs file: %s"
-            % configuration_file)
-
-        with open(configuration_file, 'r') as f:
-            all_configs = yaml.safe_load(f)
-
-        if RESOURCE in all_configs:
-            resource_config = all_configs[RESOURCE]
-
-        else:
-            resource_config = configuration_file
-            # TODO just use all_configs as init dict
 
         configurations = Configuration.read_configurations(
-            resource_config, self.name)
+            configuration_file, self.name)
 
         for c in configurations:
             if not self.configurations or c.name not in self.configurations.all.name:
@@ -407,7 +383,7 @@ class Project(object):
         #       unused,inuse,done, failed, instead
         #       of current unmanaged model.
         if destination == 'current':
-            destination = self._current_configuration.resource_name
+            destination = self._current_configuration.resource["resource_name"]
 
         r = Resource(total_cpus, total_time,
                      total_gpus, destination)
@@ -533,6 +509,7 @@ class Project(object):
         #      p.queue(r, tasks)
         if 'resource_name' in kwargs:
             resource_name = kwargs['resource_name']
+
         else:
             resource_name = None
 

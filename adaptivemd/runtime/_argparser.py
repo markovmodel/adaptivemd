@@ -48,7 +48,7 @@ def get_argparser():
 
     parser.add_argument("-C","--config",
         help="Path to config file",
-        default="cfg/admd.yaml")
+        default="admd.yaml")
         # TODO FIXME none and path from above
         #default=None)
 
