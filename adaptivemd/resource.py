@@ -43,27 +43,29 @@ class Resource(StorableMixin):
 
     """
 
-    def __init__(self, total_cpus, total_time,
-                 total_gpus, destination=None):#, name):
+    def __init__(self, total_time, total_nodes,
+                 total_cpus=None, total_gpus=None, destination=""):#, name):
 
         super(Resource, self).__init__()
 
         #assert isinstance(name, str)
         #self.name = name
 
-        assert isinstance(total_cpus, int)
-        self.total_cpus = total_cpus
-
         assert isinstance(total_time, int)
         self.total_time = total_time
 
-        assert isinstance(total_gpus, int)
-        self.total_gpus = total_gpus
+        assert isinstance(total_nodes, int)
+        self.total_nodes = total_nodes
 
-        if destination is None:
-            destination = ''
+        if total_cpus:
+            assert isinstance(total_cpus, int)
+            self.total_cpus = total_cpus
 
-        assert isinstance(destination, str)
-        self.destination = destination
+        if total_gpus:
+            assert isinstance(total_gpus, int)
+            self.total_gpus = total_gpus
 
+        if destination:
+            assert isinstance(destination, str)
+            self.destination = destination
 
