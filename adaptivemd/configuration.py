@@ -103,6 +103,7 @@ class Configuration(StorableMixin):
         RESOURCE: {
             "shared_path"   : (str, "$HOME"),
             "resource_name" : (str, "local.localhost"),
+            "netdevice"     : (str, "eth0"),
             "queues"        : (str, str()),
             "allocation"    : (str, str()),
             "cores_per_node": (int, 1),
@@ -120,17 +121,18 @@ class Configuration(StorableMixin):
             "options"   : (dict, dict()),
             "arguments" : (list, list()),
             "script"    : (list, list()),
-            "postscript": (list, list()),
         },
         LAUNCH: {
             "resource":  (dict, dict()),
-            "launcher":  (str, "mpirun"),
+            "command":  (str, "mpirun"),
             "arguments": (list, list()),
         },
         TASK: {
+            "name": (str, str()),
             "pre":  (list, list()),
             "post": (list, list()),
             "main": (dict, dict()),
+            "launcher": (dict, dict()),
         },
     }
 
@@ -274,12 +276,18 @@ class Configuration(StorableMixin):
 
                 logger.debug(pformat(config))
                 for field,val in config.items():
-
                     try:
+                        if _field not in cls._fields:
+                            raise KeyError("'%s' not a valid Configuration field" % _field)
+
+                        elif field not in cls._fields[_field]:
+                            raise KeyError("'%s' not in '%s' Configuration" % (field,_field))
+
                         _type = cls._fields[_field][field][0]
 
                         if _type in {list,dict} and val is None:
                             _val = _type()
+
                         else:
                             _val = _type(val)
 
@@ -288,12 +296,18 @@ class Configuration(StorableMixin):
                         __dict[field] = _val
 
                     except ValueError:
-                        print("Listed field {0} is not a valid configuration field"
-                              .format(field))
+                        logger.warning(
+                            "Listed field {0} is not a valid configuration field"
+                            .format(field))
 
                     except AssertionError:
-                        print("Listed field {0} is not the required type {1}"
-                              .format(field, _type))
+                        logger.warning(
+                            "Listed field {0} is not the required type {1}"
+                            .format(field, _type))
+
+                    except KeyError as e:
+                        logger.warning(
+                            "Skipping field due to error:\n{}".format(e))
 
         #for f,v in cls._fields.items():
         #    unused = filter(lambda uu: uu not in _dict[f], v)
