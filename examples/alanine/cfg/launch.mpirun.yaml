@@ -1,10 +1,11 @@
 # Command wrapping mpirun, or mpirun
-launcher: "mpirun"
+command: "mpirun"
 
 # Options to control launcher, assign hardware
 resource:
-    --exit_on_error:       1
+    --map-by: "ppr:{cpu_per_task}:node"
+    -n:       "{task.n_tasks}"
 
 # Additional to accommadate rigid formats
-arguments:
-    - "--smpiargs=\"none\""
+#arguments:
+#    - "--hostfile $PBS_NODELIST"

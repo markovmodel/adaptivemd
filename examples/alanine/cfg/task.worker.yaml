@@ -1,14 +1,19 @@
 
-pre:
-post:
+name: "worker"
+
+# Unused fields must be commented out
+#pre:
+#post:
+launcher:
+    n_tasks: "{n_tasks}"
+
 main:
-    executable:
-        - "startworker"
+    executable: "startworker"
 
     arguments:
         - "{project_name}"
         - "{admd_dburl}"
-        - "{n_workers}"
-        - "2> admd.workers.launch.err 1> admd.workers.launch.out"
+        - "{n_tasks}"
+        - "2> admd.workers.launch.err 1> admd.workers.launch.out & WORKERS_APID=$!"
 
-    options:
+#    options:

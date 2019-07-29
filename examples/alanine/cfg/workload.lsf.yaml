@@ -1,3 +1,5 @@
+# Unused must be commented out
+
 # Command to queue/submit LRMS job
 command:  "bsub"
 
@@ -15,7 +17,7 @@ arguments:
     - "-alloc_flags \"gpumps smt4\""
 
 # Before task-launching commands (ie mpirun/wrappers)
-script:
+#script:
 
 # After task-launching commands (ie mpirun/wrappers)
-postscript:
+#postscript:

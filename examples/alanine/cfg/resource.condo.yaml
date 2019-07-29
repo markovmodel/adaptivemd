@@ -1,6 +1,7 @@
-resource_name:    "condo"
-shared_path:      "$ADMD_DATA"
-queues:           "batch"
+resource_name: "condo"
+shared_path:   "$ADMD_DATA"
+netdevice:     "eth0"
+queues:        "batch"
 # TODO like this
 #queues:
 
@@ -13,6 +14,6 @@ queues:           "batch"
 #    allocation:       ""
 #    cores_per_node:   "16"
 #    gpu_per_node:     "1"
-allocation:       ""
-cores_per_node:   "16"
-gpu_per_node:     "0"
+allocation:     ""
+cores_per_node: "16"
+gpu_per_node:   "0"

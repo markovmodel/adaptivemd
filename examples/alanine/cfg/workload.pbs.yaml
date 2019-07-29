@@ -1,20 +1,52 @@
+# Unused must be commented out
+
 # Command to queue/submit LRMS job
-command:  "qsub"
+command: "qsub"
 
 # The options this command takes
 options:
-    -e:      "admd.err"
-    -o:      "admd.out"
-    -J:      "{job_name}"
-    -P:      "{allocation}"
-    -W:      "{minutes}"
-    -nnodes: "{n_nodes}"
+    -l: "walltime=0:{minutes}:0,nodes={n_nodes}:ppn=16,qos=std"
+    -W: "group_list=cades-bsd "
+    -e: "{job_home}/admd.err"
+    -o: "{job_home}/admd.out"
+    -N: "{job_name}"
+    -A: "{allocation}"
+
+script:
+    - "module load PE-gnu"
+    - "module load fftw"
+    - ""
+    - "source {admd_profile}"
+    - "cd {job_home}"
+    - "echo \"RUNNING\" > {job_state}"
+    - ""
+
+    - task: 
+        name: "database"
+
+    - ""
+    - "while [ ! -f \"{dbhome}/db.hostname\" ]; do sleep 1; done; echo \"Found hostname file\""
+    - "export ADMD_DBURL=\"mongodb://$(cat {dbhome}/db.hostname):27017/\""
+    - "adaptivemdruntime {project_name} --n_traj 0 --rescue_only 1> admd.adaptivemd.out 2> admd.adaptivemd.err & EVENT_PID=$!"
+    - ""
+
+    - task:
+        name: "worker"
+
+    - ""
+    - "echo \"STOPPING\" > {job_state}"
+    - "wait \"$EVENT_PID\""
+    - "kill \"$WORKERS_APID\""
+    - "wait \"$WORKERS_APID\""
+    - "kill \"$MONGO_APID\""
+    - "wait \"$MONGO_APID\""
+    - "echo \"COMPLETE\" > {job_state}"
 
 # Extra arguments if needed/desired
-arguments:
+#arguments:
 
 # Before task-launching commands (ie mpirun/wrappers)
-script:
+#script:
 
 # After task-launching commands (ie mpirun/wrappers)
-postscript:
+#postscript:
