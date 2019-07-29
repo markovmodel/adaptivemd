@@ -12,6 +12,10 @@ logger = get_logger(__name__)
 __all__ = ["create_request", "JobLauncher"]
 
 
+class SafeDict(dict):
+    def __missing__(self, key):
+        return "{" + key + "}"
+
 cli_args_from_dict = lambda d: ' '.join(
     [' '.join([str(k),str(v)])
     for k,v in d.items() if v is not None])
@@ -177,8 +181,17 @@ class JobLauncher(object):
 
                     task = ""
                     if "task." in launcher:
-                        fields = {key:taskopts["launcher"][key] for key in  map(lambda k: "".join(k[1].split("task.")), filter(lambda k: bool(k[1]), Formatter().parse(launcher)))}
-                        task += "".join(launcher.split("task.")).format(**fields)
+                        fields = {
+                            key:taskopts["launcher"][key]
+                            for key in  map(
+                                lambda k: "".join(k[1].split("task.")),
+                                filter(
+                                    lambda k: bool(k[1]) and str(k[1]).startswith("task."),
+                                    Formatter().parse(launcher))
+                            )
+                        }
+                        logger.debug(pformat(fields))
+                        task += "".join(launcher.split("task.")).format_map(SafeDict(**fields))
                         logger.debug(task)
 
                     task += " %s" % taskopts["main"]["executable"]
