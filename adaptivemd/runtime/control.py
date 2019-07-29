@@ -1,12 +1,76 @@
 
 
 
+import os
 from time import sleep
 
+from pprint import pformat
+
+from .jobs import JobLauncher
+from ..file import URLGenerator
 from ..util import get_logger
 
 logger = get_logger(__name__)
 
+
+def create_workload_launcher(project, workload, args, cwd):
+
+    sessions = URLGenerator("sessions/{count:06}")
+    # FIXME this isn't working to get next one
+    if os.path.exists("sessions"):
+        sessions.initialize_from_files([
+            os.path.join("sessions", d) for d in os.listdir("sessions")])
+
+    else:
+        os.makedirs("sessions")
+
+    for d in os.listdir("sessions"):
+        next(sessions)
+
+    session = next(sessions)
+    os.makedirs(session)
+    job_state_filename = "admd.job.state"
+    js = os.path.join(session, job_state_filename)
+    with open(js, "w") as f: f.write("UNLAUNCHED")
+    n_tasks  = len(workload)
+    n_nodes  = n_tasks + 1
+    walltime = args.minutes
+
+    project.request_resource(walltime, n_nodes)
+    logger.info(
+        "\nResource requested:\nnodes: {0}\nwalltime: {1}\n".format(
+        n_nodes, walltime)
+    )
+
+    jl = JobLauncher()
+
+    jl.load({"workload": project.configuration.workload})
+    jl.load({"launch":   project.configuration.launch})
+    jl.load({"task":     project.configuration.task})
+    logger.debug(pformat(jl._keys))
+
+    #jobconfig = process_resource_config(project.configuration)
+    jobconfig = dict()
+    jobconfig["job_name"]     = "admd"
+    jobconfig["job_state"]    = job_state_filename
+    jobconfig["job_home"]     = os.path.join(cwd, session)
+    jobconfig["minutes"]      = args.minutes
+    jobconfig["n_nodes"]      = n_nodes
+    jobconfig["n_tasks"]      = n_tasks
+    jobconfig["project_name"] = project.name
+    jobconfig["admd_dburl"]   = "mongodb://$ADMD_DBURL:27017/"
+    jobconfig["admd_profile"] = args.rc
+    jobconfig["dbport"]       = 27017
+    jobconfig["dbhome"]       = os.path.join(cwd, "mongo")
+    jobconfig["netdevice"]    = project.configuration.resource["netdevice"]
+    jobconfig["cpu_per_task"] = project.configuration.resource["cores_per_node"]
+    jobconfig["gpu_per_task"] = project.configuration.resource["gpu_per_node"]
+    jobconfig["allocation"]   = project.configuration.user["allocation"]
+
+    jl.configure_workload(jobconfig)
+    logger.debug(pformat(jl._keys))
+
+    return jl, session
 
 def all_done(tasks):
         '''Check if a workload (batch of tasks) is done
