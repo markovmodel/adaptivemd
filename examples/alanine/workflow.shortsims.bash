@@ -13,7 +13,7 @@ MINS="15"
 #    down the pipe
 EXECFLAG="mongo:43224"
 # OpenMM Simulation Platform
-PLATFORM="CUDA"
+PLATFORM="CPU"
 # Name for AdaptiveMD Project instance
 PROJ="alanine"
 # Name of AdaptiveMD sampling function to use
@@ -21,14 +21,14 @@ SF="explore_macrostates"
 # Save frequencies for master (all atoms) trajectory
 # and protein-only trajectory. Save protein more
 # frequently to get more data for MSM building
-MFREQ="200"
-PFREQ="40"
+MFREQ="20"
+PFREQ="4"
 # Number of replicates
 N1="2"
 # MD length per job in steps
-P1i="20000"
+P1i="2000"
 # Total MD length for full trajectory
-P1t="40000"
+P1t="4000"
 
 #------------------------------------------------------------------------------#
 #
@@ -48,7 +48,7 @@ P1t="40000"
 admd_checkpoint
 #           0 1     2     3   4    5    6 7 8   9    10        11   12     13     14        15
 admd_workload 1 $PROJ trajs $N1 $P1i $P1t 0 0 $SF $MINS $EXECFLAG $SYS $MFREQ $PFREQ $PLATFORM
-admd_workload 1 $PROJ trajs $N1 $P1i $P1t 0 0 $SF $MINS $EXECFLAG $SYS $MFREQ $PFREQ $PLATFORM
+#admd_workload 1 $PROJ trajs $N1 $P1i $P1t 0 0 $SF $MINS $EXECFLAG
 ## admd_workload 1 $PROJ trajs $N1 $P1i $P1t 0 0 $SF $MINS $EXECFLAG
 ## admd_workload 1 $PROJ trajs $N1 $P1i $P1t 0 0 $SF $MINS $EXECFLAG
 ## admd_workload 1 $PROJ trajs $N1 $P1i $P1t 0 0 $SF $MINS $EXECFLAG
