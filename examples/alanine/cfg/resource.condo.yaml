@@ -15,5 +15,5 @@ queues:        "batch"
 #    cores_per_node:   "16"
 #    gpu_per_node:     "1"
 allocation:     ""
-cores_per_node: "16"
-gpu_per_node:   "0"
+cores_per_node: 16
+gpu_per_node:   0

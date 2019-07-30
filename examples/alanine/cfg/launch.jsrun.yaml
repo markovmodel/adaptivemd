@@ -1,16 +1,16 @@
 # Command wrapping mpirun, or mpirun
-launcher: "jsrun"
+command: "jsrun"
 
 # Options to control launcher, assign hardware
 resource:
     --exit_on_error:       1
-    --nrs:                 "{n_tasks}"
-    --tasks_per_rs:        "{mpi_per_task}"
-    --cpu_per_rs:          "{threads_per_task}"
-    --gpu_per_rs:          "{gpu_per_task}"
-    --bind:                "packed:{threads_per_task}"
-    --launch_distribution: "plane:{mpi_per_task}"
-    --latency_priority:
+    --nrs:                 "{task.n_tasks}"
+    --tasks_per_rs:        1
+    --cpu_per_rs:          "{task.cpu_per_task}"
+    --gpu_per_rs:          "{task.gpu_per_task}"
+    --bind:                "packed:{task.cpu_per_task}"
+    --launch_distribution: "plane:1"
+    #--latency_priority:
 
 # Additional to accommadate rigid formats
 arguments:

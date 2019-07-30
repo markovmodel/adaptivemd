@@ -2,7 +2,8 @@
 name: "database"
 
 launcher:
-    n_tasks: "1"
+    n_tasks:        1
+    tasks_per_node: 1
 
 # Unused fields must be commented out
 #pre:

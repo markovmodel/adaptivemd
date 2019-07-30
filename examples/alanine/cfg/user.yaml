@@ -4,5 +4,5 @@ allocation: "bsd"
 
 # These are not yet used, but could help shape
 # workflow and prevent undesired useage
-limit:      "5000"
+limit:      5000
 formula:    "{nnodes}*{minutes}"
