@@ -59,8 +59,8 @@ class Configuration(StorableMixin):
     "fun_project", the Configuration object will look for a file
     "fun_project.cfg" to read.
     The configurations file can pack multiple entries into the fields
-    'queue' and 'cores_per_node'. If there is more than 1 queue listed,
-    the number of 'cores_per_node' either needs to be 1 or match the
+    'queue' and 'cpu_per_node'. If there is more than 1 queue listed,
+    the number of 'cpu_per_node' either needs to be 1 or match the
     number of queues. Likewise for the opposite case.
 
     Attributes
@@ -77,7 +77,7 @@ class Configuration(StorableMixin):
         If required, name of the account to be charged for task execution
     current : `bool`
         Flag for to signify the configuration is in or selected for use
-    cores_per_node : `int`
+    cpu_per_node : `int`
         Number of cores/threads on each node. This should correspond
         to the specifications of nodes in the requested queues.
     resource_name : `rp.resource`
@@ -101,37 +101,37 @@ class Configuration(StorableMixin):
 
     _fields = {
         RESOURCE: {
-            "shared_path"   : (str, "$HOME"),
-            "resource_name" : (str, "local.localhost"),
-            "netdevice"     : (str, "eth0"),
-            "queues"        : (str, str()),
-            "allocation"    : (str, str()),
-            "cores_per_node": (int, 1),
-            "gpu_per_node"  : (int, 0),
-            "current"       : (bool, False),
+            "shared_path"  : (str, "$HOME"),
+            "resource_name": (str, "local.localhost"),
+            "netdevice"    : (str, "eth0"),
+            "queues"       : (str, str()),
+            "allocation"   : (str, str()),
+            "cpu_per_node" : (int, 1),
+            "gpu_per_node" : (int, 0),
+            "current"      : (bool, False),
         },
         USER: {
-            "allocation" : (str, str()),
-            "formula"    : (str, str()),
-            "limit"      : (int, 0),
+            "allocation": (str, str()),
+            "formula"   : (str, str()),
+            "limit"     : (int, 0),
         },
         # TODO give required subfields in list/dicts
         WORKLOAD: {
-            "command"   : (str, "bash"),
-            "options"   : (dict, dict()),
-            "arguments" : (list, list()),
-            "script"    : (list, list()),
+            "command"  : (str, "bash"),
+            "options"  : (dict, dict()),
+            "arguments": (list, list()),
+            "script"   : (list, list()),
         },
         LAUNCH: {
-            "resource":  (dict, dict()),
-            "command":  (str, "mpirun"),
+            "resource" : (dict, dict()),
+            "command"  : (str, "mpirun"),
             "arguments": (list, list()),
         },
         TASK: {
-            "name": (str, str()),
-            "pre":  (list, list()),
-            "post": (list, list()),
-            "main": (dict, dict()),
+            "name"    : (str, str()),
+            "pre"     : (list, list()),
+            "post"    : (list, list()),
+            "main"    : (dict, dict()),
             "launcher": (dict, dict()),
         },
     }
@@ -153,6 +153,7 @@ class Configuration(StorableMixin):
             [setattr(self, field, val) for field, val in _dict.items()]
 
             self.name = name
+            self.match_tasks_to_resource()
 
         # Construction via from_dict from storage
         else:
@@ -163,11 +164,51 @@ class Configuration(StorableMixin):
 
         self.wrapper = wrapper
 
+    def match_tasks_to_resource(self):
+        '''Use resource config to finalize task specs
+        based on the given requirements. When porting
+        to new machines, the task reqs should stay same
+        while the task-bound resource partition changes
+        depending on hardware specifics.
+
+        Currently relying on a simple abstration of a
+        node as a multicpu, multigpu device. A single
+
+        tasks_per_node
+        cpu_per_task
+        gpu_per_task
+        nodes_per_task
+        '''
+
+        for ta in self.__dict__[self.TASK].values():
+            launch_specs = ta["launcher"]
+
+            if "tasks_per_node" in launch_specs:
+                launch_specs["gpu_per_task"] = self.resource["gpu_per_node"] // launch_specs["tasks_per_node"]
+                launch_specs["cpu_per_task"] = self.resource["cpu_per_node"] // launch_specs["tasks_per_node"]
+
+            elif "cpu_per_task" in launch_specs:
+                launch_specs["gpu_per_task"] = self.resource["gpu_per_node"] // (self.resource["cpu_per_node"] // launch_specs["cpu_per_task"])
+                launch_specs["tasks_per_node"] = self.resource["cpu_per_node"] // launch_specs["cpu_per_task"]
+
+            elif "gpu_per_task" in launch_specs:
+                launch_specs["cpu_per_task"] = self.resource["cpu_per_node"] // (self.resource["gpu_per_node"] // launch_specs["gpu_per_task"])
+                launch_specs["tasks_per_node"] = self.resource["cpu_per_node"] // launch_specs["cpu_per_task"]
+
+            elif "nodes_per_task" in launch_specs:
+                raise NotImplementedError(
+                    "MPI task applications not tested yet")
+
+            else:
+                logger.warning((
+                    "Cannot finalize task launch setup, no "
+                    "recognized task requirements given"
+                ))
+
     # TODO remove extra filename field project_name
     @classmethod
     def read_configurations(cls, configuration_file='', project_name=None):
-        '''
-        This method will read resource configurations from the given file
+        '''Read resource configurations from the given file
 
         The method returns a list of `Configuration`
         objects. The key of each configuration dict
@@ -224,15 +265,21 @@ class Configuration(StorableMixin):
                 for field in cls._fields:
 
                     if isinstance(_all_config[field], list):
-                        configs_list = zip(len(_all_config[field])*[field], _all_config[field])
+
+                        configs_list = zip(
+                            len(_all_config[field])*[field],
+                             _all_config[field]
+                        )
 
                     elif isinstance(_all_config[field], dict):
+
                         configs_list = [
                             (field+"."+name, _all_config[field][name])
                             for name in _all_config[field]
                         ]
 
                     else:
+
                         configs_list = [(field, _all_config[field])]
 
                     _full_config[field] = _config = dict()
@@ -253,7 +300,8 @@ class Configuration(StorableMixin):
 
         # making configuration for localhost
         elif configuration_file and f_cfg is None:
-            raise Exception("Could not locate the given configuration file: {0}\n".format(f_cfg))
+            raise Exception(
+    "Could not locate the given configuration file: {0}\n".format(f_cfg))
 
         return configurations
 
