@@ -169,6 +169,7 @@ class JobLauncher(object):
 
             script_template = ""
             for line in self.job_configuration["workload"].get("script", list()):
+
                 if isinstance(line, str):
                     script_template += "\n%s" % line
 
@@ -190,6 +191,8 @@ class JobLauncher(object):
                                     Formatter().parse(launcher))
                             )
                         }
+
+                        logger.debug("Configuring task launcher")
                         logger.debug(pformat(fields))
                         task += "".join(launcher.split("task.")).format_map(SafeDict(**fields))
                         logger.debug(task)
@@ -306,7 +309,7 @@ class JobLauncher(object):
         return filled
 
     def launch_job(self, job_path=None):
-        '''Launch a job using the built command
+        '''Build the launch command and execute it
         if the configuration is complete, ie keys
         all have values.
         '''

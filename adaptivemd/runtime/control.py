@@ -29,18 +29,18 @@ def create_workload_launcher(project, workload, args, cwd):
 
     session = next(sessions)
     os.makedirs(session)
+    os.makedirs(os.path.join(session, "workers"))
+
     job_state_filename = "admd.job.state"
     js = os.path.join(session, job_state_filename)
     with open(js, "w") as f: f.write("UNLAUNCHED")
     n_tasks  = len(workload)
-    n_nodes  = n_tasks + 1
-    walltime = args.minutes
-
-    project.request_resource(walltime, n_nodes)
-    logger.info(
-        "\nResource requested:\nnodes: {0}\nwalltime: {1}\n".format(
-        n_nodes, walltime)
+    # FIXME inflexible, assumes 1 database node and homogenous tasks currently
+    n_nodes  = 1 + n_tasks // project.configuration.task["worker"]["launcher"]["tasks_per_node"] + bool(
+        n_tasks % project.configuration.task["worker"]["launcher"]["tasks_per_node"]
     )
+
+    walltime = args.minutes
 
     jl = JobLauncher()
 
@@ -63,14 +63,20 @@ def create_workload_launcher(project, workload, args, cwd):
     jobconfig["dbport"]       = 27017
     jobconfig["dbhome"]       = os.path.join(cwd, "mongo")
     jobconfig["netdevice"]    = project.configuration.resource["netdevice"]
-    jobconfig["cpu_per_task"] = project.configuration.resource["cores_per_node"]
-    jobconfig["gpu_per_task"] = project.configuration.resource["gpu_per_node"]
     jobconfig["allocation"]   = project.configuration.user["allocation"]
 
     jl.configure_workload(jobconfig)
     logger.debug(pformat(jl._keys))
 
+    # TODO attach resource acquisition and config at project level
+    project.request_resource(walltime, n_nodes)
+    logger.info(
+        "\nResource requested:\nnodes: {0}\nwalltime: {1}\n".format(
+        n_nodes, walltime)
+    )
+
     return jl, session
+
 
 def all_done(tasks):
         '''Check if a workload (batch of tasks) is done
@@ -99,6 +105,7 @@ def all_done(tasks):
 
 
 def queue_tasks(project, tasks, wait=False, batchsize=9999999, sleeptime=5):
+    # TODO this belongs in the project queue method
     '''This function queues tasks to a `Project` instance in batches.
     For high-scale workflows with thousands to tens of thousands of
     tasks, it may be beneficial to introduce some additional control
