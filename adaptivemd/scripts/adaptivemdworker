@@ -33,6 +33,9 @@ import signal
 
 from adaptivemd import Project, Worker
 from adaptivemd.mongodb import MongoDBStorage
+from adaptivemd.util import get_logger
+
+logger = get_logger(__name__)
 
 
 if __name__ == '__main__':
