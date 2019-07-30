@@ -26,7 +26,6 @@
 # <http://www.openpathsampling.org> or
 # <http://github.com/openpathsampling/openpathsampling
 # for details and license
-from __future__ import print_function
 
 import argparse
 import re
@@ -108,11 +107,15 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     if args.dblocation:
+        logger.info("Recieved dblocation: %s" % args.dblocation)
+
         if args.dbhost != 'localhost' or args.dbport != '27017':
-            print("Cannot set database host or port if you use the full location option")
+            logger.error("Cannot set database host or port if you use the full location option")
             raise Exception
+
         elif args.dblocation.startswith('mongodb://'):
             MongoDBStorage._db_url = args.dblocation
+
         else:
             MongoDBStorage.set_location(args.dblocation) 
 
@@ -123,10 +126,8 @@ if __name__ == '__main__':
         if args.dbport != '27017':
             MongoDBStorage.set_port(args.dbport)
 
-    print("This worker is using database URL: {}".format(MongoDBStorage._db_url))
-
+    logger.info("This worker is using database URL: {}".format(MongoDBStorage._db_url))
     project = Project(args.project)
-
     RE_wrapper = re.compile(
         r'''([a-zA-Z][a-zA-Z_0-9]*)\((\"[^\"]*?\"|'[^']*?'|[\s0-9.]+)?(?:,\s*(\"[^\"]*?\"|'[^']*?'|[0-9.]+)\s*)?\)''')
 
@@ -172,24 +173,20 @@ if __name__ == '__main__':
                 fn = getattr(wrapper, ex)
                 fn(*ar)
 
-        print('Using general wrapper:')
-        print(wrapper.description)
+        logger.info('Using general wrapper:')
+        logger.info(wrapper.description)
 
     if args.generators:
-        print('[limited to generators `%s`]' % ', '.join(worker.generators))
-
-    print()
+        logger.info('[limited to generators `%s`]' % ', '.join(worker.generators))
 
     def signal_term_handler(sig, frame):
-        print('got SIGTERM ...')
+        logger.info('got SIGTERM ...')
         worker.shutdown()
 
     signal.signal(signal.SIGTERM, signal_term_handler)
 
-    print('start listening ...')
-
+    logger.info('start listening ...')
     worker.run()
-
-    print('good-bye')
+    logger.info('good-bye')
 
     exit()
