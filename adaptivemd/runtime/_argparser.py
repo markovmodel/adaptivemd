@@ -30,7 +30,7 @@ def get_argparser():
         help="Only initialize project",
         action="store_true")
 
-    parser.add_argument("-N","--n-trajectory", dest="n_traj",
+    parser.add_argument("-N","--n_traj", dest="n_traj",
         help="Number of trajectories to create",
         type=int, default=16)
 
