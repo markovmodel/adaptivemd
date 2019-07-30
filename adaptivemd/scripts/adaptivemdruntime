@@ -83,28 +83,31 @@ if __name__ == '__main__':
             "number of project.models: {}".format(
                 len(project.models)))
 
-        # TODO not clear on relationship of these and embedded conditions
+        n_incomplete_tasks = 0
         if args.rescue_tasks or args.rescue_only:
 
+            logger.info("Checking for pre-existing, runnable tasks")
             rescue_tasks = list(filter(is_incomplete, project.tasks))
             rescue_uuids = list(map(lambda ta: ta.__uuid__, rescue_tasks))
             n_incomplete_tasks = len(rescue_tasks)
+            logger.info("Found %d incomplete tasks to run" % n_incomplete_tasks)
 
-            if n_incomplete_tasks:
+            if n_incomplete_tasks and not args.rescue_only:
 
+                # Rescue tasks without rescue only uses
+                # multijob control flow
                 _exitval_ = n_incomplete_tasks
                 logger.info(
-                  "Exiting to rescue {} incomplete tasks".format(_exitval_)
+                  "Exiting to launch job for rescueing {} incomplete tasks".format(_exitval_)
                 )
-                sys.exit(_exitval_)
 
             elif args.rescue_only:
 
-                _exitval_ = 0
-                logger.info("All tasks rescued, exiting with no action")
-                sys.exit(_exitval_)
+                # Rescue tasks with rescue only means this
+                # job cycle does execution (ie no exit)
+                _exitval_ = n_incomplete_tasks
+                logger.info("Continuing to execute runnable incomplete tasks")
 
-            # TODO what is happening here?
             else:
                 logger.info(
                     "Proceeding after rescue check, found {} incomplete tasks".format(
@@ -113,8 +116,7 @@ if __name__ == '__main__':
 
         else:
             logger.info(
-                "No rescue check performed, found {} incomplete tasks".format(
-                n_incomplete_tasks)
+                "No check performed to see if there are incomplete tasks"
             )
 
         if args.init_only:
@@ -130,7 +132,9 @@ if __name__ == '__main__':
             n_traj   = 0
             modeller = None
 
-            if not args.rescue_only:
+            if not args.rescue_only and not n_incomplete_tasks:
+                logger.info("Setting up for newly issued tasks")
+
                 # TODO we currently only support a single simulation configuration
                 #      with the runtime system.
                 engine   = project.generators["openmm"]
@@ -138,7 +142,6 @@ if __name__ == '__main__':
                 n_rounds = args.n_rounds # n_rounds in single runtime, almost always 1
                 round_n  = args.round_n   # round number for overall workflow
                 length   = args.length
-                model_tasks = list(project.tasks.c(PythonTask).m('state','created'))
 
                 # We support multiple modellers so that analysis using
                 # different featurization can be evaluated easily
@@ -146,7 +149,9 @@ if __name__ == '__main__':
                     nm_modeller = args.modeller
                     modeller = project.generators[nm_modeller]
 
-            else:
+            # TODO FIXME this else catches new trajs + incomplete trajs case and
+            #            just ignores the new trajs for configuring workload
+            elif args.rescue_only and n_incomplete_tasks:
                 logger.info(
                     "Looking to clean up unfinished tasks: task states: {}".format(
                     project.task_states))
@@ -160,7 +165,7 @@ if __name__ == '__main__':
                 for fix_state in fix_states:
                     project.tasks._set._document.update_many(
                         {"state": fix_state},
-                        {"$set" : created_state_update}
+                        {"$set" : created_update}
                     )
 
                 logger.info(
@@ -174,7 +179,7 @@ if __name__ == '__main__':
                 new_tasks = project.tasks.v(
                     lambda ta: ta.__uuid__ in rescue_uuids)
 
-                model_tasks += list(new_tasks.c(PythonTask))
+                model_tasks = list(new_tasks.c(PythonTask))
 
                 # FIXME list elements getting duplicated somehow
                 # TODO  see if this still happens ^^^
@@ -182,17 +187,17 @@ if __name__ == '__main__':
                 model_tasks = list(set(model_tasks))
                 logger.info(
                     "Found {} tasks to execute in cleanup".format(
-                    len(new_tasks)))
+                    len(new_tasks))
+                )
 
                 if not new_tasks:
 
                     logger.info((
                         "Checked for failed tasks to rescue but "
-                        "found none, exiting without error"))
+                        "found none, exiting without error"
+                    ))
 
                     _exitval_ = 0
-                    print(_exitval_)
-                    sys.exit(_exitval_)
 
                 n_rounds  = 1
 
@@ -240,7 +245,7 @@ if __name__ == '__main__':
                 new_tasks = list(filter(
                     lambda ta: ta.__uuid__ not in existing_tasks, project.tasks))
 
-            else:
+            elif new_tasks:
 
                 logger.info(
                     "Project event adding from incomplete tasks\n{}".format(
@@ -255,9 +260,9 @@ if __name__ == '__main__':
 
             if submit_only:
 
-                # TODO calculate_request via resource configuration and args
                 wl, session = create_workload_launcher(project, new_tasks, args, _cwd_)
                 logger.debug(pformat(wl.job_configuration))
+
                 wl.launch_job(session)
 
             else:
@@ -269,7 +274,7 @@ if __name__ == '__main__':
 
         _exitval_ = -2
 
-        logger.warning("ADAPTIVEMD KEYBOARD INTERRUPT- Quitting Workflow Execution")
+        logger.warning("AdaptiveMD KEYBOARD INTERRUPT- Quitting Workflow Execution")
 
     except Exception as e:
 
