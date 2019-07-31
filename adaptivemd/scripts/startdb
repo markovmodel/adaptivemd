@@ -16,6 +16,6 @@ fi
 # Parse the IP address of this compute node for the given NETDEVICE
 # and write it to a file for all the workers to read
 DBHOST=`ip addr show $NETDEVICE | grep -Eo '(addr:)?([0-9]*\.){3}[0-9]*' | head -n1`
-echo "$DBHOST" > $DBPATH/db.hostname
+echo "$DBHOST" > $DBPATH/db.host
 
 launch_amongod $DBPATH $DBPORT --launch 2> admd.mongodb.err 1> admd.mongodb.out

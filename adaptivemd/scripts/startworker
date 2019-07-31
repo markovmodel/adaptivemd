@@ -9,7 +9,7 @@ PROJNAME="$1"
 ADMD_DBURL="$2"
 NWORKERS="$3"
 
-workercommand="adaptivemdworker $PROJNAME -v & >> $WORKERLOG"
+workercommand="adaptivemdworker $PROJNAME --dblocation $ADMD_DBURL -v & >> $WORKERLOG"
 
 # Use SLEEPTIME to add 'jitter' to worker startup, it can
 # help increase scalability on some systems
@@ -18,5 +18,6 @@ workercommand="adaptivemdworker $PROJNAME -v & >> $WORKERLOG"
 #sleep $SLEEPTIME
 
 echo "Worker$WORKERID starts: `date +%Y/%m/%d-%H:%M:%S.%5N`" >> $WORKERLOG
+echo "Worker$WORKERID command:\n$workercommand\n" >> $WORKERLOG
 eval $workercommand
 echo "Worker$WORKERID stops: `date +%Y/%m/%d-%H:%M:%S.%5N`" >> $WORKERLOG
