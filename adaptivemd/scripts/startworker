@@ -18,6 +18,7 @@ workercommand="adaptivemdworker $PROJNAME --dblocation $ADMD_DBURL -v & >> $WORK
 #sleep $SLEEPTIME
 
 echo "Worker$WORKERID starts: `date +%Y/%m/%d-%H:%M:%S.%5N`" >> $WORKERLOG
-echo "Worker$WORKERID command:\n$workercommand\n" >> $WORKERLOG
-eval $workercommand
+echo "Worker$WORKERID command:" >> $WORKERLOG
+echo "$workercommand" >> $WORKERLOG
+eval "$workercommand"
 echo "Worker$WORKERID stops: `date +%Y/%m/%d-%H:%M:%S.%5N`" >> $WORKERLOG

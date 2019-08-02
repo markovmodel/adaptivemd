@@ -253,7 +253,12 @@ if __name__ == '__main__':
                 sleeptime = 20
                 logger.debug("These are the tasks being cleaned up:")
                 logger.debug(pformat(new_tasks))
-                project.add_event(all([ta.is_done() for ta in new_tasks]))
+
+                def event_tasks_done():
+                    yield lambda: all([ta.is_done() for ta in new_tasks])
+
+                project.add_event(event_tasks_done())
+                logger.info(pformat(project._events))
 
             logger.info("Project event added")
             _exitval_ = 0
