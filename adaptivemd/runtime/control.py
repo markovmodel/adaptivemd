@@ -58,9 +58,8 @@ def create_workload_launcher(project, workload, args, cwd):
     jobconfig["n_nodes"]      = n_nodes
     jobconfig["n_tasks"]      = n_tasks
     jobconfig["project_name"] = project.name
-    jobconfig["admd_dburl"]   = "mongodb://$ADMD_DBURL:27017/"
+    jobconfig["admd_dburl"]   = "$ADMD_DBURL"
     jobconfig["admd_profile"] = args.rc
-    jobconfig["dbport"]       = 27017
     jobconfig["dbhome"]       = os.path.join(cwd, "mongo")
     jobconfig["netdevice"]    = project.configuration.resource["netdevice"]
     jobconfig["allocation"]   = project.configuration.user["allocation"]

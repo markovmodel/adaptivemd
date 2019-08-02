@@ -34,7 +34,7 @@ formatlines = lambda l: '\n'.join(
     ( [''] if len(l.split('\n'))>1 else [])
     )
 
-def get_logger(logname, logfile=False):
+def get_logger(logname, logfile=True):
 
     import logging
 
@@ -60,8 +60,8 @@ def get_logger(logname, logfile=False):
         loglevel = logging.WARNING
 
     formatter = logging.Formatter(
-        '%(asctime)s ::::: %(name)s ::::: %(levelname)s |||||   %(message)s'
-        )
+        "[ %(asctime)s ] %(name)s :: %(levelname)s :: %(lineno)d ||   %(message)s"
+    )
 
     logging.basicConfig(level=loglevel)#, format=formatter)
     logger  = logging.getLogger(logname)
@@ -86,45 +86,6 @@ def get_logger(logname, logfile=False):
     logger.propagate = False
 
     return logger
-
-
-def parse_cfg_file(filepath):
-    def parse_line(line):
-        v = line.strip().split()
-        if len(v) > 0 and v[0][0] != '#':
-            return v
-        else:
-            return []
-
-    reading_fields = False
-    configurations_fields = dict()
-
-    with open(filepath, 'r') as f_cfg:
-        for line in f_cfg:
-            v = parse_line(line)
-            if reading_fields:
-                if len(v) == 1 and len(v[0]) == 1:
-                    if v[0][0] == '}':
-                        reading_fields = False
-                    else:
-                        raise ValueError(
-                            "End configuration block with single '}'")
-
-                # PARSE A VALUE
-                elif len(v) == 2:
-                    configurations_fields[reading_fields][v[0]] = v[1]
-
-                # NEED A SINGLE VALUE
-                elif len(v) == 1 or len(v) > 2:
-                    raise ValueError(
-                        "Require at least one value separated by space")
-
-            # START READING
-            elif len(v) == 2 and v[1] == '{':
-                reading_fields = v[0]
-                configurations_fields[reading_fields] = dict()
-
-    return configurations_fields
 
 
 def get_function_source(func):
