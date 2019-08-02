@@ -47,12 +47,12 @@ class Scheduler(object):
         adding certain paths, etc.
     """
 
-    def __init__(self, resource, queue=None, runtime=240, cores=1):
+    def __init__(self, configuration, queue=None, runtime=240, cores=1):
         """
 
         Parameters
         ----------
-        resource : `Resource`
+        configuration : `Configuration`
             a `Resource` where this scheduler works on
         queue : str
             the name of the queue to be used for pilot creation
@@ -62,7 +62,8 @@ class Scheduler(object):
             number of used cores to be used in the created pilot
         """
 
-        self.resource = resource
+        self.configuration = configuration
+        self.resource = self.configuration.resource
         self.queue = queue
         self.runtime = runtime
         self.cores = cores
