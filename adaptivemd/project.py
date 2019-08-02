@@ -779,6 +779,8 @@ class Project(object):
         return len(self._events) == 0
 
     def add_event(self, event):
+        # FIXME see lower fixmes, this function doesn't ensure that
+        #       the event argument is a compatible type
         """
         Attach an event to the project
 
@@ -798,11 +800,15 @@ class Project(object):
             the actual event used
 
         """
+        # FIXME this looks like it should map recursively
+        #    return list(map(lambda e: self.add_event(e), event))
         if isinstance(event, (tuple, list)):
             return list(map(self._events.append, event))
 
         if isinstance(event, types.GeneratorType):
             event = ExecutionPlan(event)
+
+        # FIXME what about any other arg type? should be rejected...
 
         self._events.append(event)
 
