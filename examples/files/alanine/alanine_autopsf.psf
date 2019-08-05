@@ -5,29 +5,29 @@ PSF
  REMARKS 2 patches were applied to the molecule.
  REMARKS topology alanine_autopsf-temp.top 
  REMARKS segment XP1 { first ACE; last CT2; auto angles dihedrals }
- REMARKS patch CT2 XP1:2  
- REMARKS patch ACE XP1:2  
+ REMARKS patch CT2 XP1:1  
+ REMARKS patch ACE XP1:1  
 
       19 !NATOM
-       1 XP1  2    ALA  CAY  CT3   -0.270000       12.0110           0
-       2 XP1  2    ALA  HY1  HA3    0.090000        1.0080           0
-       3 XP1  2    ALA  HY2  HA3    0.090000        1.0080           0
-       4 XP1  2    ALA  HY3  HA3    0.090000        1.0080           0
-       5 XP1  2    ALA  CY   C      0.510000       12.0110           0
-       6 XP1  2    ALA  OY   O     -0.510000       15.9990           0
-       7 XP1  2    ALA  N    NH1   -0.470000       14.0070           0
-       8 XP1  2    ALA  HN   H      0.310000        1.0080           0
-       9 XP1  2    ALA  CA   CT1    0.070000       12.0110           0
-      10 XP1  2    ALA  HA   HB1    0.090000        1.0080           0
-      11 XP1  2    ALA  CB   CT3   -0.270000       12.0110           0
-      12 XP1  2    ALA  HB1  HA3    0.090000        1.0080           0
-      13 XP1  2    ALA  HB2  HA3    0.090000        1.0080           0
-      14 XP1  2    ALA  HB3  HA3    0.090000        1.0080           0
-      15 XP1  2    ALA  C    CC     0.550000       12.0110           0
-      16 XP1  2    ALA  O    O     -0.550000       15.9990           0
-      17 XP1  2    ALA  NT   NH2   -0.620000       14.0070           0
-      18 XP1  2    ALA  HT1  H      0.320000        1.0080           0
-      19 XP1  2    ALA  HT2  H      0.300000        1.0080           0
+       1 XP1  1    ALA  CAY  CT3   -0.270000       12.0110           0
+       2 XP1  1    ALA  HY1  HA3    0.090000        1.0080           0
+       3 XP1  1    ALA  HY2  HA3    0.090000        1.0080           0
+       4 XP1  1    ALA  HY3  HA3    0.090000        1.0080           0
+       5 XP1  1    ALA  CY   C      0.510000       12.0110           0
+       6 XP1  1    ALA  OY   O     -0.510000       15.9990           0
+       7 XP1  1    ALA  N    NH1   -0.470000       14.0070           0
+       8 XP1  1    ALA  HN   H      0.310000        1.0080           0
+       9 XP1  1    ALA  CA   CT1    0.070000       12.0110           0
+      10 XP1  1    ALA  HA   HB1    0.090000        1.0080           0
+      11 XP1  1    ALA  CB   CT3   -0.270000       12.0110           0
+      12 XP1  1    ALA  HB1  HA3    0.090000        1.0080           0
+      13 XP1  1    ALA  HB2  HA3    0.090000        1.0080           0
+      14 XP1  1    ALA  HB3  HA3    0.090000        1.0080           0
+      15 XP1  1    ALA  C    CC     0.550000       12.0110           0
+      16 XP1  1    ALA  O    O     -0.550000       15.9990           0
+      17 XP1  1    ALA  NT   NH2   -0.620000       14.0070           0
+      18 XP1  1    ALA  HT1  H      0.320000        1.0080           0
+      19 XP1  1    ALA  HT2  H      0.300000        1.0080           0
 
       18 !NBOND: bonds
        1       2       1       3       1       4       5       1

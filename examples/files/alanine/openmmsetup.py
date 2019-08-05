@@ -8,19 +8,23 @@ from simtk.unit import *
 
 pdb    = PDBFile('alanine_autopsf.pdb')
 psf    = CharmmPsfFile('alanine_autopsf.psf')
-ff     = ForceField('charmm36.xml')
+ff     = ForceField('charmm36.xml', 'charmm36/water.xml')
 
-psf.setBox(*(3*[1.2*nanometers]))
+psf.setBox(*(3*[2.*nanometers]))
 
 model = Modeller(
     psf.topology,
     pdb.positions,
 )
 
+#model.addHydrogens(ff)
+model.deleteWater()
+model.addSolvent(ff)
+
 system = ff.createSystem(
     model.topology,
     nonbondedMethod=PME,
-    nonbondedCutoff=1*nanometer,
+    nonbondedCutoff=0.95*nanometer,
     constraints=AllBonds,
     hydrogenMass=4*amu,
 )
@@ -30,6 +34,8 @@ integrator = LangevinIntegrator(
     1/picosecond,
     0.005*picoseconds,
 )
+
+PDBFile.writeFile(model.topology, model.positions, open('alanine.pdb', 'w'))
 
 with open('system.xml', 'w') as f:
     system_xml = XmlSerializer.serialize(system)
