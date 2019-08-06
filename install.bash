@@ -49,7 +49,7 @@ ADMD_NETDEVICE="eth0"
 # INSTALL_DIRNAME also the default Conda Env name
 INSTALL_DIRNAME="admd"
 ADMD_DATA="/lustre/or-hydra/cades-bsd/$USER/$INSTALL_DIRNAME/data"
-ADMD_SOFTWARE="/home/$USER/$INSTALL_DIRNAME/software"
+ADMD_SOFTWARE="/lustre/or-hydra/cades-bsd/$USER/$INSTALL_DIRNAME/software"
 ADMD_WORKFLOWS="/lustre/or-hydra/cades-bsd/$USER/$INSTALL_DIRNAME/workflows"
 ADMD_MDSYSTEMS="/lustre/or-hydra/cades-bsd/$USER/$INSTALL_DIRNAME/mdsystems"
 ADMD_SAMPLINGFUNCS="/lustre/or-hydra/cades-bsd/$USER/$INSTALL_DIRNAME/sampling"
@@ -62,6 +62,7 @@ touch $ADMD_PROFILE
 #-------------------------------------------------------------------#
 # Extra actions to include for loading AdaptiveMD Environment
 ADMD_ACTIONS[0]="module unload python"
+ADMD_ACTIONS[1]="module load PE-gnu"
 # e.g. if you used a system anaconda module to create this env
 #ADMD_ACTIONS[1]="module load python/anaconda"
 
@@ -248,15 +249,12 @@ conda create  --yes -n $ADMD_ENV_NAME python=$PYTHON_VERSION
 source activate $ADMD_ENV_NAME
 conda install --yes $OPENMM_VERSION
 conda install --yes $PYEMMA_VERSION
+
 # something weird goes on with the yaml and pyyaml
-# packages, choosing to force install instead of
-# switching to use yaml package for now
-# TODO FIXME why does conda think pyyaml is installed
-#            (only some times...) when it is not?
 conda install --yes --force-reinstall pyyaml
 
 echo ">>>>>>>>>>>> ADMD_PROFILE >>>>>>>>>>>>>>>>>>>>>>>>"
-echo "export PATH=\"$(dirname $(which conda)):\$PATH\"" | tee -a $ADMD_PROFILE
+echo "export PATH=\"$ADMD_SOFTWARE/miniconda/bin:\$PATH\"" | tee -a $ADMD_PROFILE
 echo "" | tee -a $ADMD_PROFILE
 echo "# 'activate' now in PATH" | tee -a $ADMD_PROFILE
 echo "# TODO maybe? conda activate $ADMD_ENV_NAME... but seems" | tee -a $ADMD_PROFILE
