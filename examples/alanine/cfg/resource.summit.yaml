@@ -2,7 +2,6 @@
 resource_name:  "summit"
 shared_path:    "$ADMD_DATA"
 queues:         ""
-allocation:     "bif112"
 cpu_per_node:   42
 gpu_per_node:   6
 netdevice:      "ib0"

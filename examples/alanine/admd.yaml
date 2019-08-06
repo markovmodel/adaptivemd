@@ -1,10 +1,10 @@
 
 summit-lsf-jsrun:
-    user:     "cfg/user.summit.yaml"
+    user:     "cfg/user.yaml"
     analyze:  "cfg/analyze.yaml"
-    resource: "cfg/resource.summit.yaml"
-    workload: "cfg/workload.lsf.yaml"
-    launch:   "cfg/launch.jsrun.yaml"
+    resource: "cfg/resource.condo.yaml"
+    workload: "cfg/workload.pbs.yaml"
+    launch:   "cfg/launch.mpirun.yaml"
 
     task:
         worker:   "cfg/task.worker.yaml"

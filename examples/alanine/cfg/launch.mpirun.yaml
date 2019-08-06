@@ -3,7 +3,7 @@ command: "mpirun"
 
 # Options to control launcher, assign hardware
 resource:
-    --map-by: "ppr:{cpu_per_task}:node"
+    --map-by: "ppr:1:node:PE={task.cpu_per_task}"
     -n:       "{task.n_tasks}"
 
 # Additional to accommadate rigid formats
