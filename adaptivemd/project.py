@@ -831,6 +831,8 @@ class Project(object):
             while found_iteration > 0:
                 found_new_events = False
                 for event in list(self._events):
+                    logger.debug("Checking event: {}".format(event))
+
                     if event:
                         new_events = event.trigger()
 

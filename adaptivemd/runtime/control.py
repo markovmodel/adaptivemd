@@ -78,32 +78,6 @@ def create_workload_launcher(project, workload, args, cwd):
     return jl, session
 
 
-def all_done(tasks):
-        '''Check if a workload (batch of tasks) is done
-        '''         
-        # TODO establish / utilize FINAL_STATES via adaptivemd.Task class
-        logger.info("Checking if all done")
-        idle_time = 5
-
-        n_waiting = len(tasks) - len(filter(
-            lambda ta: ta.state in {'dummy','cancelled', 'fail', 'success'},
-            project.tasks
-        ))
-
-        if n_waiting > 0:
-
-            logger.info("Waiting on {} tasks".format(n_waiting))
-            sleep(idle_time)
-
-            return False
-
-        else:
-
-            logger.info("All Tasks in Final States")
-
-            return True
-
-
 def queue_tasks(project, tasks, wait=False, batchsize=9999999, sleeptime=5):
     # TODO this belongs in the project queue method
     '''This function queues tasks to a `Project` instance in batches.

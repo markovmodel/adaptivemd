@@ -6,7 +6,7 @@ import yaml
 #import uuid
 #import time
 
-from .control import queue_tasks, all_done
+from .control import queue_tasks
 from .util import counter
 
 from ..sampling import get_sampling_function

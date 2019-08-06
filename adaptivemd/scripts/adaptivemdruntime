@@ -237,7 +237,7 @@ if __name__ == '__main__':
                     cpu_threads = args.threads,
                     fixedlength = True,#args.fixedlength,
                     startontraj = args.after_n_trajs,
-                    admd_profile = args.rc,
+                    admd_profile = None,#args.rc,
                     min_model_trajlength = args.min_model_trajlength,
                     sampling_function_name = args.sampling_method,
                 ))
@@ -274,6 +274,8 @@ if __name__ == '__main__':
                 logger.info("Project waiting on completion event for last workload")
                 project.wait_until(project.events_done)
                 logger.info("Project event done")
+                logger.info("Shutting down the workers")
+                project.workers.all.execute("shutdown")
 
     except KeyboardInterrupt:
 
