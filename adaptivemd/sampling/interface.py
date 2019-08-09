@@ -108,21 +108,16 @@ def get_sampling_function(name_func, backup_func=None, **sfkwargs):
             sf = _func 
             sampled_frames = list()
 
-            while not sampled_frames:
+            try:
+                sampled_frames = sf(project, number, *args, **skwargs)
 
-                try:
-                    sampled_frames = sf(project, number, *args, **skwargs)
+            except Exception as e:
 
-                except Exception as e:
+                logger.error("Error: Sampling was unsuccessful due to this error:")
+                logger.error(traceback.print_exc())
 
-                    logger.error("Error: Sampling was unsuccessful due to this error:")
-                    logger.error(traceback.print_exc())
-
-                    if (sf == _backup_func) or (_backup_func is None):
-                        break
-
-                    else:
-                        sf = _backup_func
+                if not (sf == _backup_func) and not (_backup_func is None):
+                    sf = _backup_func
 
             logger.info("frames sampled from function: {0}".format(sf))
             logger.info(sampled_frames)
