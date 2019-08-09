@@ -191,7 +191,7 @@ class WorkerScheduler(Scheduler):
         script_location = self.current_task_dir
 
         if os.path.exists(script_location):
-            logger.info('removing existing folder', script_location)
+            logger.info('removing existing folder {}'.format(script_location))
             # the folder already exists, probably a failed previous attempt
             # a restart needs a clean folder so remove it now
             shutil.rmtree(script_location)
@@ -624,10 +624,12 @@ class Worker(StorableMixin):
                     # success, so mark the task as cancelled
                     task.state = mode
                     task.worker = None
-                    logger.info('stopped a task [%s] from generator `%s` and set to `%s`' % (
+                    logger.info(
+                        'stopped a task [%s] from generator `%s` and set to `%s`' % (
                         task.__class__.__name__,
                         task.generator.name if task.generator else '---',
-                        task.state))
+                        task.state)
+                    )
 
             else:
                 # semms in the meantime the task has finished (success/fail)
