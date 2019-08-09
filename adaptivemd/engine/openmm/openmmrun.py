@@ -39,11 +39,12 @@ from simtk.openmm.app import PDBFile, Simulation, DCDReporter, StateDataReporter
 
 
 def get_xml(xml_file):
-    # TODO file access control
     attempt = 0
     retries = 10
+
     if not xml_file.endswith('.xml'):
         raise IOError("{} must end in '.xml' for reading as XML file".format(xml_file))
+
     while True:
         try:
             with open(xml_file) as f:
@@ -52,7 +53,7 @@ def get_xml(xml_file):
             return xml, cereal
 
         #except ValueError as e:
-        except:
+        except Exception as e:
             if attempt < retries:
                 attempt += 1
                 time.sleep(5*random.random())
@@ -61,19 +62,20 @@ def get_xml(xml_file):
 
 
 def get_platform(platform_name):
+    attempt = 0
+    retries = 10
+
     if platform_name == 'fastest':
         platform = None
+
     else:
-        # TODO file access control
-        attempt = 0
-        retries = 10
         while True:
             try:
                 platform = Platform.getPlatformByName(platform_name)
                 return platform
 
             #except IndexError as e:
-            except:
+            except Exception as e:
                 if attempt < retries:
                     attempt += 1
                     time.sleep(5*random.random())
@@ -82,18 +84,19 @@ def get_platform(platform_name):
 
 
 def get_pdbfile(topology_pdb):
-    # TODO file access control
     attempt = 0
     retries = 10
+
     if not topology_pdb.endswith('.pdb'):
         raise IOError("{} must end in '.pdb' for reading as PDB file".format(topology_pdb))
+
     while True:
         try:
             pdb = PDBFile(topology_pdb)
             return pdb
 
         #except IndexError as e:
-        except:
+        except Exception as e:
             if attempt < retries:
                 attempt += 1
                 time.sleep(5*random.random())
@@ -114,6 +117,7 @@ def read_input(platform, pdbfile, system, integrator):
     kfuncs = list(funcs.keys())
     random.shuffle(kfuncs)
     returns = dict()
+
     while kfuncs:
         op_name = kfuncs.pop(0)
         func, arg = funcs[op_name]
