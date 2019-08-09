@@ -7,28 +7,41 @@ from time import sleep
 from pprint import pformat
 
 from .jobs import JobLauncher
-from ..file import URLGenerator
 from ..util import get_logger
 
 logger = get_logger(__name__)
 
 
-def create_workload_launcher(project, workload, args, cwd):
 
-    sessions = URLGenerator("sessions/{count:06}")
-    # FIXME this isn't working to get next one
-    if os.path.exists("sessions"):
-        sessions.initialize_from_files([
-            os.path.join("sessions", d) for d in os.listdir("sessions")])
+def check_trajectory_minlength(project, minlength, trajectories, n_steps, n_traj=0,
+                               resource_requirements=None, **kwargs):
 
-    else:
-        os.makedirs("sessions")
+    #if not trajectories:
+    #    trajectories = project.trajectories
 
-    for d in os.listdir("sessions"):
-        next(sessions)
+    tasks = list()
+    for t in trajectories:
 
-    session = next(sessions)
-    os.makedirs(session)
+        tlength = t.length
+        xlength = 0
+
+        if tlength < minlength:
+            if minlength - tlength > n_steps:
+                xlength += n_steps
+            else:
+                xlength += minlength - tlength
+
+        if xlength:
+            tasks.append(t.extend(xlength, **resource_requirements))
+
+    if n_traj is not None and len(tasks) > n_traj:
+        tasks = tasks[:n_traj]
+
+    return tasks
+
+
+def create_workload_launcher(project, workload, session, args, cwd):
+
     os.makedirs(os.path.join(session, "workers"))
 
     job_state_filename = "admd.job.state"
@@ -75,7 +88,7 @@ def create_workload_launcher(project, workload, args, cwd):
         n_nodes, walltime)
     )
 
-    return jl, session
+    return jl
 
 
 def queue_tasks(project, tasks, wait=False, batchsize=9999999, sleeptime=5):
@@ -104,9 +117,9 @@ def queue_tasks(project, tasks, wait=False, batchsize=9999999, sleeptime=5):
     sleeptime :: `int`
     the waiting time between task state checks of previous batch
     '''
-    logger.info("Arguments to task queueing function")
+    logger.debug("Arguments to task queueing function")
 
-    logger.info("wait={w} batchsize={b} sleeptime={s}".format(
+    logger.debug("wait={w} batchsize={b} sleeptime={s}".format(
            w=wait, b=batchsize, s=sleeptime)
     )
 

@@ -40,12 +40,6 @@ def get_argparser():
     parser.add_argument("--rp", action="store_true",
         help="Use RP" )
 
-    # This should almost always be 1, why would a broken MD
-    # instance not be for an adaptive sampling round?
-    parser.add_argument("-x","--n-extension", dest="n_ext",
-        help="Number of extensions to trajectories per round",
-        type=int, default=1)
-
     parser.add_argument("-C","--config",
         help="Path to config file",
         default="admd.yaml")
@@ -58,7 +52,7 @@ def get_argparser():
 
     parser.add_argument("-b","--n_rounds",
         help="Number of workloads inside a single PBS job",
-        type=int, default=0)
+        type=int, default=1)
 
     parser.add_argument("-c","--batchsize",
         help="Number of tasks to queue simultaneously",
@@ -77,13 +71,17 @@ def get_argparser():
         type=int, default=5)
 
     parser.add_argument("-R","--round_n",
-        help="Use if you are externally tracking round number",
+        help="Round number used to select analysis at runtime",
         type=int, default=1)
 
     # TODO activate command with full path to bins or shell source
     #      activate of rc file with full activate command
     parser.add_argument("-r","--rc",
         help="Location of AdaptiveMD profile, ie an rc file", type=stripped)
+
+    parser.add_argument("-A","--analysis_cfg",
+        help="Configuration file for PyEMMA analysis",
+        default="analysis.yaml")
 
     parser.add_argument("-a","--after_n_trajs",
         help="Extension of trajs N onward", type=digit)

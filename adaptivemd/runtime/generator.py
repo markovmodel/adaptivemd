@@ -5,8 +5,9 @@ import yaml
 #from pprint import pformat
 #import uuid
 #import time
+from pprint import pformat
 
-from .control import queue_tasks
+from .control import queue_tasks, check_trajectory_minlength
 from .util import counter
 
 from ..sampling import get_sampling_function
@@ -18,9 +19,9 @@ __all__ = ["workflow_generator_simple", "model_extend_simple"]
 
 
 def workflow_generator_simple(
-    project, engine, n_run, n_ext, n_steps, round_n,
+    project, engine, n_traj, n_steps, round_n,
     longest = 5000,
-    n_rounds = 0,
+    n_rounds = 1,
     modeller = None,
     sfkwargs = dict(),
     minlength = None,
@@ -32,13 +33,13 @@ def workflow_generator_simple(
     fixedlength = True,
     startontraj = 0,
     admd_profile = None,
+    analysis_cfg = None,
     min_model_trajlength = 0,
     sampling_function_name = 'explore_macrostates',
 
     # these arent currently utilized
-    mpi_rank = 0,
     randomly = False,
-    margs_file = None,
+    mpi_ranks = 0,
     continuing = True,
     **kwargs,):
 
@@ -48,6 +49,7 @@ def workflow_generator_simple(
     )
 
     resource_requirements = dict() # TODO calculate request
+    qkwargs = dict(sleeptime=batchsleep, batchsize=batchsize, wait=batchwait)
 
     if progression == 'all':
         progress = lambda tasks: all([ta.is_done() for ta in tasks])
@@ -55,15 +57,15 @@ def workflow_generator_simple(
     else:
         progress = lambda tasks: any([ta.is_done() for ta in tasks])
 
-    c = counter(n_rounds)
-    tasks = list()
-
     if n_rounds:
 
         assert isinstance(n_rounds, int)
         assert n_rounds > 0
 
-        logger.info("Going to do n_rounds:  {}".format(c.n))
+        logger.info("Going to do n_rounds:  {}".format(n_rounds))
+
+    c = counter(n_rounds)
+    tasks = list()
 
     # PREPARATION - Preprocess task setups
     logger.info("Using MD Engine: {0} {1}".format(engine, engine.name))#, project.generators[engine.name].__dict__)
@@ -87,14 +89,14 @@ def workflow_generator_simple(
 
         logger.info("Defining first simulation tasks for new project")
 
-        for traj in project.new_trajectory(engine['pdb_file'], n_steps, engine, n_run):
+        for traj in project.new_trajectory(engine['pdb_file'], n_steps, engine, n_traj):
             tasks.append(traj.run(**resource_requirements))
             if admd_profile: # This should be path to an RC file
                 tasks[-1].pre.insert(0, "source %s" % admd_profile)
 
-        if not n_rounds or not c.done:
+        if not c.done:
             logger.info("Project first tasks queue")
-            queue_tasks(project, tasks, sleeptime=batchsleep, batchsize=batchsize, wait=batchwait)
+            queue_tasks(project, tasks, **qkwargs)
             c.increment()
 
         logger.info("Project first tasks queued")
@@ -109,47 +111,51 @@ def workflow_generator_simple(
 
         notfirsttime = True
 
-    c_ext = 0
     mtask = None
 
-    with open(margs_file, 'r') as f:
-        _margs = yaml.safe_load(f)
+    if analysis_cfg:
+        with open(analysis_cfg, 'r') as f:
+            _margs = yaml.safe_load(f)
 
-    margs = lambda rn: _margs[max(list(filter(lambda mi: mi <= rn, _margs)))]
+        update_margs = lambda rn: _margs[
+            max(list(filter(
+            lambda mi: mi <= rn, _margs)))
+        ]
 
     # Start of CONTROL LOOP
-    # when on final workload, with c_ext == n_ext,
-    while c_ext <= n_ext and (not n_rounds or not c.done):
+    while not c.done:
 
         logger.info("Checking Extension Lengths")
 
-        done = False
-        lastcheck = True
-        priorext = 0
+        priorext = -1
         # TODO fix, this isn't a consistent name "trajectories"
         trajectories = set()
-        while not done and ( not n_rounds or not c.done ):
+        # This loop will escape if all the trajectories
+        # are / become full length
+        while priorext and not c.done:
 
-            #print("looking for too-short trajectories")
-            if c.done:
-                xtasks = list()
-            else:
-                #logger.info(formatline("TIMER Brain ext tasks define {0:.5f}".format(time.time())))
-                #active_trajs =  ~~~  after_n_trajs_trajs
-                after_n_trajs_trajs = list(project.trajectories.sorted(lambda tj: tj.__time__))[startontraj:]
-                logger.info("Checking last {} trajectories for proper length".format(len(after_n_trajs_trajs)))
-                xtasks = check_trajectory_minlength(project, minlength, n_steps, n_run, task_env=taskenv,
-                    trajectories=after_n_trajs_trajs, resource_requirements=resource_requirements)
-                   # environment=environment,
-                   # activate_prefix=activate_prefix, virtualenv=virtualenv,
-                   # task_env=task_env, resource_requirements=resource_requirements)
+            xtasks = list()
 
+            #active_trajs =  ~~~  after_n_trajs_trajs
+            after_n_trajs_trajs = list(project.trajectories.sorted(
+                lambda tj: tj.__time__))[startontraj:]
+
+            logger.info(
+                "Checking last {} trajectories for proper length".format(
+                len(after_n_trajs_trajs))
+            )
+
+            xtasks = check_trajectory_minlength(
+                project, minlength, after_n_trajs_trajs, n_steps, n_traj,
+                resource_requirements=resource_requirements
+            )
+
+            # NOTE we are tracking pre-existing extension tasks
             tnames = set()
             if len(trajectories) > 0:
                 [tnames.add(_) for _ in set(zip(*trajectories)[0])]
 
-            #if xtasks:
-            #    logger.info(formatline("TIMER Brain ext tasks queue {0:.5f}".format(time.time())))
+            # NOTE so we only extend those who aren't already running
             queuethese = list()
             for xta in xtasks:
                 tname = xta.trajectory.basename
@@ -159,10 +165,12 @@ def workflow_generator_simple(
                     trajectories.add( (tname, xta) )
                     queuethese.append(xta)
 
-            queue_tasks(project, queuethese, rp_client, sleeptime=batchsleep, batchsize=batchsize, wait=batchwait)
+            if queuethese:
 
-            #if xtasks:
-            #    logger.info(formatline("TIMER Brain ext tasks queued {0:.5f}".format(time.time())))
+                queue_tasks(project, queuethese, **qkwargs)
+                yield lambda: progress(queuethese)
+
+            # NOTE and remove any that have already completed
             removals = list()
             for tname, xta in trajectories:
                 if xta.state in {"fail","halted","success","cancelled"}:
@@ -171,116 +179,78 @@ def workflow_generator_simple(
             for removal in removals:
                 trajectories.remove(removal)
 
-            if len(trajectories) == n_run and priorext < n_run:
+            if len(trajectories) == n_traj and priorext < n_traj:
                 logger.info("Have full width of extensions")
                 c.increment()
 
             # setting this to look at next round
             priorext = len(trajectories)
 
-            if len(trajectories) == 0:
-                if lastcheck:
-                    logger.info("Extensions last check")
-                    lastcheck = False
-                    time.sleep(15)
+        logger.info("----------- On workload #{0}".format(c.n))
+        logger.info("Runtime main loop enter")
+        tasks = list()
 
-                else:
-                    logger.info("Extensions are done")
-                    #logger.info(formatline("TIMER Brain ext tasks done {0:.5f}".format(time.time())))
-                    done = True
+        if not modeller:
+            logger.info("Extending project without modeller")
 
-            else:
-                if not lastcheck:
-                    lastcheck = True
+            yield lambda: model_extend_simple(project, engine, modeller, n_traj, tasks, n_steps, sampling_function, mtask=mtask, c=c)
 
-                time.sleep(15)
+            logger.info("Runtime main no modeller done")
 
-        logger.info("----------- Extension #{0}".format(c_ext))
-
-        # when c_ext == n_ext, we just wanted
-        # to use check_trajectory_minlength above
-        if c_ext < n_ext and not c.done:
-            logger.info(formatline("TIMER Brain main loop enter {0:.5f}".format(time.time())))
-            tasks = list()
-            if not modeller:
-                c_ext += 1
-                logger.info("Extending project without modeller")
-                yield lambda: model_extend(modeller, randbreak, c=c)
-                logger.info(formatline("TIMER Brain main no modeller done {0:.5f}".format(time.time())))
-            else:
-                margs = update_margs(_margs, round_n)
-
-                logger.info("Extending project with modeller")
-                logger.info("margs for this round will be: {}".format(pformat(margs)))
-
-                if mtask is None:
-
-                    mtime -= time.time()
-                    yield lambda: model_extend(modeller, randbreak, c=c)
-
-                    logger.info(formatline("TIMER Brain main loop1 done {0:.5f}".format(time.time())))
-                    logger.info("Set a current modelling task")
-                    mtask = tasks[-1]
-                    logger.info("First model task is: {}".format(mtask))
-
-                # TODO don't assume mtask not None means it
-                #      has is_done method. outer loop needs
-                #      upgrade
-                elif mtask.is_done():
-
-                    mtime += time.time()
-                    mtimes.append(mtime)
-                    mtime = -time.time()
-                    logger.info("Current modelling task is done")
-                    logger.info("It took {0} seconds".format(mtimes[-1]))
-                    c_ext += 1
-
-                    yield lambda: model_extend(modeller, randbreak, mtask, c=c)
-                    logger.info(formatline("TIMER Brain main loop2 done {0:.5f}".format(time.time())))
-
-                    pythontask_callback(mtask, scd)
-                    #mpath = os.path.expandvars(mtask.__dict__['post'][1].target.url.replace('project:///','$ADMDRP_DATA/projects/{}/'.format(project.name)))
-                    #mtask._cb_success(scd, mpath)
-                    logger.info("Added another model to project, now have: {}".format(len(project.models)))
-
-                    print_last_model(project)
-                    mtask = tasks[-1]
-                    logger.info("Set a new current modelling task")
-
-                elif not mtask.is_done():
-                    logger.info("Continuing trajectory tasks, waiting on model")
-                    yield lambda: model_extend(modeller, randbreak, mtask, c=c)
-                    logger.info(formatline("TIMER Brain main loop3 done {0:.5f}".format(time.time())))
-
-                else:
-                    logger.info("Not sure how we got here")
-                    pass
-
-
-        # End of CONTROL LOOP
-        # need to increment c_ext to exit the loop
         else:
-            c_ext += 1
+            margs = update_margs(round_n)
+
+            logger.info("Extending project with modeller")
+            logger.info("Analysis args for this round will be: {}".format(pformat(margs)))
+
+            if mtask is None:
+
+                yield lambda: model_extend_simple(project, engine, modeller, n_traj, tasks, n_steps, sampling_function, mtask=mtask, c=c)
+
+                logger.info("Runtime main loop1 done")
+                mtask = tasks[-1]
+                logger.info("Set a current modelling task: {}".format(mtask))
+
+            # TODO don't assume mtask not None means it
+            #      has is_done method. outer loop needs
+            #      upgrade
+            elif mtask.is_done():
+
+                logger.info("Current modelling task is done")
+
+                yield lambda: model_extend_simple(project, engine, modeller, n_traj, tasks, n_steps, sampling_function, mtask=mtask, c=c)
+
+                logger.info("Runtime main loop2 done")
+                logger.info("Added another model to project, now have: {}".format(len(project.models)))
+                mtask = tasks[-1]
+                logger.info("Set a new current modelling task")
+
+            elif not mtask.is_done():
+                logger.info("Continuing trajectory tasks, waiting on model")
+                yield lambda: model_extend_simple(project, engine, modeller, n_traj, tasks, n_steps, sampling_function, mtask=mtask, c=c)
+                logger.info("Runtime main loop3 done")
+
+            else:
+                logger.info("Not sure how we got here")
+                pass
 
 
-
-def model_extend_simple(modeller, c_ext, tasks, n_steps, sampling_function, mtask=None, c=None):
-    #print("c_ext is ", c_ext, "({0})".format(n_ext))
-    #print("length of extended is: ", len(extended))
+def model_extend_simple(project, engine, modeller, n_traj,
+     tasks, n_steps, sampling_function, mtask, c, qkwargs=dict()):
 
     # FIRST workload including a model this execution
-    if c_ext == 0:
+    if c.i == 1 and not mtask:
         if len(tasks) == 0:
 
-            trajectories = sampling_function(project, engine, n_steps, n_run)
+            trajectories = sampling_function(project, engine, n_steps, n_traj)
             logger.info("Runtime new trajectories defined")
 
-            if not n_rounds or not c.done:
+            if not c.done:
                 logger.info("Converting trajectories to tasks")
                 [tasks.append(t.run(**resource_requirements)) for t in trajectories]
 
-                logger.info("Runtime new tasks queueing {0:.5f}".format(time.time()))
-                queue_tasks(project, tasks, sleeptime=batchsleep, batchsize=batchsize, wait=batchwait)
+                logger.info("Runtime new tasks queueing")
+                queue_tasks(project, tasks, **qkwargs)
 
                 c.increment()
                 logger.info("Runtime new tasks queued")
@@ -291,11 +261,11 @@ def model_extend_simple(modeller, c_ext, tasks, n_steps, sampling_function, mtas
                 # OK condition because we're in first
                 #    extension, as long as its a fresh
                 #    project.
-                logger.debug("len(project.trajectories), n_run: {0} {1}".format(
-                    len(project.trajectories), n_run
+                logger.debug("len(project.trajectories), n_traj: {0} {1}".format(
+                    len(project.trajectories), n_traj
                 ))
 
-                if notfirsttime or len(project.trajectories) >= n_run - len(filter(lambda ta: ta.state in {'fail','cancelled'}, project.tasks)):
+                if len(project.trajectories) >= n_traj - len(filter(lambda ta: ta.state in {'fail','cancelled'}, project.tasks)):
                     logger.info("adding first/next modeller task")
                     mtask = model_task(project, modeller, margs,
                         taskenv=taskenv, min_trajlength=min_model_trajlength,
@@ -311,15 +281,15 @@ def model_extend_simple(modeller, c_ext, tasks, n_steps, sampling_function, mtas
         return lambda: progress(tasks)
 
     # LAST workload in this execution
-    elif c_ext == n_ext:
-        if len(tasks) < n_run:
+    elif c.i == c.n - 1:
+        if len(tasks) < n_traj:
             if mtask:
             # breaking convention of mtask last
             # is OK because not looking for mtask
             # after last round, only task.done
                 if mtask.is_done() and continuing:
                     mtask = model_task(project, modeller, margs,
-                            taskenv=taskenv, rp_client=rp_client, min_trajlength=min_model_trajlength,
+                            taskenv=taskenv, min_trajlength=min_model_trajlength,
                             resource_requirements=resource_requirements)
 
                     tasks.extend(mtask)
@@ -329,17 +299,16 @@ def model_extend_simple(modeller, c_ext, tasks, n_steps, sampling_function, mtas
             logger.info("Queueing final extensions after modelling done")
             logger.info("\nFirst MD Task Lengths: \n")
 
-            trajectories = sampling_function(project, engine, unrandbreak, n_run)
+            trajectories = sampling_function(project, engine, n_steps, n_traj)
 
             [tasks.append(t.run(**resource_requirements)) for t in trajectories]
-            add_task_env(tasks, **taskenv)
 
             logger.info("Project last tasks queue")
-            if not n_rounds or not c.done:
+            if not c.done:
 
                 logger.info("Queueing these: ")
                 logger.info(tasks)
-                queue_tasks(project, tasks, rp_client, sleeptime=batchsleep, batchsize=batchsize, wait=batchwait)
+                queue_tasks(project, tasks, **qkwargs)
 
                 c.increment()
 
@@ -358,14 +327,13 @@ def model_extend_simple(modeller, c_ext, tasks, n_steps, sampling_function, mtas
             logger.info("Queueing new round of modelled trajectories")
             logger.info("Project new tasks define")
 
-            trajectories = sampling_function(project, engine, n_steps, n_run)
+            trajectories = sampling_function(project, engine, n_steps, n_traj)
 
-            if not n_rounds or not c.done:
+            if not c.n or not c.done:
                 [tasks.append(t.run(**resource_requirements)) for t in trajectories]
-                add_task_env(tasks, **taskenv)
                 logger.info("Project new tasks queue")
 
-                queue_tasks(project, tasks, rp_client, sleeptime=batchsleep, batchsize=batchsize, wait=batchwait)
+                queue_tasks(project, tasks, **qkwargs)
 
                 c.increment()
                 logger.info("Project new tasks queued")
@@ -373,7 +341,7 @@ def model_extend_simple(modeller, c_ext, tasks, n_steps, sampling_function, mtas
                 if mtask:
                     if mtask.is_done():
                         mtask = model_task(project, modeller, margs,
-                                taskenv=taskenv, rp_client=rp_client, min_trajlength=min_model_trajlength,
+                                taskenv=taskenv, min_trajlength=min_model_trajlength,
                                 resource_requirements=resource_requirements)
 
                         tasks.extend(mtask)
