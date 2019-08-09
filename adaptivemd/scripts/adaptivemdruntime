@@ -11,11 +11,14 @@ _cwd_ = os.getcwd()
 
 import sys
 import time
+import shutil
+import glob
 import datetime
 import traceback
 from pprint import pformat
 
 from adaptivemd import PythonTask, Task
+from adaptivemd.file import URLGenerator
 from adaptivemd.runtime import get_argparser, initialize_project, workflow_generator_simple, create_workload_launcher
 from adaptivemd.util import get_logger
 logger = get_logger(logname=__name__)
@@ -41,6 +44,7 @@ runnable_states.add(created_state)
 task_done = lambda ta: ta.state in final_states
 is_incomplete = lambda ta: ta.state in runnable_states
 
+session = None
 
 if __name__ == '__main__':
 
@@ -82,6 +86,22 @@ if __name__ == '__main__':
         logger.info(
             "number of project.models: {}".format(
                 len(project.models)))
+
+        if not args.rescue_only and not args.init_only:
+            sessions = URLGenerator("sessions/{count:06}")
+            # FIXME this isn't working to get next one
+            if os.path.exists("sessions"):
+                sessions.initialize_from_files([
+                    os.path.join("sessions", d) for d in os.listdir("sessions")])
+
+            else:
+                os.makedirs("sessions")
+
+            for d in os.listdir("sessions"):
+                next(sessions)
+
+            session = next(sessions)
+            os.makedirs(session)
 
         n_incomplete_tasks = 0
         if args.rescue_tasks or args.rescue_only:
@@ -131,6 +151,8 @@ if __name__ == '__main__':
 
             n_traj   = 0
             modeller = None
+            n_rounds = 1
+
 
             if not args.rescue_only and not n_incomplete_tasks:
                 logger.info("Setting up for newly issued tasks")
@@ -140,7 +162,7 @@ if __name__ == '__main__':
                 engine   = project.generators["openmm"]
                 n_traj   = args.n_traj
                 n_rounds = args.n_rounds # n_rounds in single runtime, almost always 1
-                round_n  = args.round_n   # round number for overall workflow
+                round_n  = args.round_n  # round number for overall workflow
                 length   = args.length
 
                 # We support multiple modellers so that analysis using
@@ -148,6 +170,7 @@ if __name__ == '__main__':
                 if args.modeller:
                     nm_modeller = args.modeller
                     modeller = project.generators[nm_modeller]
+                    analysis_cfg = args.analysis_cfg
 
             # TODO FIXME this else catches new trajs + incomplete trajs case and
             #            just ignores the new trajs for configuring workload
@@ -199,8 +222,6 @@ if __name__ == '__main__':
 
                     _exitval_ = 0
 
-                n_rounds  = 1
-
                 #for ta in new_tasks:
                 #    logger.info("{0}  {1}".format(ta.state, getattr(ta, 'trajectory', None)))
 
@@ -224,7 +245,7 @@ if __name__ == '__main__':
                     workflow_generator_simple))
 
                 project.add_event(workflow_generator_simple(
-                    project, engine, n_traj, args.n_ext, length, round_n,
+                    project, engine, n_traj, length, round_n,
                     longest = args.all,
                     n_rounds = n_rounds,
                     modeller = modeller,
@@ -238,6 +259,7 @@ if __name__ == '__main__':
                     fixedlength = True,#args.fixedlength,
                     startontraj = args.after_n_trajs,
                     admd_profile = None,#args.rc,
+                    analysis_cfg = args.analysis_cfg,
                     min_model_trajlength = args.min_model_trajlength,
                     sampling_function_name = args.sampling_method,
                 ))
@@ -265,10 +287,11 @@ if __name__ == '__main__':
 
             if submit_only:
 
-                wl, session = create_workload_launcher(project, new_tasks, args, _cwd_)
+                wl = create_workload_launcher(project, new_tasks, session, args, _cwd_)
                 logger.debug(pformat(wl.job_configuration))
 
                 wl.launch_job(session)
+                _exitval_ = os.path.join(session, "admd.job.state")
 
             else:
                 logger.info("Project waiting on completion event for last workload")
@@ -299,16 +322,15 @@ if __name__ == '__main__':
             project.close()
             logger.info("Project closed")
 
-         #   if not args.init_only and dump_finalize_timestamps:
-         #       final_timestamps = pull_final_timestamps(project)
-         #       logger.info(pformat(final_timestamps))
+        if session:
+            logger.info("Moving application files to session directory")
+            logfiles = glob.glob("*log")
+            appdir = os.path.join(session, "application")
+            os.makedirs(appdir)
+            for log in logfiles:
+                shutil.move(log, os.path.join(appdir, log))
 
         logger.info("Exiting Event Script")
-
-        #if len(project.workers) > 0:
-        #    logger.info("Sending 'shutdown' command to all active workers")
-        #    logger.info(project.workers.all)
-        #    project.workers.all.execute('shutdown')
 
         print(_exitval_)
         sys.exit(_exitval_)

@@ -149,7 +149,7 @@ then
   generator+=" -N $NTRAJS -S $SAMPLEFUNC"
 elif [[ "$WORKLOAD" = "model" ]]
 then
-  generator+=" -N 0 -a $AFTERNTRAJS"
+  generator+=" -M pyemma -N 0 -a $AFTERNTRAJS"
 elif [[ "$WORKLOAD" = "all" ]]
 then
   generator+=" -N $NTRAJS"
@@ -229,6 +229,8 @@ kill $MPID
 #------------------------------------------------------------------------------#
 # Process adaptivemdruntime exit code
 
+echo "Is $APP_STATUS found?: $(ls -grth $APP_STATUS)"
+
 if [[ $APP_STATUS =~ ^[-+]?([1-9][[:digit:]]*|0)$ ]]
 then
     if [[ $APP_STATUS -lt 0 ]]
@@ -247,6 +249,13 @@ then
     else
       echo "This condition should not appear, already closed logic"
     fi
+elif [ -f "$APP_STATUS" ]
+then
+    echo "Looking at job state file '$APP_STATUS' for 'COMPLETE' state"
+    while [ ! "$(cat $APP_STATUS)" = "COMPLETE" ]
+    do
+        sleep 3
+    done
 else
     echo "Exiting, $APP_STATUS not castable as int"
     exitval="1"
