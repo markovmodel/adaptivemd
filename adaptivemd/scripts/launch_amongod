@@ -22,10 +22,17 @@ else
 fi
 
 mkdir -p $DBPATH
-mkdir $DBPATH/db
-mkdir $DBPATH/socket
+mkdir -p $DBPATH/db
+mkdir -p $DBPATH/socket
+
+DBHOSTFILE="$DBPATH/db.log"
 
 echo -e "net:\n   unixDomainSocket:\n      pathPrefix: $DBPATH/socket\n   bindIp: 0.0.0.0\n   port:   $DBPORT\n" > $DBPATH/db.cfg
+
+echo "================================================================================" &>> $DBHOSTFILE
+echo "================================================================================" &>> $DBHOSTFILE
+echo "[ $(date +'%Y-%m-%d %H:%M:%S.%5N') ] Log starting from new 'mongod' instance" &>> $DBHOSTFILE
+echo "================================================================================" &>> $DBHOSTFILE
 
 if [ ! -z "$(command -v numactl)" ]; then
   launcher="numactl --interleave=all "
@@ -33,17 +40,10 @@ else
   launcher=""
 fi
 
-if [ "$LAUNCH" = "--launch" ]
-then
-  postcommand=""
-else
-  postcommand="&"
-fi
+mongodcommand="${launcher}mongod --dbpath $DBPATH/db/ --config $DBPATH/db.cfg &>> $DBHOSTFILE &"
 
-mongodcommand="${launcher}mongod --dbpath $DBPATH/db/ --config $DBPATH/db.cfg &> $DBPATH/db.log $postcommand"
-
-#echo "Launching 'mongod' with this command:"
-#echo "$mongodcommand"
 eval "$mongodcommand"
+
+# When using startdb, we need PID to track the launched process
 echo "$!"
 

@@ -3,22 +3,16 @@
 WORKERID="$OMPI_COMM_WORLD_RANK"
 WORKERLOG="workers/adaptivemd.worker.${WORKERID}.log"
 
-echo "Worker$WORKERID says hello: `date +%Y/%m/%d-%H:%M:%S.%5N`" >> $WORKERLOG
+echo "Worker$WORKERID says hello: $(date +'%Y-%m-%d %H:%M:%S.%5N')" >> $WORKERLOG
 
 PROJNAME="$1"
 ADMD_DBURL="$2"
 NWORKERS="$3"
 
-workercommand="adaptivemdworker $PROJNAME --dblocation $ADMD_DBURL -v & >> $WORKERLOG"
-
-# Use SLEEPTIME to add 'jitter' to worker startup, it can
-# help increase scalability on some systems
-#SLEEPTIME=$(echo `printf "0.%03d\n" $(( RANDOM % 1000 ))`*0.8*$NWORKERS | bc)
-#echo "sleeping for: $SLEEPTIME"
-#sleep $SLEEPTIME
-
-echo "Worker$WORKERID starts: `date +%Y/%m/%d-%H:%M:%S.%5N`" >> $WORKERLOG
+workercommand="adaptivemdworker $PROJNAME --dblocation $ADMD_DBURL -v &>> $WORKERLOG"
 echo "Worker$WORKERID command:" >> $WORKERLOG
+
+echo "Worker$WORKERID starts: $(date +'%Y-%m-%d %H:%M:%S.%5N')" >> $WORKERLOG
 echo "$workercommand" >> $WORKERLOG
 eval "$workercommand"
-echo "Worker$WORKERID stops: `date +%Y/%m/%d-%H:%M:%S.%5N`" >> $WORKERLOG
+echo "Worker$WORKERID stops: $(date +'%Y-%m-%d %H:%M:%S.%5N')" >> $WORKERLOG

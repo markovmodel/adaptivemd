@@ -4,15 +4,15 @@ SEARCHKEY="$1"
 
 if [ ! -z "$SEARCHKEY" ]
 then
-  MP=`ps faux | grep "mongod" | grep -v "grep" | grep -v "kill_amongod" | grep "$SEARCHKEY" | tail -n1`
+  MP=`ps faux | grep " mongod " | grep -v "grep" | grep -v "kill_amongod" | grep "$SEARCHKEY" | tail -n1`
 else
-  MP=`ps faux | grep "mongod" | grep -v "grep" | grep -v "kill_amongod" | tail -n1`
+  MP=`ps faux | grep " mongod " | grep -v "grep" | grep -v "kill_amongod" | tail -n1`
 fi
 
 MPID=`echo $MP | awk '{print $2}'`
 
 echo "$MP"
-echo " --- Kill above (hopefully 'mongod') process with ID $MPID?"
+echo " --- Kill above process with ID $MPID?"
 
 if [ ! -z "$MPID" ]
 then

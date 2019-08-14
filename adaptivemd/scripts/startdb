@@ -13,9 +13,24 @@ then
   echo "       the AdaptiveMD Worker connections" >> admd.mongodb.err
 fi
 
+MPID="$(launch_amongod $DBPATH $DBPORT 2> admd.mongodb.err)"
+
+while [ ! -S "$DBPATH/socket/mongodb-27017.sock" ]
+do
+    sleep 1
+done
+
 # Parse the IP address of this compute node for the given NETDEVICE
 # and write it to a file for all the workers to read
-DBHOST=`ip addr show $NETDEVICE | grep -Eo '(addr:)?([0-9]*\.){3}[0-9]*' | head -n1`
-echo "$DBHOST" > $DBPATH/db.host
+DBHOSTFILE="$DBPATH/db.host"
 
-launch_amongod $DBPATH $DBPORT --launch 2> admd.mongodb.err 1> admd.mongodb.out
+DBHOST=`ip addr show $NETDEVICE | grep -Eo '(addr:)?([0-9]*\.){3}[0-9]*' | head -n1`
+echo "$DBHOST" > "$DBHOSTFILE"
+
+trap "kill \"$MPID\"; rm \"$DBHOSTFILE\"" SIGINT SIGTERM
+
+while [ -e "/proc/$MPID" ]
+do
+    sleep 1
+done
+
