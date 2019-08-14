@@ -52,6 +52,7 @@ script:
     #- "wait \"$MONGO_APID\""
     - ""
     - "echo \"COMPLETE\" > {job_state}"
+    - "rm {dbhome}/db.host"
     - ""
     - "echo \"qdel $PBS_JOBID\""
     - "qdel $PBS_JOBID"
