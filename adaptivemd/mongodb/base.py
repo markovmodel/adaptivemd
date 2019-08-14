@@ -28,9 +28,10 @@ from __future__ import absolute_import
 
 
 import inspect
-import logging
 import time
 import uuid
+
+# TODO Remove Python2 related code
 import six
 
 if six.PY2:
@@ -41,9 +42,10 @@ else:
 # TODO forward and reverse for hex, int, and uuidstring
 #      representation of object/document IDs
 hex_t = lambda l: hex(l) if six.PY2 else ''.join([hex(l), 'L'])
-#hex_t = lambda l: hex(l).rstrip('L') if six.PY2 else hex(l)
+hex_t = lambda l: hex(l).rstrip('L') if six.PY2 else hex(l)
 
-logger = logging.getLogger(__name__)
+from ..util import get_logger
+logger = get_logger(__name__)
 
 
 class StorableMixin(object):

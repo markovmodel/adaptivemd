@@ -28,11 +28,10 @@ import six
 import uuid
 
 from .file import File, JSONFile, FileTransaction
-from .util import get_function_source
+from .util import get_function_source, get_logger
 from .mongodb import StorableMixin, SyncVariable, ObjectSyncVariable
 
-import logging
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class BaseTask(StorableMixin):
@@ -1181,20 +1180,18 @@ class PythonTask(PrePostTask):
    ###         {"$set": {"_dict._output_stored": is_stored}})
    ###  
     def _cb_success(self, scheduler, path=None):
-        # here is the logic to retrieve the result object
-        # the output file is a JSON and these know how to load itself
 
         # TODO Cleaner Hard check possible?
         #       need to ensure objects sync across distributed layers
         is_stored = scheduler.project.tasks._set.load(self.__uuid__, force_load=True).output_stored
-        logger.info("{}.output_stored after reloading: ".format(self), is_stored)
+        logger.info("{0}.output_stored after reloading: {1}".format(self, is_stored))
+
         if is_stored:
             logger.info("Skipping callback, output already stored")
             return
 
         if self.store_output:
-            # by default store the result. If you handle it yourself you
-            # might want to turn it off to not save the data twice
+            logger.info("store_output is set, loading analysis results from file to store in database")
             self._rpc_output_file.load(scheduler, path)
 
         data = self._rpc_output_file.get(scheduler, path)
@@ -1210,6 +1207,9 @@ class PythonTask(PrePostTask):
 
         # cleanup
         # mark as changed / deleted
+        # TODO do we need to do this here?
+        #      the worker is going to cleanup its sanbox
+        #      or is set to leave all files...
         if not path:
             filename = scheduler.get_path(self._rpc_output_file)
             os.remove(filename)

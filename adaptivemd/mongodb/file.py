@@ -1,6 +1,5 @@
 from __future__ import absolute_import, print_function
 
-import logging
 import gridfs
 from uuid import UUID
 import time
@@ -10,7 +9,8 @@ from .base import StorableMixin, long_t, hex_t
 from .object import ObjectStore
 from .proxy import LoaderProxy
 
-logger = logging.getLogger(__name__)
+from ..util import get_logger
+logger = get_logger(__name__)
 
 
 class FileStore(ObjectStore):

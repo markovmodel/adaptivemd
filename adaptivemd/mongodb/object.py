@@ -26,7 +26,6 @@
 # for details and license
 from __future__ import absolute_import, print_function
 
-import logging
 from uuid import UUID
 from weakref import WeakValueDictionary
 
@@ -39,7 +38,8 @@ from .cache import MaxCache, Cache, NoCache, \
     WeakLRUCache
 from .proxy import LoaderProxy
 
-logger = logging.getLogger(__name__)
+from ..util import get_logger
+logger = get_logger(__name__)
 
 
 class ObjectStore(StorableMixin):

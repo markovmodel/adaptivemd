@@ -27,14 +27,14 @@
 from __future__ import absolute_import, print_function
 
 import abc
-import logging
+
+from pymongo import MongoClient
 from collections import OrderedDict
 from .dictify import UUIDObjectJSON
 from .object import ObjectStore
 
-from pymongo import MongoClient
-
-logger = logging.getLogger(__name__)
+from ..util import get_logger
+logger = get_logger(__name__)
 
 
 class MongoDBStorage(object):

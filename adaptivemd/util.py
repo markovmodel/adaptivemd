@@ -60,7 +60,8 @@ def get_logger(logname, logfile=True):
         loglevel = logging.WARNING
 
     formatter = logging.Formatter(
-        "[ %(asctime)s ] %(name)s :: %(levelname)s :: %(lineno)d ||   %(message)s"
+        fmt="[ %(asctime)s.%(msecs)05d ] %(name)s :: %(levelname)s :: %(lineno)d ||  %(message)s",
+        datefmt='%Y-%m-%d %H:%M:%S',
     )
 
     logging.basicConfig(level=loglevel)#, format=formatter)
@@ -74,11 +75,8 @@ def get_logger(logname, logfile=True):
     logger.addHandler(ch)
 
     if logfile:
-        logfilename = 'adaptivemd'
-        if isinstance(logfile, str):
-            logfilename = logfile
-        logfile = logfilename + '.' + logname + '.log'
-        fh = logging.FileHandler(logfile)
+        logfilename = logname + '.log'
+        fh = logging.FileHandler(logfilename)
         fh.setLevel(loglevel)
         fh.setFormatter(formatter)
         logger.addHandler(fh)
