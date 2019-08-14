@@ -161,6 +161,7 @@ class PyEMMAAnalysis(Analysis):
         assert isinstance(resource_name, list)
         t.resource_name = resource_name
 
+        # TODO document these 2 ways output can be stored
         # we handle the returned output ourselves -> its stored as a model
         # so do not store the returned JSON also
         t.store_output = False

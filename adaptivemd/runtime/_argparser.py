@@ -79,9 +79,15 @@ def get_argparser():
     parser.add_argument("-r","--rc",
         help="Location of AdaptiveMD profile, ie an rc file", type=stripped)
 
+    # Default file lives in the runtime config folder
+    parser.add_argument("-F","--features_cfg",
+        help="Configuration file specifying features for analysis",
+        default="cfg/features.yaml")
+
+    # Default file lives in the runtime config folder
     parser.add_argument("-A","--analysis_cfg",
         help="Configuration file for PyEMMA analysis",
-        default="analysis.yaml")
+        default="cfg/analysis.yaml")
 
     parser.add_argument("-a","--after_n_trajs",
         help="Extension of trajs N onward", type=digit)
