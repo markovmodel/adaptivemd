@@ -71,7 +71,7 @@ if __name__ == '__main__':
             m_freq   = args.all,
             p_freq   = args.prot,
             platform = args.platform,
-            features = None,
+            features = args.features_cfg,
             config   = args.config,
         ) 
 
@@ -149,10 +149,10 @@ if __name__ == '__main__':
         else:
             logger.info("Configuring workload")
 
-            n_traj   = 0
-            modeller = None
-            n_rounds = 1
-
+            n_traj    = 0
+            modeller  = None
+            n_rounds  = 1
+            new_tasks = list()
 
             if not args.rescue_only and not n_incomplete_tasks:
                 logger.info("Setting up for newly issued tasks")
@@ -174,7 +174,7 @@ if __name__ == '__main__':
 
             # TODO FIXME this else catches new trajs + incomplete trajs case and
             #            just ignores the new trajs for configuring workload
-            elif args.rescue_only and n_incomplete_tasks:
+            elif n_incomplete_tasks:
                 logger.info(
                     "Looking to clean up unfinished tasks: task states: {}".format(
                     project.task_states))
@@ -271,15 +271,17 @@ if __name__ == '__main__':
 
                 logger.info(
                     "Project event adding from incomplete tasks\n{}".format(
-                    new_tasks))
+                    new_tasks)
+                )
+
                 sleeptime = 20
                 logger.debug("These are the tasks being cleaned up:")
                 logger.debug(pformat(new_tasks))
 
-                def event_tasks_done():
+                def event_new_tasks():
                     yield lambda: all([ta.is_done() for ta in new_tasks])
 
-                project.add_event(event_tasks_done())
+                project.add_event(event_new_tasks())
                 logger.info(pformat(project._events))
 
             logger.info("Project event added")
@@ -287,11 +289,12 @@ if __name__ == '__main__':
 
             if submit_only:
 
-                wl = create_workload_launcher(project, new_tasks, session, args, _cwd_)
-                logger.debug(pformat(wl.job_configuration))
+                if new_tasks:
+                    wl = create_workload_launcher(project, new_tasks, session, args, _cwd_)
+                    logger.debug(pformat(wl.job_configuration))
 
-                wl.launch_job(session)
-                _exitval_ = os.path.join(session, "admd.job.state")
+                    wl.launch_job(session)
+                    _exitval_ = os.path.join(session, "admd.job.state")
 
             else:
                 logger.info("Project waiting on completion event for last workload")

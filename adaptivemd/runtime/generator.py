@@ -15,7 +15,7 @@ from ..util import get_logger
 logger = get_logger(__name__)
 
 
-__all__ = ["workflow_generator_simple", "model_extend_simple"]
+__all__ = ["workflow_generator_simple"]
 
 
 def workflow_generator_simple(
@@ -31,10 +31,10 @@ def workflow_generator_simple(
     progression = 'any',
     cpu_threads = 8,
     fixedlength = True,
-    startontraj = 0,
+    startontraj = 0, # TODO None and extra condition if set
     admd_profile = None,
     analysis_cfg = None,
-    min_model_trajlength = 0,
+    min_model_trajlength = 0, # TODO None and extra condition if set
     sampling_function_name = 'explore_macrostates',
 
     # these arent currently utilized
@@ -113,25 +113,29 @@ def workflow_generator_simple(
 
     mtask = None
 
-    if analysis_cfg:
-        with open(analysis_cfg, 'r') as f:
-            _margs = yaml.safe_load(f)
+    if modeller:
+        if analysis_cfg:
+            with open(analysis_cfg, 'r') as f:
+                _margs = yaml.safe_load(f)
 
-        update_margs = lambda rn: _margs[
-            max(list(filter(
-            lambda mi: mi <= rn, _margs)))
-        ]
+            update_margs = lambda rn: _margs[
+                max(list(filter(
+                lambda mi: mi <= rn, _margs)))
+            ]
+
+        else:
+            raise RuntimeError("Must specify an analysis cfg file to use modeller")
 
     # Start of CONTROL LOOP
     while not c.done:
 
         logger.info("Checking Extension Lengths")
 
-        priorext = -1
         # TODO fix, this isn't a consistent name "trajectories"
         trajectories = set()
         # This loop will escape if all the trajectories
         # are / become full length
+        priorext = -1
         while priorext and not c.done:
 
             xtasks = list()
@@ -193,163 +197,45 @@ def workflow_generator_simple(
         if not modeller:
             logger.info("Extending project without modeller")
 
-            yield lambda: model_extend_simple(project, engine, modeller, n_traj, tasks, n_steps, sampling_function, mtask=mtask, c=c)
+            trajectories = sampling_function(project, engine, n_steps, n_traj)
+            logger.info("Runtime new trajectories defined")
+
+            logger.info("Converting trajectories to tasks")
+            [tasks.append(t.run(**resource_requirements)) for t in trajectories]
+
+            logger.info("Runtime new tasks queueing")
+            if tasks:
+                queue_tasks(project, tasks, **qkwargs)
+                logger.info("Runtime new tasks queued")
+
+            c.increment()
+
+            yield lambda: progress(tasks)
 
             logger.info("Runtime main no modeller done")
 
         else:
-            margs = update_margs(round_n)
-
-            logger.info("Extending project with modeller")
-            logger.info("Analysis args for this round will be: {}".format(pformat(margs)))
 
             if mtask is None:
+                margs = update_margs(round_n)
 
-                yield lambda: model_extend_simple(project, engine, modeller, n_traj, tasks, n_steps, sampling_function, mtask=mtask, c=c)
+                logger.info("Extending project with modeller")
+                logger.info("Analysis args for this round will be: {}".format(pformat(margs)))
 
-                logger.info("Runtime main loop1 done")
-                mtask = tasks[-1]
-                logger.info("Set a current modelling task: {}".format(mtask))
+                trajectories = list(filter(lambda tj: tj.length >= min_model_trajlength, project.trajectories))
+                mtask = modeller.execute(trajectories, **resource_requirements)
+                project.queue(mtask)
 
-            # TODO don't assume mtask not None means it
-            #      has is_done method. outer loop needs
-            #      upgrade
+                yield lambda: progress(tasks)
+
             elif mtask.is_done():
+                # In current 1-workload per runtime model, shouldn't ever see this condition
 
                 logger.info("Current modelling task is done")
-
-                yield lambda: model_extend_simple(project, engine, modeller, n_traj, tasks, n_steps, sampling_function, mtask=mtask, c=c)
-
-                logger.info("Runtime main loop2 done")
-                logger.info("Added another model to project, now have: {}".format(len(project.models)))
-                mtask = tasks[-1]
-                logger.info("Set a new current modelling task")
-
-            elif not mtask.is_done():
-                logger.info("Continuing trajectory tasks, waiting on model")
-                yield lambda: model_extend_simple(project, engine, modeller, n_traj, tasks, n_steps, sampling_function, mtask=mtask, c=c)
-                logger.info("Runtime main loop3 done")
+                mtask = None
 
             else:
-                logger.info("Not sure how we got here")
+                # Something if still waiting on modeller?
                 pass
 
 
-def model_extend_simple(project, engine, modeller, n_traj,
-     tasks, n_steps, sampling_function, mtask, c, qkwargs=dict()):
-
-    # FIRST workload including a model this execution
-    if c.i == 1 and not mtask:
-        if len(tasks) == 0:
-
-            trajectories = sampling_function(project, engine, n_steps, n_traj)
-            logger.info("Runtime new trajectories defined")
-
-            if not c.done:
-                logger.info("Converting trajectories to tasks")
-                [tasks.append(t.run(**resource_requirements)) for t in trajectories]
-
-                logger.info("Runtime new tasks queueing")
-                queue_tasks(project, tasks, **qkwargs)
-
-                c.increment()
-                logger.info("Runtime new tasks queued")
-
-            # wait for all initial trajs to finish ¿in this workload?
-            waiting = True
-            while waiting:
-                # OK condition because we're in first
-                #    extension, as long as its a fresh
-                #    project.
-                logger.debug("len(project.trajectories), n_traj: {0} {1}".format(
-                    len(project.trajectories), n_traj
-                ))
-
-                if len(project.trajectories) >= n_traj - len(filter(lambda ta: ta.state in {'fail','cancelled'}, project.tasks)):
-                    logger.info("adding first/next modeller task")
-                    mtask = model_task(project, modeller, margs,
-                        taskenv=taskenv, min_trajlength=min_model_trajlength,
-                        resource_requirements=resource_requirements)
-    
-                    logger.info("\nQueued Modelling Task\nUsing these modeller arguments:\n" + pformat(margs))
-
-                    tasks.extend(mtask)
-                    waiting = False
-                else:
-                    time.sleep(3)
-
-        return lambda: progress(tasks)
-
-    # LAST workload in this execution
-    elif c.i == c.n - 1:
-        if len(tasks) < n_traj:
-            if mtask:
-            # breaking convention of mtask last
-            # is OK because not looking for mtask
-            # after last round, only task.done
-                if mtask.is_done() and continuing:
-                    mtask = model_task(project, modeller, margs,
-                            taskenv=taskenv, min_trajlength=min_model_trajlength,
-                            resource_requirements=resource_requirements)
-
-                    tasks.extend(mtask)
-                    logger.info("\nQueued Modelling Task\nUsing these modeller arguments:\n" + pformat(margs))
-                
-            logger.info("Project last tasks define")
-            logger.info("Queueing final extensions after modelling done")
-            logger.info("\nFirst MD Task Lengths: \n")
-
-            trajectories = sampling_function(project, engine, n_steps, n_traj)
-
-            [tasks.append(t.run(**resource_requirements)) for t in trajectories]
-
-            logger.info("Project last tasks queue")
-            if not c.done:
-
-                logger.info("Queueing these: ")
-                logger.info(tasks)
-                queue_tasks(project, tasks, **qkwargs)
-
-                c.increment()
-
-            logger.info("Project last tasks queued")
-
-        return lambda: progress(tasks)
-
-    else:
-        # MODEL TASK MAY NOT BE CREATED
-        #  - timing is different
-        #  - just running trajectories until
-        #    prior model finishes, then starting
-        #    round of modelled trajs along
-        #    with mtask
-        if len(tasks) == 0:
-            logger.info("Queueing new round of modelled trajectories")
-            logger.info("Project new tasks define")
-
-            trajectories = sampling_function(project, engine, n_steps, n_traj)
-
-            if not c.n or not c.done:
-                [tasks.append(t.run(**resource_requirements)) for t in trajectories]
-                logger.info("Project new tasks queue")
-
-                queue_tasks(project, tasks, **qkwargs)
-
-                c.increment()
-                logger.info("Project new tasks queued")
-
-                if mtask:
-                    if mtask.is_done():
-                        mtask = model_task(project, modeller, margs,
-                                taskenv=taskenv, min_trajlength=min_model_trajlength,
-                                resource_requirements=resource_requirements)
-
-                        tasks.extend(mtask)
-
-                return lambda: progress(tasks)
-
-            else:
-                return lambda: progress(tasks)
-
-        else:
-            return lambda: progress(tasks)

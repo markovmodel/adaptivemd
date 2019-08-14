@@ -1,6 +1,7 @@
 
 import os
 import yaml
+from pprint import pformat
 
 from ..project import Project
 from ..file import File
@@ -36,7 +37,7 @@ def initialize_project(p_name, sys_name=None, m_freq=None, p_freq=None, platform
         #if config:
         #    do-something-to-use-given-config
 
-    elif not all([sys_name,m_freq,p_freq,platform]):
+    elif not all([sys_name, m_freq, p_freq, platform]):
 
         raise ValueError(
           "Require paramters: [{0}] to initialize new project\nHave: {1}".format(
@@ -66,14 +67,17 @@ def initialize_project(p_name, sys_name=None, m_freq=None, p_freq=None, platform
         f_integrator = File(f_base + 'integrator.xml').load()
 
         sim_args = '-r -p {0}'.format(platform)
+        feat = None
 
         if features is None:
-            features = {'add_inverse_distances': {'select_Ca': None}}
+            feat = {'add_inverse_distances': {'select_Ca': None}}
 
         elif os.path.exists(features):
-            features = yaml.safe_load(features)
+            with open(features, 'r') as _features:
+                feat = yaml.safe_load(_features)
 
-        assert isinstance(features, (dict, list))
+        logger.info(pformat(feat))
+        assert isinstance(feat, (dict, list))
 
         engine = OpenMMEngine(f_system, f_integrator, f_structure, sim_args).named('openmm')
 
@@ -83,7 +87,7 @@ def initialize_project(p_name, sys_name=None, m_freq=None, p_freq=None, platform
         engine.add_output_type('master', 'allatoms.dcd', stride=m_freq)
         engine.add_output_type('protein', 'protein.dcd', stride=p_freq, selection='protein')
 
-        modeller = PyEMMAAnalysis(engine, 'protein', features).named('pyemma')
+        modeller = PyEMMAAnalysis(engine, 'protein', feat).named('pyemma')
 
         project.generators.add(modeller)
         project.generators.add(engine)
