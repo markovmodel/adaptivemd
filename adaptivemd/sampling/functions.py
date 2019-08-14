@@ -120,11 +120,15 @@ def explore_microstates(project, number=1, **kwargs):
     return trajlist
 
 
-def explore_macrostates(project, n_frames=1, num_macrostates = 30, reversible=True, **kwargs):
+def explore_macrostates(project, n_frames=1, n_macrostates = 30, reversible=True, **kwargs):
     '''Inverse-count sampling of macrostates
     '''
 
-    model_parameters = {'tica':['lagtime','stride'],'clustering':['k'],'msm':['lagtime']}
+    model_parameters = {
+        'tica':       ['lagtime','stride'],
+        'clustering': ['k'],
+        'msm':        ['lagtime']
+    }
 
     def select_restart_state(values, select_type, microstates, nparallel=1, parameters=None):
         if select_type == 'sto_inv_linear':
@@ -137,7 +141,6 @@ def explore_macrostates(project, n_frames=1, num_macrostates = 30, reversible=Tr
         else:
             logger.info("Unsupported selection type")
             return
-
         return np.random.choice(microstates, p = p, size=nparallel)
 
     def MinMaxScale(X, min=-1, max=1):
@@ -152,7 +155,7 @@ def explore_macrostates(project, n_frames=1, num_macrostates = 30, reversible=Tr
 
     pyemma.config.show_progress_bars = False
     starttime = time.time()
-    logger.info("USING EXPLORE MACROSTATES STRATEGY")
+    logger.info("Using 'explore macrostates' sampling function")
     logger.info("Starting Timer at: {}".format(starttime))
     model_filters  = {}
 
@@ -171,13 +174,15 @@ def explore_macrostates(project, n_frames=1, num_macrostates = 30, reversible=Tr
         return [] # No trajs made
         #raise    # Backup method may be used
 
+    # FIXME remove, this is probably identical to _c...
     c         = data['msm']['C']
     counts    = np.array(np.sum(c, axis=1), dtype=int)
     array_ok  = msmtools.estimation.largest_connected_set(c)
-    num_macrostates = min(num_macrostates, array_ok.shape[0]/3)
+    # TODO is this the correct place to judge n_macrostates?
+    n_macrostates = min(n_macrostates, array_ok.shape[0] // 5)
     connected = msmtools.estimation.is_connected(c[array_ok,:][:,array_ok])
     disconnected_microstates = [i for i in range(c.shape[0]) if i not in array_ok]
-    logger.info("Coarse Graining to {} macrostates".format(num_macrostates))
+    logger.info("Coarse Graining to {} macrostates".format(n_macrostates))
     logger.info("c.shape: {}".format(c.shape))
     #logger.info("array_ok: {}".format(array_ok))
     logger.info("Disconnected Microstates: {}".format(disconnected_microstates))
@@ -187,28 +192,47 @@ def explore_macrostates(project, n_frames=1, num_macrostates = 30, reversible=Tr
     logger.info("Making MSM from transition matrix")
     current_MSM_obj    = pyemma.msm.markov_model(p)
     current_timescales = current_MSM_obj.timescales()
-    logger.debug("Timescales from microstate MSM: {}".format(current_timescales))
-    #num_macrostates = max(cut.shape[0],1)
+    logger.info("Timescales from microstate MSM: {}".format(current_timescales))
+    #n_macrostates = max(cut.shape[0],1)
     #
     #   PCCA  Macrostates
     #
     logger.info("Making CG MSM")
-    current_MSM_obj.pcca(num_macrostates)
+    current_MSM_obj.pcca(n_macrostates)
     macrostate_assignments = { k:v for k,v in enumerate(current_MSM_obj.metastable_sets) }
     macrostate_assignment_of_visited_microstates = current_MSM_obj.metastable_assignments
-    corrected = np.zeros(c.shape[0])
+    corrected = np.zeros(c.shape[0], dtype=int)
     corrected[array_ok] = macrostate_assignment_of_visited_microstates
 
     for n,i in enumerate(disconnected_microstates):
-        corrected[i]=n+num_macrostates
+        corrected[i]=n+n_macrostates
 
-    logger.info("Macrostates including unassigned (index over num_macrostates): {}".format(corrected))
+    logger.info("Macrostates including unassigned (index over n_macrostates): {}".format(corrected))
     #del#counts=np.sum(c,axis=1)
     #[array_ok,:][:,array_ok]
-    logger.debug("Macrostate summer: {}".format([counts[corrected == macrostate_label] for macrostate_label in range(num_macrostates+len(disconnected_microstates))]))
-    macrostate_counts   = np.array([np.sum(counts[corrected == macrostate_label])      for macrostate_label in range(num_macrostates+len(disconnected_microstates))])
+    logger.debug("Macrostate summer: {}".format([
+        counts[corrected == macrostate_label]
+        for macrostate_label in range(
+        int(n_macrostates)+len(disconnected_microstates))
+    ]))
+
+    macrostate_counts   = np.array([np.sum(counts[corrected == macrostate_label])      for macrostate_label in range(int(n_macrostates)+len(disconnected_microstates))])
+
+    frame_state_list = list_microstate_frames(data)
+
+    # This loop catches states where a protein traj
+    # frame showed up but not all atoms, so cannot
+    # restart simulation
+    for macrostate in np.unique(corrected):
+        microstates_in_macrostate = np.squeeze(np.argwhere(corrected==macrostate))
+        if len(microstates_in_macrostate.shape) == 0:
+            microstates_in_macrostate = microstates_in_macrostate[..., np.newaxis]
+        if sum([len(frame_state_list[mi]) for mi in microstates_in_macrostate]) == 0:
+            macrostate_counts[macrostate] = 0
+
     # Set count to zero in disconnected 'macrostates'<-->microstates
-    #macrostate_counts[num_macrostates:] = 0
+    #macrostate_counts[n_macrostates:] = 0
+
     logger.info("Macrostate Assignments: {}".format('\n'.join(["{0}: {1}".format(k,v)  for k,v in macrostate_assignments.items()])))
     logger.info("Microstate Counts: {}".format(counts))
     logger.info("Macrostate Counts: {}".format(macrostate_counts))
@@ -219,17 +243,20 @@ def explore_macrostates(project, n_frames=1, num_macrostates = 30, reversible=Tr
         ma_counted + (
         np.sum(ma_counted)/float(ma_counted.shape[0]))**0.5,
         'sto_inv_linear',
-        np.arange(num_macrostates+len(
-          disconnected_microstates))[
-          macrostate_counts > 0],
-        nparallel=n_frames)
+        np.arange(
+            n_macrostates + len(
+            disconnected_microstates)
+        )[macrostate_counts > 0],
+        # FIXME  this arg name doesn't make sense
+        nparallel=n_frames
+    )
 
     logger.info("Selected Macrostates: {}".format(selected_macrostate))
     restart_state = np.empty((0))
 
     for i in range(n_frames):
         selected_macrostate_mask      = (corrected == selected_macrostate[i])
-        logger.debug("Macrostate Selection Mask: ({0})\n{1}".format(selected_macrostate[i], selected_macrostate_mask))
+        logger.info("Macrostate Selection Mask: ({0})\n{1}".format(selected_macrostate[i], selected_macrostate_mask))
         #counts_in_selected_macrostate = counts[selected_macrostate_mask]
         counts_in_selected_macrostate = np.ones(len(counts))[selected_macrostate_mask]
         add_microstate                = select_restart_state(counts_in_selected_macrostate, 'sto_inv_linear', np.arange(c.shape[0])[selected_macrostate_mask], nparallel=1)
@@ -237,7 +264,6 @@ def explore_macrostates(project, n_frames=1, num_macrostates = 30, reversible=Tr
         restart_state                 = np.append(restart_state, add_microstate)
 
     state_picks  = restart_state.astype('int')
-    frame_state_list = list_microstate_frames(data)
     filelist = data['input']['trajectories']
     trajlist = get_picks(frame_state_list, filelist, n_frames, data=None, state_picks=state_picks)
     #trajlist = get_picks(frame_state_list, filelist, n_frames, data=data, state_picks=state_picks)

@@ -6,7 +6,7 @@ logger = get_logger(__name__)
 
 
 def get_model(project, filters=dict()):
-    logger.info(str(len(project.models)))
+    logger.info("Picking last of %s available models" % str(len(project.models)))
 
     if len(project.models) == 0:
         return None
@@ -33,7 +33,7 @@ def get_model(project, filters=dict()):
             for f in dtraj:
                 c[f] += 1
 
-        logger.info('{}'.format(len(data['input']['trajectories'])))
+        logger.info("The selected model analyzed %d trajectories" % len(data['input']['trajectories']))
         return data, c
 
     else:
@@ -55,16 +55,18 @@ def get_picks(frame_state_list, filelist, npicks, pvec=None, data=None, state_pi
     trajlist = list()
     picks = list()
     for state in state_picks:
-        logger.debug("LOOKING AT STATE: ".format(state))
+        logger.debug("Looking at state: ".format(state))
         logger.debug("{}".format(frame_state_list[state]))
-        pick = frame_state_list[state][np.random.randint(0,
+        pick = frame_state_list[state][
                 # FIXME should this be len()-1?
-                len(frame_state_list[state]))]
+                np.random.randint(0, len(frame_state_list[state]))
+        ]
+
         picks.append(pick)
         # FIXME the goal with this seems to have been use of a subsample of data
         if data:
             #state_from_dtrajs = data['clustering']['dtrajs'][pick[0]][dfti(data, pick[1])]
-            logger.debug("DTRAJ {}".format(data['clustering']['dtrajs'][pick[0]]))
+            logger.debug("dtraj {}".format(data['clustering']['dtrajs'][pick[0]]))
 
         logger.info("For state {0}, picked this frame: {1}  {2} from traj  {3}  --  {4}".format(state, picks[-1], filelist[pick[0]][pick[1]], filelist[pick[0]], pick))
 
