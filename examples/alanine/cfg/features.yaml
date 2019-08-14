@@ -1,0 +1,3 @@
+
+add_inverse_distances:
+    select: "protein"
