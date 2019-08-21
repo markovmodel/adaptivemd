@@ -23,18 +23,8 @@ def get_model(project, filters=dict()):
         if not all([model.data.data.get(mod).get(par) == v for (mod,par),v in filters]):
             continue
 
-        data = model.data
-        n_microstates = data['clustering']['k']
-        if not n_microstates:
-            n_microstates = data['msm']['C'].shape[0]
-
-        c = np.zeros(n_microstates)
-        for dtraj in data['clustering']['dtrajs']:
-            for f in dtraj:
-                c[f] += 1
-
-        logger.info("The selected model analyzed %d trajectories" % len(data['input']['trajectories']))
-        return data, c
+        logger.info("The selected model analyzed %d trajectories" % len(model.data['input']['trajectories']))
+        return model
 
     else:
         return None

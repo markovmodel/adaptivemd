@@ -31,14 +31,13 @@ def random_sampling_microstates(project, number=1, **kwargs):
     '''
 
     trajlist = list()
-    data, c = get_model(project)
+    data = get_model(project).data
 
     filelist = data['input']['trajectories']
     frame_state_list = list_microstate_frames(data)
     states = frame_state_list.keys()
+
     # remove states that do not have at least one frame
-    # can't iterate over states while also changing states
-    # so using len(c), states is same range
     for state in states:
         if len(frame_state_list[state]) == 0:
             logger.info("This state was empty: {}".format(state))
@@ -59,19 +58,18 @@ def uniform_sampling_microstates(project, number=1, **kwargs):
     states cannot be uniformly sampled.
     '''
     trajlist = list()
-    data, c = get_model(project)
+    data = get_model(project).data
 
     filelist = data['input']['trajectories']
     frame_state_list = list_microstate_frames(data)
     states = frame_state_list.keys()
+
     # remove states that do not have at least one frame
-    # can't iterate over states while also changing states
-    # so using len(c), states is same range
     for state in states:
         if len(frame_state_list[state]) == 0:
             states.remove(state)
 
-    logger.info("Uniformly sampling {0} frames across {1} microstates".format(number, c.shape[0]))
+    logger.info("Uniformly sampling {0} frames across {1} microstates".format(number, data['clustering']['k']))
     _states = iter(states)
     while len(trajlist) < number:
         try:
@@ -94,25 +92,22 @@ def explore_microstates(project, number=1, **kwargs):
     '''Inverse-count sampling of microstates
     '''
 
-    d = get_model(project)
-    if not d:
-        return None
-    data, c = d
+    data = get_model(project).data
+    microstate_counts = np.array(np.sum(data['msm']['C'], axis=1), dtype=int)
     filelist = data['input']['trajectories']
-    # TODO verify axis 0 is the columns
-    # TODO dont' do above todo, but ...
-    #      do ceiling(average(rowcount, colcount)) as weight
-    #q = 1/np.sum(c, axis=1)
-    q = 1/c
     trajlist = list()
 
     frame_state_list = list_microstate_frames(data)
     # remove states that do not have at least one frame
-    for k in range(len(q)):
+    for k, c in enumerate(microstate_counts):
         if len(frame_state_list[k]) == 0:
             q[k] = 0.0
-    # and normalize the remaining ones
+        else:
+            q[k] = 1 / c
+
+    # and normalize
     q /= np.sum(q)
+
     #trajlist = get_picks(frame_state_list, filelist, number, pvec=q, data=data)
     trajlist = get_picks(frame_state_list, filelist, number, pvec=q, data=None)
 
@@ -120,7 +115,7 @@ def explore_microstates(project, number=1, **kwargs):
     return trajlist
 
 
-def explore_macrostates(project, n_frames=1, n_macrostates = 30, reversible=True, **kwargs):
+def explore_macrostates(project, n_frames=1, reversible=True, n_macrostates=None, **kwargs):
     '''Inverse-count sampling of macrostates
     '''
 
@@ -130,23 +125,19 @@ def explore_macrostates(project, n_frames=1, n_macrostates = 30, reversible=True
         'msm':        ['lagtime']
     }
 
-    def select_restart_state(values, select_type, microstates, nparallel=1, parameters=None):
+    def select_restart_state(values, states, nparallel=1, select_type='sto_inv_linear', parameters=None):
         if select_type == 'sto_inv_linear':
             if not isinstance(values, np.ndarray):
                 values = np.array(values)
-            inv_values = 1.0 / values
+            inv_values = np.zeros(values.shape)
+            inv_values[values > 0] = 1.0 / values[values > 0]
             p = inv_values / np.sum(inv_values)
             logger.info("Values: {}".format(values))
             logger.info("Problt: {}".format(p))
         else:
             logger.info("Unsupported selection type")
             return
-        return np.random.choice(microstates, p = p, size=nparallel)
-
-    def MinMaxScale(X, min=-1, max=1):
-        X_std = (X - X.min(axis=0)) / (X.max(axis=0) - X.min(axis=0))
-        X_scaled = X_std * (max - min) + min
-        return X_scaled
+        return np.random.choice(states, p=p, size=nparallel)
 
     # TODO   MOVE TO analysis task: adaptivemd.analysis.pyemma._remote
     import time
@@ -167,40 +158,49 @@ def explore_macrostates(project, n_frames=1, n_macrostates = 30, reversible=True
                 model_filters[key] = val
 
     try:
-        data, _c  = get_model(project, model_filters)
+        data = get_model(project, model_filters).data
+        c = data['msm']['C']
 
     except TypeError:
         # No matching models
         return [] # No trajs made
         #raise    # Backup method may be used
 
-    # FIXME remove, this is probably identical to _c...
-    c         = data['msm']['C']
-    counts    = np.array(np.sum(c, axis=1), dtype=int)
-    array_ok  = msmtools.estimation.largest_connected_set(c)
-    # TODO is this the correct place to judge n_macrostates?
-    n_macrostates = min(n_macrostates, array_ok.shape[0] // 5)
-    connected = msmtools.estimation.is_connected(c[array_ok,:][:,array_ok])
-    disconnected_microstates = [i for i in range(c.shape[0]) if i not in array_ok]
-    logger.info("Coarse Graining to {} macrostates".format(n_macrostates))
+    counts = np.array(np.sum(c, axis=1), dtype=int)
+
+    if 'cgmsm' in data:
+        n_macrostates = data['cgmsm']['m']
+        logger.info("Reading existing Metastability Analysis")
+        macrostate_assignments = { k:v for k,v in enumerate(data['cgmsm']['metastable_sets']) }
+        macrostate_assignment_of_visited_microstates = data['cgmsm']['metastable_assignments']
+        array_ok = data['msm']['connected_states']
+
+    else:
+        array_ok  = msmtools.estimation.largest_connected_set(c)
+        # TODO is this the correct place to judge n_macrostates?
+        n_macrostates = max(min(n_macrostates, array_ok.shape[0] // 5), 2)
+        connected = msmtools.estimation.is_connected(c[array_ok,:][:,array_ok])
+        logger.info("Coarse Graining to {} macrostates".format(n_macrostates))
+        logger.info("Connected Dataset: {0} {1}".format(connected, len(array_ok)))
+        p = msmtools.estimation.transition_matrix(c[array_ok,:][:,array_ok], reversible=reversible)
+        logger.info("Making MSM from transition matrix")
+        current_MSM_obj    = pyemma.msm.markov_model(p)
+        current_timescales = current_MSM_obj.timescales()
+        logger.info("Timescales from microstate MSM: {}".format(current_timescales))
+        #n_macrostates = max(cut.shape[0],1)
+        #
+        #   PCCA  Macrostates
+        #
+        logger.info("Making CG MSM")
+        current_MSM_obj.pcca(n_macrostates)
+        macrostate_assignments = { k:v for k,v in enumerate(current_MSM_obj.metastable_sets) }
+        macrostate_assignment_of_visited_microstates = current_MSM_obj.metastable_assignments
+
     logger.info("c.shape: {}".format(c.shape))
     #logger.info("array_ok: {}".format(array_ok))
-    logger.info("Disconnected Microstates: {}".format(disconnected_microstates))
     logger.debug("array_ok.__len__: {}".format(len(array_ok)))
-    logger.info("Connected Dataset: {0} {1}".format(connected, len(array_ok)))
-    p = msmtools.estimation.transition_matrix(c[array_ok,:][:,array_ok], reversible=reversible)
-    logger.info("Making MSM from transition matrix")
-    current_MSM_obj    = pyemma.msm.markov_model(p)
-    current_timescales = current_MSM_obj.timescales()
-    logger.info("Timescales from microstate MSM: {}".format(current_timescales))
-    #n_macrostates = max(cut.shape[0],1)
-    #
-    #   PCCA  Macrostates
-    #
-    logger.info("Making CG MSM")
-    current_MSM_obj.pcca(n_macrostates)
-    macrostate_assignments = { k:v for k,v in enumerate(current_MSM_obj.metastable_sets) }
-    macrostate_assignment_of_visited_microstates = current_MSM_obj.metastable_assignments
+    disconnected_microstates = [i for i in range(c.shape[0]) if i not in array_ok]
+    logger.info("Disconnected Microstates: {}".format(disconnected_microstates))
     corrected = np.zeros(c.shape[0], dtype=int)
     corrected[array_ok] = macrostate_assignment_of_visited_microstates
 
@@ -216,7 +216,10 @@ def explore_macrostates(project, n_frames=1, n_macrostates = 30, reversible=True
         int(n_macrostates)+len(disconnected_microstates))
     ]))
 
-    macrostate_counts   = np.array([np.sum(counts[corrected == macrostate_label])      for macrostate_label in range(int(n_macrostates)+len(disconnected_microstates))])
+    macrostate_counts = np.array([
+        np.sum(counts[corrected == macrostate_label])
+        for macrostate_label in range(int(n_macrostates) + len(disconnected_microstates))
+    ])
 
     frame_state_list = list_microstate_frames(data)
 
@@ -236,19 +239,16 @@ def explore_macrostates(project, n_frames=1, n_macrostates = 30, reversible=True
     logger.info("Macrostate Assignments: {}".format('\n'.join(["{0}: {1}".format(k,v)  for k,v in macrostate_assignments.items()])))
     logger.info("Microstate Counts: {}".format(counts))
     logger.info("Macrostate Counts: {}".format(macrostate_counts))
-    # TODO why not just use macrostate_counts array in the arange?
-    ma_counted = macrostate_counts[macrostate_counts > 0]
+    ## TODO why not just use macrostate_counts array in the arange?
+    ma_counts_withprior = macrostate_counts + (
+        np.sum(macrostate_counts) / float(macrostate_counts.shape[0])) ** 0.5
+
+    ma_counts_withprior[macrostate_counts == 0] = 0
 
     selected_macrostate = select_restart_state(
-        ma_counted + (
-        np.sum(ma_counted)/float(ma_counted.shape[0]))**0.5,
-        'sto_inv_linear',
-        np.arange(
-            n_macrostates + len(
-            disconnected_microstates)
-        )[macrostate_counts > 0],
-        # FIXME  this arg name doesn't make sense
-        nparallel=n_frames
+        ma_counts_withprior,
+        np.arange(macrostate_counts.shape[0]),
+        n_frames,
     )
 
     logger.info("Selected Macrostates: {}".format(selected_macrostate))
@@ -258,8 +258,12 @@ def explore_macrostates(project, n_frames=1, n_macrostates = 30, reversible=True
         selected_macrostate_mask      = (corrected == selected_macrostate[i])
         logger.info("Macrostate Selection Mask: ({0})\n{1}".format(selected_macrostate[i], selected_macrostate_mask))
         #counts_in_selected_macrostate = counts[selected_macrostate_mask]
+        # NOTE using ones means each microstate within macrostate equally likely
         counts_in_selected_macrostate = np.ones(len(counts))[selected_macrostate_mask]
-        add_microstate                = select_restart_state(counts_in_selected_macrostate, 'sto_inv_linear', np.arange(c.shape[0])[selected_macrostate_mask], nparallel=1)
+        add_microstate = select_restart_state(
+            counts_in_selected_macrostate,
+            np.arange(c.shape[0])[selected_macrostate_mask]
+        )
         logger.info("Selected Macrostate, microstate: {0}, {1}".format(selected_macrostate[i], add_microstate))
         restart_state                 = np.append(restart_state, add_microstate)
 
