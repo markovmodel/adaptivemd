@@ -61,7 +61,7 @@ if __name__ == '__main__':
         submit_only = args.submit_only
 
         logger.info("Initializing Project named: " + args.project_name)
-        logger.info("Recieved Argumentes:\n{}".format(args))
+        logger.info("Recieved Arguments:\n{}".format(args))
         logger.info("Project opening")
         logger.debug("with config %s"%args.config)
 
@@ -231,8 +231,6 @@ if __name__ == '__main__':
                 #    # doesn't handle TrajectoryExtensionTask correctly
                 #    length    = max(map(lambda ta: ta.trajectory.length, filter(lambda ta: hasattr(ta,'trajectory'), new_tasks)))
 
-            sfkwargs = dict()
-            sfkwargs['num_macrostates'] = 25
             logger.info("n_rounds: {}".format(n_rounds))
 
             if n_traj or modeller:
@@ -249,7 +247,6 @@ if __name__ == '__main__':
                     longest = args.all,
                     n_rounds = n_rounds,
                     modeller = modeller,
-                    sfkwargs = sfkwargs,
                     minlength = args.minlength,
                     batchsize = args.batchsize,
                     batchwait = args.batchwait,
