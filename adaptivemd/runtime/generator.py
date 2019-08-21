@@ -45,7 +45,7 @@ def workflow_generator_simple(
 
     logger.info("Starting workflow_generator_simple function")
     sampling_function = get_sampling_function(
-        sampling_function_name, **sfkwargs
+        sampling_function_name, **sfkwargs,
     )
 
     resource_requirements = dict() # TODO calculate request
@@ -217,13 +217,15 @@ def workflow_generator_simple(
         else:
 
             if mtask is None:
+
                 margs = update_margs(round_n)
+                margs.update(resource_requirements)
 
                 logger.info("Extending project with modeller")
                 logger.info("Analysis args for this round will be: {}".format(pformat(margs)))
 
                 trajectories = list(filter(lambda tj: tj.length >= min_model_trajlength, project.trajectories))
-                mtask = modeller.execute(trajectories, **resource_requirements)
+                mtask = modeller.execute(trajectories, **margs)
                 project.queue(mtask)
 
                 yield lambda: progress(tasks)
@@ -235,7 +237,9 @@ def workflow_generator_simple(
                 mtask = None
 
             else:
-                # Something if still waiting on modeller?
-                pass
+                # In current 1-workload per runtime model, shouldn't ever see this condition
+
+                logger.info("Waiting on modelling task")
+                yield lambda: progress(tasks)
 
 
