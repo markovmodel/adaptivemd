@@ -27,13 +27,6 @@ import os
 import datetime
 
 
-# formatlines adds some format for multiline log entries
-prefixline = '    >>>   '
-formatlines = lambda l: '\n'.join(
-    [prefixline+ls if ls else '' for ls in l.split('\n')] +
-    ( [''] if len(l.split('\n'))>1 else [])
-    )
-
 def get_logger(logname, logfile=True):
 
     import logging
@@ -76,6 +69,8 @@ def get_logger(logname, logfile=True):
 
     if logfile:
         logfilename = logname + '.log'
+        if logfilename.startswith("__main__"):
+            logfilename = "adaptivemd." + logfilename
         fh = logging.FileHandler(logfilename)
         fh.setLevel(loglevel)
         fh.setFormatter(formatter)
