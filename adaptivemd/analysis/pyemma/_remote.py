@@ -42,9 +42,12 @@ def remote_analysis(
         tica_lag=2,
         tica_dim=2,
         tica_stride=2,
+        reversible=True,
         msm_states=None,
         msm_lag=2,
-        clust_stride=2):
+        clust_stride=2,
+        n_macrostates=None,
+    ):
     """
     Remote analysis function to be called by the RPC Python call
 
@@ -149,7 +152,7 @@ def remote_analysis(
         -> feat.add_distances(select('resname GLN and (mass 11 to 17)'),
                               indices2=[10,11,12,13])
 
-     Ionic Contacts (Salt Bridges):
+     Ionic Contacts (ie modeling possible Salt Bridges):
 
         pos = 'rescode K or rescode R or rescode H'
         neg = 'rescode D or rescode E'
@@ -161,6 +164,7 @@ def remote_analysis(
     import os
 
     import pyemma
+    import msmtools
     import mdtraj as md
 
     pdb = md.load(topfile)
@@ -285,10 +289,30 @@ def remote_analysis(
             'lagtime': msm_lag,
             'P': m.P,
             'C': m.count_matrix_full,
+            'pi': m.stationary_distribution,
+            'timescales': m.timescales(),
             'eigenvalues': m.eigenvalues(d),
             'l_eigenvectors': m.eigenvectors_left(d),
             'r_eigenvectors': m.eigenvectors_right(d),
+            'connected_states': m.largest_connected_set,
         }
     }
+
+    if n_macrostates:
+
+        pcca = m.pcca(n_macrostates)
+        # TODO is there a way to init a PCCA object?
+        #      in msmtools.analysis.dense.pcca doesn't look like it
+        #      then save reqd attrs to use on agent side
+        data.update({
+            'cgmsm': {
+                'm': n_macrostates,
+                'P': pcca.coarse_grained_transition_matrix,
+                'pi': pcca.coarse_grained_stationary_probability,
+                'metastable_memberships': m.metastable_memberships,
+                'metastable_sets': m.metastable_sets,
+                'metastable_assignments': m.metastable_assignments,
+            }
+        })
 
     return data

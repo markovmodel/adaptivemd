@@ -117,6 +117,8 @@ class PyEMMAAnalysis(Analysis):
                 msm_lag=2,
                 clust_stride=2,
                 tica_weights='empirical',
+                n_macrostates=None,
+                reversible=True,
                 resource_name=None,
                 cpu_threads=1,
                 gpu_contexts=0,
@@ -141,6 +143,10 @@ class PyEMMAAnalysis(Analysis):
             lagtime used for the MSM construction
         stride : int
             a stride to be used on the data. Can speed up computation at reduced accuracy
+        n_macrostates : None or int
+            if given, number of macrostates for MSM coarse graining with PCCA
+        reversible : bool
+            force a reversible microstate MSM
 
         Returns
         -------
@@ -201,7 +207,9 @@ class PyEMMAAnalysis(Analysis):
             tica_weights=tica_weights,
             msm_states=msm_states,
             msm_lag=msm_lag,
-            clust_stride=clust_stride
+            clust_stride=clust_stride,
+            n_macrostates=n_macrostates,
+            reversible=reversible,
         )
 
         return t
