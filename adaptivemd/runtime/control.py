@@ -76,6 +76,9 @@ def create_workload_launcher(project, workload, session, args, cwd):
     jobconfig["dbhome"]       = os.path.join(cwd, "mongo")
     jobconfig["dbport"]       = 27017
     jobconfig["netdevice"]    = project.configuration.resource["netdevice"]
+    jobconfig["queue"]        = project.configuration.resource["queue"]
+    jobconfig["cpu_per_node"] = project.configuration.resource["cpu_per_node"]
+    jobconfig["gpu_per_node"] = project.configuration.resource["gpu_per_node"]
     jobconfig["allocation"]   = project.configuration.user["allocation"]
 
     jl.configure_workload(jobconfig)
