@@ -66,7 +66,7 @@ def initialize_project(p_name, sys_name=None, m_freq=None, p_freq=None, platform
         f_system     = File(f_base + 'system.xml').load()
         f_integrator = File(f_base + 'integrator.xml').load()
 
-        sim_args = '-r -p {0}'.format(platform)
+        sim_args = '-v -p {0}'.format(platform)
         feat = None
 
         if features is None:

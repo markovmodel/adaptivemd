@@ -19,8 +19,6 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with MDTraj. If not, see <http://www.gnu.org/licenses/>.
 ##############################################################################
-from __future__ import absolute_import, print_function
-
 import os
 import argparse
 import ujson
@@ -35,7 +33,9 @@ import simtk.unit as u
 from simtk.openmm import Platform, XmlSerializer
 from simtk.openmm.app import PDBFile, Simulation, DCDReporter, StateDataReporter
 
-
+# NOT a good idea since it will be local to worker
+# sandbox and lost by default
+#from adaptivemd.util import get_logger
 
 
 def get_xml(xml_file):
@@ -166,7 +166,7 @@ if __name__ == '__main__':
 
     parser.add_argument(
         '--report-interval', dest='interval_report',
-        type=int, default=1, nargs='?',
+        type=int, default=0, nargs='?',
         help='report every nth interval')
 
     parser.add_argument(
@@ -215,12 +215,6 @@ if __name__ == '__main__':
                          '`%s` will be used instead. ' % p_name.upper()
                      ) + '[NOT INSTALLED!]' if p not in platform_names else ''
             )
-
-    parser.add_argument(
-        '-r', '--report',
-        dest='report', action='store_true',
-        default=False,
-        help='if set then a report is send to STDOUT')
 
     parser.add_argument(
         '-p', '--platform', dest='platform',
@@ -273,11 +267,13 @@ if __name__ == '__main__':
             platform,
             properties
         )
-        print("SIMULATION: ",simulation)
 
-    except Exception:
-        print('EXCEPTION', (socket.gethostname()))
-        raise
+        print("SIMULATION: ", simulation)
+
+    except Exception as e:
+
+        print('EXCEPTION on host: ', (socket.gethostname()))
+        raise e
 
     print('Done.')
 
@@ -355,20 +351,31 @@ if __name__ == '__main__':
         for r in simulation.reporters:
             r.report(simulation, state)
 
-    if args.report and args.verbose:
-        output_stride = args.interval_store
+    #if args.verbose:
+    if True:
+
+        report_stride = 10
+
         if types:
-            output_stride = min([oty['stride'] for oty in types.values()])
+            report_stride = min([oty['stride'] for oty in types.values()])
+
+        print("Adding state data reporter")
+        print("Verbose? : {}".format(args.verbose))
+
         simulation.reporters.append(
             StateDataReporter(
                 stdout,
-                output_stride,
+                report_stride,
                 step=True,
+                totalEnergy=True,
+                kineticEnergy=True,
                 potentialEnergy=True,
                 temperature=True,
                 speed=True,
                 separator="  ||  ",
-            ))
+        ))
+
+        print("{}".format(simulation.reporters[-1]))
 
     restart_file = os.path.join(output, 'restart.npz')
 
