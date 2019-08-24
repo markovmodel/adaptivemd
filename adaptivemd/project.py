@@ -575,10 +575,10 @@ class Project(object):
         """
         if number == 1:
             traj = Trajectory(next(self.traj_name), frame, length, engine)
-            return traj
+            return [traj]
 
         elif number > 1:
-            return [self.new_trajectory(frame, length, engine) for _ in range(number)]
+            return [self.new_trajectory(frame, length, engine)[0] for _ in range(number)]
 
     def on_ntraj(self, numbers):
         """
