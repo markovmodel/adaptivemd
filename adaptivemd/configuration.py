@@ -104,7 +104,9 @@ class Configuration(StorableMixin):
             "shared_path"  : (str, "$HOME"),
             "resource_name": (str, "local.localhost"),
             "netdevice"    : (str, "eth0"),
-            "queues"       : (str, str()),
+            # TODO upgrade queue to queues
+            #"queues"       : (list, list()),
+            "queue"       : (str, str()),
             "allocation"   : (str, str()),
             "cpu_per_node" : (int, 1),
             "gpu_per_node" : (int, 0),
