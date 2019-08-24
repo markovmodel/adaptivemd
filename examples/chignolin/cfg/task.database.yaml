@@ -1,0 +1,21 @@
+
+name: "database"
+
+launcher:
+    bind_element:        "node"
+    n_tasks:        1
+    tasks_per_node: 1
+
+# Unused fields must be commented out
+#pre:
+#post:
+main:
+    executable: "startdb"
+
+    arguments:
+        - "{dbhome}"
+        - "{dbport}"
+        - "{netdevice}"
+        - "2> admd.database.launch.err 1> admd.database.launch.out & MONGO_APID=$!"
+
+#    options:

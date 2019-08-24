@@ -1,0 +1,7 @@
+
+resource_name:  "summit"
+shared_path:    "$ADMD_DATA"
+queues:         ""
+cpu_per_node:   42
+gpu_per_node:   6
+netdevice:      "ib0"

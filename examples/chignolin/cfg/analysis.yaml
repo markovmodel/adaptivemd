@@ -9,10 +9,7 @@
   clust_stride:     1
   #msm_states:       250
   msm_lag:          50
-  n_macrostates:    6
-
-  # Use 0/1 as bools here
-  reversible:       1
+  n_macrostates:    10
 
 3:
   tica_stride:      1
