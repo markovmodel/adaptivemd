@@ -29,6 +29,8 @@ import mdtraj as md
 
 import time, random
 
+import traceback
+
 import simtk.unit as u
 from simtk.openmm import Platform, XmlSerializer
 from simtk.openmm.app import PDBFile, Simulation, DCDReporter, StateDataReporter
@@ -129,6 +131,20 @@ def read_input(platform, pdbfile, system, integrator):
 
 
 if __name__ == '__main__':
+
+    # TODO options at the interface of the application tasks and
+    #      resource hardware should not be specified within the
+    #      application dataflow but late-bound from configs, so
+    #      the exact same tasks are portable. If these types of
+    #      options are stored, the tasks will not be portable.
+    #
+    #      Eventually, the ideal model would probably be:
+    #       - minimal resource requirements in task description
+    #       - bind resource specifications at job config time
+
+    # For now, getting this crucial one from environment
+    myDevices = os.environ.get("WORKERDEVICE", "0")
+    print("OpenMM Run Script can see these GPU devices: %s" % myDevices)
 
     # add further auto options here
     platform_properties = {
@@ -255,6 +271,16 @@ if __name__ == '__main__':
      = read_input(args.platform, args.topology_pdb,
                   args.system_xml, args.integrator_xml)
 
+    platformName = platform.getName()
+    print("Name of platform in use: %s" % platformName)
+
+    if platformName == "CUDA":
+       print("Setting CudaDeviceIndex to: {}".format(myDevices))
+       platform.setPropertyDefaultValue('CudaDeviceIndex', myDevices)
+
+    elif platformName == "OpenCL":
+       print("Setting OpenCLDeviceIndex to: {}".format(myDevices))
+       platform.setPropertyDefaultValue('OpenCLDeviceIndex', myDevices)
 
     print('Done')
     print('Initialize Simulation')
@@ -273,7 +299,8 @@ if __name__ == '__main__':
     except Exception as e:
 
         print('EXCEPTION on host: ', (socket.gethostname()))
-        raise e
+        print(traceback.format_exc())
+        raise
 
     print('Done.')
 
@@ -285,7 +312,7 @@ if __name__ == '__main__':
             # noinspection PyCallByClass,PyTypeChecker
             print('(%d) %s' % (no_platform, Platform.getPlatform(no_platform).getName()))
 
-        print(os.environ)
+        #print(os.environ)
 
         print(Platform.getPluginLoadFailures())
         print(Platform.getDefaultPluginsDirectory())

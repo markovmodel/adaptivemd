@@ -13,6 +13,17 @@ echo "got args: $@" >> $WORKERLOG
 PROJNAME="$1"
 ADMD_DBURL="$2"
 NWORKERS="$3"
+GPU_PER_NODE="$4"
+
+echo "GPU_PER_NODE is $GPU_PER_NODE" >> $WORKERLOG
+
+if [ "$GPU_PER_NODE" -gt "1" ]
+then
+  export WORKERDEVICE="$(($WORKERID % $GPU_PER_NODE))"
+  echo "This worker can see these GPU devices: $WORKERDEVICE" >> $WORKERLOG
+  #export CUDA_VISIBLE_DEVICES="$(($WORKERID % $GPU_PER_NODE))"
+  #echo "This worker can see these GPU devices: $CUDA_VISIBLE_DEVICES" >> $WORKERLOG
+fi
 
 workercommand="adaptivemdworker $PROJNAME --dblocation $ADMD_DBURL &>> $WORKERLOG"
 echo "Worker$WORKERID command: $workercommand" >> $WORKERLOG
