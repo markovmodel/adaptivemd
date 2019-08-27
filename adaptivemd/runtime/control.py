@@ -53,6 +53,9 @@ def create_workload_launcher(project, workload, session, args, cwd):
         n_tasks % project.configuration.task["worker"]["launcher"]["tasks_per_node"]
     )
 
+    # For scaled tasks
+    cpu_per_task = project.configuration.resource["cpu_per_node"] // project.configuration.task["worker"]["launcher"]["tasks_per_node"]
+
     walltime = args.minutes
 
     jl = JobLauncher()
@@ -78,6 +81,7 @@ def create_workload_launcher(project, workload, session, args, cwd):
     jobconfig["netdevice"]    = project.configuration.resource["netdevice"]
     jobconfig["queue"]        = project.configuration.resource["queue"]
     jobconfig["cpu_per_node"] = project.configuration.resource["cpu_per_node"]
+    jobconfig["cpu_per_task"] = cpu_per_task
     jobconfig["gpu_per_node"] = project.configuration.resource["gpu_per_node"]
     jobconfig["allocation"]   = project.configuration.user["allocation"]
 
