@@ -48,8 +48,14 @@ def create_workload_launcher(project, workload, session, args, cwd):
     js = os.path.join(session, job_state_filename)
     with open(js, "w") as f: f.write("UNLAUNCHED")
     n_tasks  = len(workload)
+
+    if args.persist:
+        n_database_nodes = 0
+    else:
+        n_database_nodes = 1
+
     # FIXME inflexible, assumes 1 database node and homogenous tasks currently
-    n_nodes  = 1 + n_tasks // project.configuration.task["worker"]["launcher"]["tasks_per_node"] + bool(
+    n_nodes  = n_database_nodes + n_tasks // project.configuration.task["worker"]["launcher"]["tasks_per_node"] + bool(
         n_tasks % project.configuration.task["worker"]["launcher"]["tasks_per_node"]
     )
 
@@ -74,16 +80,20 @@ def create_workload_launcher(project, workload, session, args, cwd):
     jobconfig["n_nodes"]      = n_nodes
     jobconfig["n_tasks"]      = n_tasks
     jobconfig["project_name"] = project.name
-    jobconfig["admd_dburl"]   = "$ADMD_DBURL"
-    jobconfig["admd_profile"] = args.rc
-    jobconfig["dbhome"]       = os.path.join(cwd, "mongo")
-    jobconfig["dbport"]       = 27017
     jobconfig["netdevice"]    = project.configuration.resource["netdevice"]
     jobconfig["queue"]        = project.configuration.resource["queue"]
     jobconfig["cpu_per_node"] = project.configuration.resource["cpu_per_node"]
     jobconfig["cpu_per_task"] = cpu_per_task
     jobconfig["gpu_per_node"] = project.configuration.resource["gpu_per_node"]
     jobconfig["allocation"]   = project.configuration.user["allocation"]
+
+    dburl = os.environ.get("ADMD_DBURL", "")
+
+    jobconfig["admd_dburl"]   = "$ADMD_DBURL"
+    jobconfig["admd_profile"] = args.rc
+    jobconfig["dbhome"]       = os.path.join(cwd, "mongo")
+    jobconfig["dbport"]       = dburl.split(":")[-1].strip("/") if dburl else 27017
+    jobconfig["persistent_dburl"] = dburl if dburl else "unset"
 
     jl.configure_workload(jobconfig)
     logger.debug(pformat(jl._keys))

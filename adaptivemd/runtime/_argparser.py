@@ -102,6 +102,12 @@ def get_argparser():
         help="Default randomizes traj length, flag to fix to n_steps",
         action='store_true')
 
+    # TODO the actual client application should persist, not just the
+    #      database. TODO requires further testing of runtime function
+    parser.add_argument("--persist",
+        help="Flag for adaptivemd client to persist (only persistent DB implemented for now)",
+        action='store_true')
+
     parser.add_argument("-p","--protein-stride", dest="prot",
         help="Stride between saved protein structure frames",
         type=int, default=2)
