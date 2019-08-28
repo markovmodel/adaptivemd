@@ -1,6 +1,6 @@
 
 # User-specific needed to submit jobs
-allocation: "ccsd"
+allocation: "bif112"
 
 # These are not yet used, but could help shape
 # workflow and prevent undesired useage

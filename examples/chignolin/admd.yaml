@@ -2,9 +2,9 @@
 summit-lsf-jsrun:
     user:     "cfg/user.yaml"
     analyze:  "cfg/analyze.yaml"
-    resource: "cfg/resource.condo.yaml"
-    workload: "cfg/workload.pbs.yaml"
-    launch:   "cfg/launch.mpirun.yaml"
+    resource: "cfg/resource.rhea.yaml"
+    workload: "cfg/workload.rhea-pbs-persist.yaml"
+    launch:   "cfg/launch.rhea-mpirun.yaml"
 
     task:
         worker:   "cfg/task.worker.yaml"

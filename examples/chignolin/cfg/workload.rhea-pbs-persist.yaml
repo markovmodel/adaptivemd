@@ -1,0 +1,57 @@
+# Unused must be commented out
+
+# Command to queue/submit LRMS job
+command: "qsub"
+
+# The options this command takes
+options:
+    -e: "{job_home}/admd.err"
+    -o: "{job_home}/admd.out"
+    -N: "{job_name}"
+    -l: "walltime=0:{minutes}:0,nodes={n_nodes},partition={queue}"
+    -A: "{allocation}"
+
+script:
+    #- "module load PE-gnu"
+    - "module load fftw"
+    - "module unload python"
+    - ""
+    - "source {admd_profile}"
+    - "echo \"CUDA compiler: $(which nvcc)\""
+    - "cd {job_home}"
+    - "echo \"RUNNING\" > {job_state}"
+    - ""
+    # For persistent sessions, can use a tunnel we create here
+    #- "ssh -f {persistent_dbhost} -L {dbport}:localhost:27017"
+    # Or try to let pymongo find the host
+    - "export ADMD_DBURL=\"{persistent_dburl}\""
+    - "echo \"new ADMD_DBURL: $ADMD_DBURL\""
+    - "adaptivemdruntime {project_name} --n_traj 0 --rescue_only 1> admd.adaptivemd.out 2> admd.adaptivemd.err & EVENT_PID=$!"
+    - ""
+
+    - task:
+        name: "worker"
+
+    - ""
+    - "wait \"$EVENT_PID\""
+    - ""
+    - "echo \"$(jobs)\""
+    - ""
+    - "wait \"$WORKERS_APID\""
+    - "echo \"STOPPING\" > {job_state}"
+    - ""
+    - "kill %2"
+    - ""
+    - "echo \"COMPLETE\" > {job_state}"
+    - ""
+    - "echo \"qdel $PBS_JOBID\""
+    - "qdel $PBS_JOBID"
+
+# Extra arguments if needed/desired
+#arguments:
+
+# Before task-launching commands (ie mpirun/wrappers)
+#script:
+
+# After task-launching commands (ie mpirun/wrappers)
+#postscript:

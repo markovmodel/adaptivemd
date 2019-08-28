@@ -2,8 +2,11 @@
 name: "database"
 
 launcher:
-    bind_element:        "node"
+    #hostfile:       "admd.database.hostfile"
+    bind_element:   "node"
+    n_per_element:  1
     n_tasks:        1
+    n_threads:      "{cpu_per_node}"
     tasks_per_node: 1
 
 # Unused fields must be commented out

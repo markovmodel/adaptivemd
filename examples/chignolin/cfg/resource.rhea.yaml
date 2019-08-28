@@ -1,0 +1,18 @@
+resource_name: "rhea"
+shared_path:   "$ADMD_DATA"
+netdevice:     "eth0"
+queue:         "gpu"
+# TODO like this
+#queues:
+
+#  batch:
+#    allocation:       ""
+#    cores_per_node:   "16"
+#    gpu_per_node:     "0"
+
+#  gpu:
+#    allocation:       ""
+#    cores_per_node:   "16"
+#    gpu_per_node:     "1"
+cpu_per_node: 28
+gpu_per_node:  4

@@ -6,9 +6,12 @@ name: "worker"
 #post:
 
 launcher:
-    bind_element:      "socket"
-    n_tasks:      "{n_tasks}"
-    gpu_per_task: 1
+    #hostfile:      "admd.worker.hostfile"
+    n_per_element: "2"
+    bind_element:  "numa"
+    n_tasks:       "{n_tasks}"
+    n_threads:     "{cpu_per_task}"
+    gpu_per_task:  1
 
 main:
     executable: "startworker"
@@ -17,6 +20,7 @@ main:
         - "{project_name}"
         - "{admd_dburl}"
         - "{n_tasks}"
+        - "{gpu_per_node}"
         - "2> admd.workers.launch.err 1> admd.workers.launch.out & WORKERS_APID=$!"
 
 #    options:
