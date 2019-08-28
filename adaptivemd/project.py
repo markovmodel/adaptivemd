@@ -119,6 +119,11 @@ class Project(object):
 
     """
 
+    _db_url = os.environ.get("ADMD_DBURL")
+
+    if _db_url:
+        MongoDBStorage._db_url = _db_url
+
     @classmethod
     def set_dburl(cls, dburl):
         MongoDBStorage._db_url = dburl
@@ -242,10 +247,6 @@ class Project(object):
     def __init__(self, name):
 
         self.name = name
-
-        dburl = os.environ.get("ADMD_DBURL")
-        if dburl:
-            self.set_dburl(dburl)
 
         # TODO reference to rp client here
         # TODO control callbacks/watchers
