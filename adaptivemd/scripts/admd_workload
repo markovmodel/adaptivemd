@@ -80,16 +80,13 @@ EXECFLAG="--submit_only"
 DLM=":"
 DBHOME=$(echo ${11} | awk -F"$DLM" '{print $1}')
 DBPORT=$(echo ${11} | awk -F"$DLM" '{print $2}')
+DBPERSIST=$(echo ${11} | awk -F"$DLM" '{print $3}')
 
 # Fill in to use default port if None was given
 if [ -z "$DBPORT" ]
 then
   DBPORT="27017"
 fi
-
-# This is environment variable is read by
-# any local AdaptiveMD instances
-export ADMD_DBURL="mongodb://0.0.0.0:$DBPORT/"
 
 # These ones only come with the first round
 # to describe simulation setup
@@ -108,15 +105,30 @@ then
 else
   BATCHWAIT="-u all"
 fi
-if [[ $WORKLOAD = "cleanup" ]]
+
+if [ $WORKLOAD = "cleanup" ]
 then
   RESCUE_TASKS=""
 else
   RESCUE_TASKS="--rescue_tasks"
 fi
+
 PROGRESS="any"
 
+# This is environment variable is read by
+# any local AdaptiveMD instances
+# and inbound instances if persist is on
+DBHOST=`ip addr show $ADMD_NETDEVICE | grep -Eo '(addr:)?([0-9]*\.){3}[0-9]*' | head -n1`
+export ADMD_DBURL="mongodb://$DBHOST:$DBPORT/"
+
+echo "Client ADMD_DBURL: $ADMD_DBURL"
+
 ROUND_PER_WORKLOAD="1"
+
+if [ "$DBPERSIST" = "persist" ]
+then
+    EXECFLAG+=" --persist"
+fi
 
 
 #------------------------------------------------------------------------------#
@@ -172,10 +184,15 @@ fi
 # Launch database instance to run side-by-side with
 # the AdaptiveMD application on head node
 
-echo "Starting database in directory '$DBHOME' on port '$DBPORT'"
-MPID="$(launch_amongod $DBHOME $DBPORT)"
-echo "Mongo DB process ID: $MPID"
-echo "Running AdaptiveMD Application:"
+# If persist make sure we have a mongod process on the dbport running now
+if [[ ( "$DBPERSIST" = "persist" ) && ( ! -z "$(netstat -tupnl | grep "$(list_mongods | awk -F" " '{print $2}')" | grep "mongod" | grep "$DBPORT" )" ) ]]
+then
+    echo "Found existing mongodb instance on port $DBPORT"
+else
+    echo "Starting database in directory '$DBHOME' on port '$DBPORT'"
+    MPID="$(launch_amongod $DBHOME $DBPORT)"
+    echo "Mongo DB process ID: $MPID"
+fi
 
 #------------------------------------------------------------------------------#
 # Launch adaptivemdruntime
@@ -212,8 +229,14 @@ echo "Got status '$APP_STATUS' from AdaptiveMD"
 #------------------------------------------------------------------------------#
 # Kill and cleanup database stuff
 
-echo "Killing Mongo DB Process: $MPID"
-kill $MPID
+if [ ! "$DBPERSIST" = "persist" ]
+then
+    echo "Killing Mongo DB Process: $MPID"
+    kill $MPID
+else
+    echo "Mongod will persist on client application side"
+    list_mongods
+fi
 
 # ## Sometimes shutdown doesn't happen nicely, we should not
 # ## have to do this. But if the workflow is the only thing
