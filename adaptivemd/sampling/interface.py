@@ -63,7 +63,7 @@ def list_sampling_functions():
     pass
 
 
-def get_sampling_function(name_func, backup_func=None, **sfkwargs): 
+def get_sampling_function(name_func, backup_func=None, **sfkwargs):
 
     _func = getattr(functions, name_func, None)
 
@@ -73,10 +73,10 @@ def get_sampling_function(name_func, backup_func=None, **sfkwargs):
     assert callable(_func)
 
     if backup_func:
-        _backup_func = getattr(functions, backup_func, None) 
+        _backup_func = getattr(functions, backup_func, None)
 
         if _backup_func is None:
-            _backup_func = getattr(user_functions, backup_func, None) 
+            _backup_func = getattr(user_functions, backup_func, None)
 
         assert callable(_backup_func)
 
@@ -86,26 +86,26 @@ def get_sampling_function(name_func, backup_func=None, **sfkwargs):
     logger.info("Retrieved sampling function: {}".format(_func) )
     logger.info("Backup sampling function: {}".format(_backup_func) )
 
-    # Use Sampled Frames to make New Trajectories 
-    def sampling_function(project, engine, length, number, *args, **skwargs): 
+    # Use Sampled Frames to make New Trajectories
+    def sampling_function(project, engine, length, number, *args, **skwargs):
  
-        trajectories = list() 
+        trajectories = list()
         skwargs.update(sfkwargs)
 
         if number == 0:
              return trajectories
  
-        if isinstance(length, int): 
+        if isinstance(length, int):
 
-            assert(isinstance(number, int)) 
-            length = [length] * number 
+            assert(isinstance(number, int))
+            length = [length] * number
  
-        if isinstance(length, list): 
+        if isinstance(length, list):
 
-            if number is None: 
-                number = len(length) 
+            if number is None:
+                number = len(length)
  
-            sf = _func 
+            sf = _func
             sampled_frames = list()
 
             try:
@@ -122,12 +122,12 @@ def get_sampling_function(name_func, backup_func=None, **sfkwargs):
             logger.info("frames sampled from function: {0}".format(sf))
             logger.info(sampled_frames)
 
-            for i,frame in enumerate(sampled_frames): 
-                trajectories.append( 
+            for i,frame in enumerate(sampled_frames):
+                trajectories.append(
                     project.new_trajectory(
-                    frame, length[i], engine) 
-                ) 
+                    frame, length[i], engine)[0]
+                )
  
-        return trajectories 
+        return trajectories
  
-    return sampling_function 
+    return sampling_function
