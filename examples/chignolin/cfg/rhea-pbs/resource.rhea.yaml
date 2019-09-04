@@ -1,0 +1,6 @@
+resource_name: "rhea"
+shared_path:   "$ADMD_DATA"
+netdevice:     "eth0"
+queue:         "gpu"
+cpu_per_node:  28
+gpu_per_node:  4

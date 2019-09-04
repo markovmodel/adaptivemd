@@ -1,0 +1,19 @@
+
+name: "database"
+
+launcher:
+    hostfile:       "admd.database.hostfile"
+    bind_element:   "node"
+    n_per_element:  1
+    n_tasks:        1
+    n_threads:      "{cpu_per_node}"
+    tasks_per_node: 1
+
+main:
+    executable: "startdb"
+
+    arguments:
+        - "{dbhome}"
+        - "{dbport}"
+        - "{netdevice}"
+        - "2> admd.database.launch.err 1> admd.database.launch.out & MONGO_APID=$!"

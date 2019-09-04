@@ -3,7 +3,8 @@ command: "mpirun"
 
 # Options to control launcher, assign hardware
 resource:
-    #--map-by:     "ppr:1:{task.bind_element}:PE={task.cpu_per_task}"
+    --hostfile:   "{task.hostfile}"
+    --map-by:     "ppr:{task.n_per_element}:{task.bind_element},PE={task.n_threads}"
     -n:           "{task.n_tasks}"
 
 # Additional to accommadate rigid formats

@@ -2,7 +2,7 @@
 # User-specific needed to submit jobs
 allocation: "bif112"
 
-# These are not yet used, but could help shape
-# workflow and prevent undesired useage
+# TODO options controlling allocation usage
+# to help shape the workflow, prevent undesired useage
 limit:      5000
 formula:    "{nnodes}*{minutes}"

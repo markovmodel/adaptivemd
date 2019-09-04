@@ -1,0 +1,11 @@
+
+rhea-pbs-mpirun:
+    analyze:  "cfg/analyze.yaml"
+    user:     "cfg/rhea/user.rhea.yaml"
+    resource: "cfg/rhea/resource.rhea.yaml"
+    workload: "cfg/rhea/workload.pbs.yaml"
+    launch:   "cfg/rhea/launch.mpirun.yaml"
+
+    task:
+        worker:   "cfg/rhea/task.mpirun-worker.yaml"
+        database: "cfg/rhea/task.mpirun-database.yaml"

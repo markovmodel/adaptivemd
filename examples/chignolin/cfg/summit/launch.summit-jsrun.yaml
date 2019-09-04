@@ -1,4 +1,4 @@
-# Command wrapping mpirun, or mpirun
+# Launch command
 command: "jsrun"
 
 # Options to control launcher, assign hardware
@@ -12,6 +12,6 @@ resource:
     --launch_distribution: "plane:1"
     #--latency_priority:
 
-# Additional to accommadate rigid formats
+# Additional to accommadate rigid formatting
 arguments:
     - "--smpiargs=\"none\""

@@ -11,7 +11,7 @@
 #     version on your cluster with OpenMM
 #     version via configuration below
 
-USER="osz"
+#USER="jrossyra"
 CWD="$(pwd)"
 
 # Line to install AdaptiveMD itself via this
@@ -29,13 +29,13 @@ MONGO_VERSION="mongodb-linux-x86_64-3.6.13"
 CONDA_VERSION="Miniconda3-latest-Linux-x86_64"
 PYTHON_VERSION="3.7"
 PYEMMA_VERSION="pyemma"
-OPENMM_VERSION="openmm -c omnia/label/cuda92"
+OPENMM_VERSION="openmm -c omnia/label/cuda100"
 
 # CUDA module line saved in ADMD_PROFILE
-CUDA_MODULE="module load cuda/9.2"
+CUDA_MODULE="module load cuda"
 
 # Runtime preferences and specifics for your cluster
-ADMD_LOGLEVEL="DEBUG"
+ADMD_LOGLEVEL="INFO"
 ADMD_NETDEVICE="eth0"
 
 #-------------------------------------------------------------------#
@@ -48,21 +48,21 @@ ADMD_NETDEVICE="eth0"
 
 # INSTALL_DIRNAME also the default Conda Env name
 INSTALL_DIRNAME="admd"
-ADMD_DATA="/lustre/or-hydra/cades-bsd/$USER/$INSTALL_DIRNAME/data"
-ADMD_SOFTWARE="/lustre/or-hydra/cades-bsd/$USER/$INSTALL_DIRNAME/software"
-ADMD_WORKFLOWS="/lustre/or-hydra/cades-bsd/$USER/$INSTALL_DIRNAME/workflows"
-ADMD_MDSYSTEMS="/lustre/or-hydra/cades-bsd/$USER/$INSTALL_DIRNAME/mdsystems"
-ADMD_SAMPLINGFUNCS="/lustre/or-hydra/cades-bsd/$USER/$INSTALL_DIRNAME/sampling"
+ADMD_DATA="/gpfs/alpine/proj-shared/bif112/$USER/$INSTALL_DIRNAME/data"
+ADMD_SOFTWARE="/gpfs/alpine/proj-shared/bif112/$USER/$INSTALL_DIRNAME/software"
+ADMD_WORKFLOWS="/gpfs/alpine/proj-shared/bif112/$USER/$INSTALL_DIRNAME/workflows"
+ADMD_MDSYSTEMS="/gpfs/alpine/proj-shared/bif112/$USER/$INSTALL_DIRNAME/mdsystems"
+ADMD_SAMPLINGFUNCS="/gpfs/alpine/proj-shared/bif112/$USER/$INSTALL_DIRNAME/sampling"
 
 # This file contains all required runtime
 # environment configuration, built by installer
-ADMD_PROFILE="$HOME/admd.bashrc"
+ADMD_PROFILE="$HOME/admd-rhea.bashrc"
 touch $ADMD_PROFILE
 
 #-------------------------------------------------------------------#
 # Extra actions to include for loading AdaptiveMD Environment
 ADMD_ACTIONS[0]="module unload python"
-ADMD_ACTIONS[1]="module load PE-gnu"
+#ADMD_ACTIONS[1]="module load PE-gnu"
 # e.g. if you used a system anaconda module to create this env
 #ADMD_ACTIONS[1]="module load python/anaconda"
 

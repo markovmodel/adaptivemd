@@ -1,0 +1,11 @@
+
+condo-pbs-mpirun:
+    analyze:  "cfg/analyze.yaml"
+    user:     "cfg/rhea/user.rhea.yaml"
+    resource: "cfg/rhea/resource.rhea.yaml"
+    workload: "cfg/rhea/workload.pbs-persist.yaml"
+    launch:   "cfg/rhea/launch.mpirun-persist.yaml"
+
+    task:
+        worker:   "cfg/rhea/task.mpirun-worker-persist.yaml"
+        #database: "cfg/rhea/task.mpirun-database.yaml"

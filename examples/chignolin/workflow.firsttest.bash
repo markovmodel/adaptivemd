@@ -65,11 +65,3 @@ admd_checkpoint
 
 #           0 1     2     3  4   5   6 7 8   9    10       11   12     13     14        15
 admd_workload 1 $PROJ trajs $N $Pi $Pt 0 0 $SF $MINS $DBSETUP $SYS $MFREQ $PFREQ $PLATFORM
-admd_workload 1 $PROJ trajs $N $Pi $Pt 0 0 $SF $MINS $DBSETUP
-admd_workload 1 $PROJ model 1  0   0   0 0 $SF $MINS $DBSETUP
-
-# Changing the round number lets us pick up a new set
-# of analysis parameters given in 'cfg/analysis.yaml'
-admd_workload 2 $PROJ trajs $N $Pi $Pt 0 0 $SF $MINS $DBSETUP
-admd_workload 2 $PROJ trajs $N $Pi $Pt 0 0 $SF $MINS $DBSETUP
-admd_workload 2 $PROJ model 1  0   0   0 0 $SF $MINS $DBSETUP

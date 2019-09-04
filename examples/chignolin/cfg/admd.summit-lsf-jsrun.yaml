@@ -1,0 +1,11 @@
+
+summit-lsf-jsrun:
+    analyze:  "cfg/analyze.yaml"
+    user:     "cfg/summit/user.summit.yaml"
+    resource: "cfg/summit/resource.summit.yaml"
+    workload: "cfg/summit/workload.summit-lsf.yaml"
+    launch:   "cfg/summit/launch.summit-jsrun.yaml"
+
+    task:
+        worker:   "cfg/summit/task.worker.yaml"
+        database: "cfg/summit/task.database.yaml"
