@@ -15,7 +15,7 @@ fi
 
 MPID="$(launch_amongod $DBPATH $DBPORT 2> admd.mongodb.err)"
 
-while [ ! -S "$DBPATH/socket/mongodb-$DBPORT" ]
+while [ ! -S "$DBPATH/socket/mongodb-${DBPORT}.sock" ]
 do
     sleep 1
 done

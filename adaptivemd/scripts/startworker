@@ -19,10 +19,10 @@ echo "GPU_PER_NODE is $GPU_PER_NODE" >> $WORKERLOG
 
 if [ "$GPU_PER_NODE" -gt "1" ]
 then
-  export WORKERDEVICE="$(($WORKERID % $GPU_PER_NODE))"
-  echo "This worker can see these GPU devices: $WORKERDEVICE" >> $WORKERLOG
-  #export CUDA_VISIBLE_DEVICES="$(($WORKERID % $GPU_PER_NODE))"
-  #echo "This worker can see these GPU devices: $CUDA_VISIBLE_DEVICES" >> $WORKERLOG
+  # OpenMM will use the first device in this list by default
+  # so we give it a list of 1 device
+  export CUDA_VISIBLE_DEVICES="$(($WORKERID % $GPU_PER_NODE))"
+  echo "This worker can see this GPU device: $CUDA_VISIBLE_DEVICES" >> $WORKERLOG
 fi
 
 workercommand="adaptivemdworker $PROJNAME --dblocation $ADMD_DBURL &>> $WORKERLOG"
