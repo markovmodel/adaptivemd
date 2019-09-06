@@ -1,0 +1,20 @@
+
+name: "worker"
+
+launcher:
+    hostfile:      "admd.worker.hostfile"
+    n_per_element: 1
+    bind_element:  "numa"
+    n_tasks:       "{n_tasks}"
+    n_threads:     "{cpu_per_task}"
+    gpu_per_task:  1
+
+main:
+    executable:    "startworker"
+
+    arguments:
+        - "{project_name}"
+        - "{admd_dburl}"
+        - "{n_tasks}"
+        - "{gpu_per_node}"
+        - "2> admd.workers.launch.err 1> admd.workers.launch.out & WORKERS_APID=$!"

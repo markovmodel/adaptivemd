@@ -27,7 +27,7 @@ MFREQ="20000"
 PFREQ="4000"
 
 # Number of replicates
-N="8"
+N="4"
 
 # MD length per job in steps
 Pi="1000000"
@@ -35,6 +35,8 @@ Pi="1000000"
 # Total MD length for full trajectory
 Pt="2000000"
 
+# Save logs during workflow
+export ADMD_SAVELOGS="True"
 #------------------------------------------------------------------------------#
 #
 # Every workload line: need to fill out these options to define a workflow

@@ -46,6 +46,8 @@ Pi="10000"
 # Total MD length for full trajectory
 Pt="20000"
 
+# Save logs during workflow
+export ADMD_SAVELOGS="True"
 #------------------------------------------------------------------------------#
 #
 # Every workload line: need to fill out these options to define a workflow

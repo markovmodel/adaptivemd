@@ -34,7 +34,7 @@ SF="explore_macrostates"
 # test and real use-cases.
 
 # Number of replicates
-N="8"
+N="2"
 
 # Save frequencies. Save protein frequently to increase MSM building data
 MFREQ="200"
@@ -46,6 +46,8 @@ Pi="10000"
 # Total MD length for full trajectory
 Pt="20000"
 
+# Save logs during workflow
+export ADMD_SAVELOGS="True"
 #------------------------------------------------------------------------------#
 #
 # Every workload line: need to fill out these options to define a workflow

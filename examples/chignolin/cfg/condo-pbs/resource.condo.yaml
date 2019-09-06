@@ -1,0 +1,6 @@
+resource_name: "condo"
+shared_path:   "$ADMD_DATA"
+netdevice:     "eth0"
+queue:         "gpu_p100"
+cpu_per_node:  36
+gpu_per_node:  2

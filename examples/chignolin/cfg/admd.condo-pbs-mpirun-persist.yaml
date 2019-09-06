@@ -1,0 +1,10 @@
+
+condo-pbs-mpirun:
+    analyze:  "cfg/analyze.yaml"
+    user:     "cfg/condo-pbs/user.condo.yaml"
+    resource: "cfg/condo-pbs/resource.condo.yaml"
+    workload: "cfg/condo-pbs/workload.pbs-persist.yaml"
+    launch:   "cfg/condo-pbs/launch.mpirun-persist.yaml"
+
+    task:
+        worker:   "cfg/condo-pbs/task.mpirun-worker-persist.yaml"

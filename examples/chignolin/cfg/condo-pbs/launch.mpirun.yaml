@@ -1,0 +1,13 @@
+# Command wrapping mpirun, or mpirun
+command: "mpirun"
+
+# Options to control launcher, assign hardware
+resource:
+    --hostfile:   "{task.hostfile}"
+    --map-by:     "ppr:{task.n_per_element}:{task.bind_element}:PE={task.n_threads}"
+    -n:           "{task.n_tasks}"
+
+# Additional to accommadate rigid formats
+arguments:
+    - "-display-map"
+    - "-display-allocation"
