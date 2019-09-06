@@ -290,13 +290,17 @@ class JobLauncher(object):
 
         self._keys.update(newkeys)
 
-    def _write_script(self):
+    def _write_script(self, prescript=None):
         '''Write a script to submit a job
         '''
         script = self._fill_fields(self._script)
 
         with open(self._job_script, 'w') as fjob:
             fjob.write("#!/bin/bash\n")
+
+            if prescript:
+                fjob.write(prescript)
+
             fjob.write(script)
 
     def _fill_fields(self, template):
@@ -324,12 +328,12 @@ class JobLauncher(object):
             logger.info("Job Launcher")
             logger.info(" -- " + job_launcher)
             if self.__class__._live_:
-                self._write_script()
+                self._write_script("# Job submitted with command:\n# %s" % job_launcher)
 
                 out, retval = small_proc_watch_block(
                    job_launcher)
 
-                # FIXME confusing stdout with returncode i think
+                # FIXME confusing stdout with returncode
                 logger.info(out)
                 logger.info("")
                 logger.info(
