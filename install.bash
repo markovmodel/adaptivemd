@@ -56,7 +56,7 @@ ADMD_SAMPLINGFUNCS="/gpfs/alpine/proj-shared/bif112/$USER/$INSTALL_DIRNAME/sampl
 
 # This file contains all required runtime
 # environment configuration, built by installer
-ADMD_PROFILE="$HOME/admd-rhea.bashrc"
+ADMD_PROFILE="$HOME/admd.bashrc"
 touch $ADMD_PROFILE
 
 #-------------------------------------------------------------------#
