@@ -27,7 +27,9 @@ import os
 import datetime
 
 
-def get_logger(logname, logfile=True):
+_save_logs = bool(os.environ.get("ADMD_SAVELOGS", False))
+
+def get_logger(logname, save_log=False):
 
     import logging
 
@@ -67,11 +69,13 @@ def get_logger(logname, logfile=True):
 
     logger.addHandler(ch)
 
-    if logfile:
-        logfilename = logname + '.log'
-        if logfilename.startswith("__main__"):
-            logfilename = "adaptivemd." + logfilename
-        fh = logging.FileHandler(logfilename)
+    if save_log or _save_logs:
+        logfile = logname + '.log'
+
+        if logfile.startswith("__main__"):
+            logfile = "adaptivemd." + logfile
+
+        fh = logging.FileHandler(logfile)
         fh.setLevel(loglevel)
         fh.setFormatter(formatter)
         logger.addHandler(fh)
