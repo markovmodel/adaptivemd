@@ -5,11 +5,13 @@ command: "qsub"
 
 # The options this command takes
 options:
+    -l: "walltime=0:{minutes}:0,nodes={n_nodes}:ppn={cpu_per_node},qos=std"
+    -W: "group_list=cades-{allocation} "
     -e: "{job_home}/admd.err"
     -o: "{job_home}/admd.out"
     -N: "{job_name}"
-    -l: "walltime=0:{minutes}:0,nodes={n_nodes},partition={queue}"
     -A: "{allocation}"
+    -q: "{queue}"
 
 # Body of the submitted job script
 script:

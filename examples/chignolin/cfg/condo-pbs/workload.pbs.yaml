@@ -22,7 +22,7 @@ script:
     - "cd {job_home}"
     - "echo \"RUNNING\" > {job_state}"
 
-    - "# 4- splice the nodefile so mpirun can target tasks to resource"
+    - "# 4- splice nodefile so mpirun targets tasks to resource without oversubscribing"
     - "cat $PBS_NODEFILE | head -n {cpu_per_node} > admd.database.hostfile"
     - "cat $PBS_NODEFILE | tail -n +$((1+{cpu_per_node})) > admd.worker.hostfile"
 
