@@ -2,32 +2,35 @@
 
 WORKERID="$OMPI_COMM_WORLD_RANK"
 WORKERLOG="workers/adaptivemd.worker.${WORKERID}.log"
-
-echo "Worker$WORKERID says hello: $(date +'%Y-%m-%d %H:%M:%S.%5N')" >> $WORKERLOG
-
-echo "CUDA compiler: $(which nvcc)" >> $WORKERLOG
-export OPENMM_CUDA_COMPILER="$(which nvcc)"
-
-echo "got args: $@" >> $WORKERLOG
-
 PROJNAME="$1"
 ADMD_DBURL="$2"
 NWORKERS="$3"
 GPU_PER_NODE="$4"
+ADMD_PROFILE="$5"
 
+if [ ! -z "$ADMD_PROFILE" ]
+then
+    echo "Loading profile '$ADMD_PROFILE' for Worker$WORKERID"
+    source $ADMD_PROFILE
+fi
+
+export OPENMM_CUDA_COMPILER="$(which nvcc)"
+workercommand="adaptivemdworker $PROJNAME --dblocation $ADMD_DBURL &>> $WORKERLOG"
+
+echo "Worker$WORKERID says hello: $(date +'%Y-%m-%d %H:%M:%S.%5N')" >> $WORKERLOG
+echo "Worker$WORKERID got args  : $@" >> $WORKERLOG
 echo "GPU_PER_NODE is $GPU_PER_NODE" >> $WORKERLOG
+echo "CUDA compiler: $OPENMM_CUDA_COMPILER" >> $WORKERLOG
 
 if [ "$GPU_PER_NODE" -gt "1" ]
 then
-  # OpenMM will use the first device in this list by default
-  # so we give it a list of 1 device
-  export CUDA_VISIBLE_DEVICES="$(($WORKERID % $GPU_PER_NODE))"
-  echo "This worker can see this GPU device: $CUDA_VISIBLE_DEVICES" >> $WORKERLOG
+    # OpenMM will use the first device in this list by default
+    # so we give it a list of 1 device
+    export CUDA_VISIBLE_DEVICES="$(($WORKERID % $GPU_PER_NODE))"
+    echo "This worker can see this GPU device# $CUDA_VISIBLE_DEVICES" >> $WORKERLOG
 fi
 
-workercommand="adaptivemdworker $PROJNAME --dblocation $ADMD_DBURL &>> $WORKERLOG"
 echo "Worker$WORKERID command: $workercommand" >> $WORKERLOG
-
 echo "Worker$WORKERID starts: $(date +'%Y-%m-%d %H:%M:%S.%5N')" >> $WORKERLOG
 eval "$workercommand"
 echo "Worker$WORKERID stops: $(date +'%Y-%m-%d %H:%M:%S.%5N')" >> $WORKERLOG
