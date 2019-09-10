@@ -182,8 +182,10 @@ class JobLauncher(object):
 
                     task = ""
                     if "task." in launcher:
+                        if "launcher" not in taskopts:
+                            raise KeyError("Field 'launcher' required in task config to define task properties requested by launcher")
                         fields = {
-                            key:taskopts["launcher"][key]
+                            key : taskopts["launcher"][key]
                             for key in  map(
                                 lambda k: "".join(k[1].split("task.")),
                                 filter(
@@ -196,6 +198,9 @@ class JobLauncher(object):
                         logger.debug(pformat(fields))
                         task += "".join(launcher.split("task.")).format_map(SafeDict(**fields))
                         logger.debug(task)
+
+                    else:
+                        task += launcher
 
                     task += " %s" % taskopts["main"]["executable"]
                     task += " %s" % " ".join(taskopts["main"].get("arguments", list()))
