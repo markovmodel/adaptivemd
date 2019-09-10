@@ -207,6 +207,11 @@ class Configuration(StorableMixin):
                     "recognized task requirements given"
                 ))
 
+                logger.warning("Setting resource config to use 1 gpu per task")
+                launch_specs["gpu_per_task"] = 1
+                launch_specs["cpu_per_task"] = self.resource["cpu_per_node"] // (self.resource["gpu_per_node"] // launch_specs["gpu_per_task"])
+                launch_specs["tasks_per_node"] = self.resource["cpu_per_node"] // launch_specs["cpu_per_task"]
+
     # TODO remove extra filename field project_name
     @classmethod
     def read_configurations(cls, configuration_file='', project_name=None):
