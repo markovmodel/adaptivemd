@@ -1,0 +1,7 @@
+# User-specific needed to submit jobs
+allocation: "bif112"
+
+## TODO options controlling allocation usage
+## to help shape the workflow, prevent undesired useage
+#limit:      5000
+#formula:    "{nnodes}*{minutes}"

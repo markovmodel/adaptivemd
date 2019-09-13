@@ -1,0 +1,10 @@
+
+rhea-slurm-srun-persist:
+    analyze:  "cfg/analyze.yaml"
+    user:     "cfg/rhea-slurm-persist/user.yaml"
+    resource: "cfg/rhea-slurm-persist/resource.yaml"
+    workload: "cfg/rhea-slurm-persist/workload.yaml"
+    launch:   "cfg/rhea-slurm-persist/launch.yaml"
+
+    task:
+        worker:   "cfg/rhea-slurm-persist/task.worker.yaml"

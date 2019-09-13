@@ -1,0 +1,11 @@
+# Command wrapping mpirun, or mpirun
+command: "srun"
+
+# Options to control launcher, assign hardware
+resource:
+    -n:              "{n_tasks}"
+    --cpus-per-task: "{cpu_per_task}"
+
+# Additional to accommadate rigid formats
+arguments:
+    - "--verbose"

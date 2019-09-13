@@ -1,0 +1,43 @@
+
+
+command: "sbatch"
+
+options:
+    -t: "{minutes}"
+    -e: "{job_home}/admd.err"
+    -o: "{job_home}/admd.out"
+    -J: "{job_name}"
+    -p: "{queue}"
+    -A: "{allocation}"
+    -N: "{n_nodes}"
+
+script:
+    - "# 1- Load the AdaptiveMD environment"
+    - "source {admd_profile}"
+    - "export ADMD_SAVELOGS=\"True\""
+    - "echo \"CUDA compiler: $(which nvcc)\""
+    - "export ADMD_DBURL=\"{persistent_dburl}\""
+    - "echo \"new ADMD_DBURL: $ADMD_DBURL\""
+
+    - "# 2- Update job state to running"
+    - "cd {job_home}"
+    - "echo \"RUNNING\" > {job_state}"
+
+    - "# 3- Shell Job 1, Start AdaptiveMD to coordinate AdaptiveMD Event"
+    - "adaptivemdruntime {project_name} --n_traj 0 --rescue_only 1> admd.adaptivemd.out 2> admd.adaptivemd.err & EVENT_PID=$!"
+
+    - "# 4- Shell Job 2, Launch AdaptiveMDWorkers"
+    - task:
+        name: "worker"
+
+    - "# 5- Shut down Shell Jobs after AdaptiveMD Event (shell job 2) terminates"
+    - "wait \"$EVENT_PID\""
+    - "wait \"%1\""
+    - "echo \"STOPPING\" > {job_state}"
+    - "kill \"%2\""
+    - "sleep \"3\""
+    - "echo \"COMPLETE\" > {job_state}"
+
+    - "# 6- Help the LRMS with explicit job kill"
+    - "echo \"scancel $SLURM_JOB_ID\""
+    - "scancel \"$SLURM_JOB_ID\""

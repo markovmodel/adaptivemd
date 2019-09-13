@@ -5,13 +5,13 @@
 SYS="chignolin"
 
 # Walltime for LRMS job
-MINS="15"
+MINS="40"
 
 # Fields separated by colon: "path[:port[:'persistent']]"
 #  1. relative or absolute path to DB parent folder
 #  2. optional DB port for client-side database
 #  3. optional flag to use a persistent, client-side database instance
-DBSETUP="mongo:23234:persist"
+DBSETUP="mongo:33234:persist"
 
 # OpenMM Simulation Platform
 PLATFORM="CUDA"
@@ -27,7 +27,7 @@ MFREQ="20000"
 PFREQ="4000"
 
 # Number of replicates
-N="4"
+N="8"
 
 # MD length per job in steps
 Pi="1000000"
