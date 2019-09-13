@@ -1,12 +1,15 @@
 #!/bin/bash
 
-WORKERID="$OMPI_COMM_WORLD_RANK"
-WORKERLOG="workers/adaptivemd.worker.${WORKERID}.log"
 PROJNAME="$1"
 ADMD_DBURL="$2"
 NWORKERS="$3"
 GPU_PER_NODE="$4"
-ADMD_PROFILE="$5"
+RANK_IDENTIFIER="$5"
+ADMD_PROFILE="$6"
+
+# RANK_IDENTIFIER should be an MPI Rank/ProcID Variable
+WORKERID="${!RANK_IDENTIFIER}"
+WORKERLOG="workers/adaptivemd.worker.${WORKERID}.log"
 
 if [ ! -z "$ADMD_PROFILE" ]
 then
