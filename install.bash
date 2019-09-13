@@ -255,6 +255,7 @@ conda install --yes --force-reinstall pyyaml
 
 echo ">>>>>>>>>>>> ADMD_PROFILE >>>>>>>>>>>>>>>>>>>>>>>>"
 echo "export PATH=\"$ADMD_SOFTWARE/miniconda/bin:\$PATH\"" | tee -a $ADMD_PROFILE
+echo "export PATH=\"$(dirname $(which python)):\$PATH\"" | tee -a $ADMD_PROFILE
 echo "" | tee -a $ADMD_PROFILE
 echo "# 'activate' now in PATH" | tee -a $ADMD_PROFILE
 echo "# TODO maybe? conda activate $ADMD_ENV_NAME... but seems" | tee -a $ADMD_PROFILE
